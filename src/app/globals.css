@@ -26,6 +26,10 @@
   --color-risk-high: #e5484d;
   --color-risk-med: #f2a93b;
   --color-risk-low: #3dd68c;
+  --color-risk-info: #4cc2ff;
+
+  --color-brand-400: #9d80ff;
+  --color-brand-300: #b5a0ff;
 
   --font-sans: var(--font-inter);
   --font-display: var(--font-display);
@@ -124,3 +128,24 @@ body {
 .dark-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
 .dark-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .dark-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
+
+/* App shell skeleton shimmer */
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.85; }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--color-ink-800) 0%, var(--color-ink-700) 50%, var(--color-ink-800) 100%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.6s ease-in-out infinite;
+}
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Body switches to dark for app routes */
+body.app-shell {
+  background: var(--color-ink-950);
+  color: var(--color-ink-100);
+}
