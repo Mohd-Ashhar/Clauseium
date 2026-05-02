@@ -1,0 +1,99 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-ink-950: #050505;
+  --color-ink-900: #0a0b0d;
+  --color-ink-850: #0d0f12;
+  --color-ink-800: #14171c;
+  --color-ink-700: #1f2329;
+  --color-ink-500: #6b7280;
+  --color-ink-300: #c5c8ce;
+  --color-ink-100: #f0f1f3;
+
+  --color-paper-50: #fafaf9;
+  --color-paper-100: #f4f4f2;
+  --color-paper-200: #e8e8e4;
+  --color-paper-900: #0a0b0d;
+
+  --color-brand-200: #d4c8ff;
+  --color-brand-500: #7c5cff;
+  --color-brand-600: #6b46ff;
+
+  --color-counsel-200: #efddb0;
+  --color-counsel-500: #c9a449;
+  --color-counsel-600: #a98736;
+
+  --color-risk-high: #e5484d;
+  --color-risk-med: #f2a93b;
+  --color-risk-low: #3dd68c;
+
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-display);
+  --font-mono: var(--font-mono);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings: "ss01", "cv11";
+  background: var(--color-paper-50);
+  color: var(--color-paper-900);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Aurora orb keyframes — driven via CSS for 60fps performance */
+@keyframes aurora-1 {
+  0%, 100% { transform: translate3d(-10%, -20%, 0) scale(1); }
+  50% { transform: translate3d(20%, 10%, 0) scale(1.15); }
+}
+@keyframes aurora-2 {
+  0%, 100% { transform: translate3d(40%, 10%, 0) scale(1.1); }
+  50% { transform: translate3d(10%, 30%, 0) scale(0.95); }
+}
+@keyframes aurora-3 {
+  0%, 100% { transform: translate3d(60%, 50%, 0) scale(0.9); }
+  50% { transform: translate3d(30%, 20%, 0) scale(1.2); }
+}
+@keyframes aurora-4 {
+  0%, 100% { transform: translate3d(-20%, 40%, 0) scale(1); }
+  50% { transform: translate3d(50%, -10%, 0) scale(1.1); }
+}
+
+@keyframes cursor-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@keyframes stream-text {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Soft selection colors */
+::selection {
+  background: var(--color-brand-500);
+  color: white;
+}
+
+/* Subtle scrollbar on dark surfaces */
+.dark-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+.dark-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.dark-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
