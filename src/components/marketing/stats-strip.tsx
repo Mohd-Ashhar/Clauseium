@@ -8,21 +8,34 @@ const stats: {
   prefix?: string;
   suffix: string;
   label: string;
+  caption: string;
   format?: (n: number) => string;
 }[] = [
   {
     value: 10000,
     suffix: "+",
     label: "Contracts reviewed",
+    caption: "across 400+ Indian companies",
     format: (n) => Math.round(n).toLocaleString("en-IN"),
   },
-  { value: 94, suffix: "%", label: "Citation accuracy" },
-  { value: 6, suffix: " min", label: "Average review time" },
+  {
+    value: 94,
+    suffix: "%",
+    label: "Citation accuracy",
+    caption: "verified against Indian Kanoon",
+  },
+  {
+    value: 6,
+    suffix: " min",
+    label: "Average review time",
+    caption: "vs. 4.2 hours manual average",
+  },
   {
     value: 2.4,
     prefix: "₹",
     suffix: "Cr",
     label: "Risk exposure caught",
+    caption: "in the last 90 days",
     format: (n) => n.toFixed(1),
   },
 ];
@@ -43,8 +56,11 @@ export function StatsStrip() {
                 />
                 <span className="text-brand-500">{s.suffix}</span>
               </div>
-              <div className="mt-1 text-[13.5px] text-paper-900/50">
+              <div className="mt-1 text-[13.5px] font-medium text-paper-900/70">
                 {s.label}
+              </div>
+              <div className="mt-0.5 text-[11px] text-paper-900/40">
+                {s.caption}
               </div>
             </div>
           ))}

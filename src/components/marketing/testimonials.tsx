@@ -1,40 +1,71 @@
+import type { ReactNode } from "react";
 import { FadeUp } from "@/components/motion/fade-up";
 import { Stagger, StaggerItem } from "@/components/motion/stagger";
 
 type Testimonial = {
-  quote: string;
+  quote: ReactNode;
   name: string;
   title: string;
   initials: string;
-  color: string;
+  accent: "brand" | "counsel" | "low";
 };
 
 const items: Testimonial[] = [
   {
-    quote:
-      "Clauseium caught a missing DPDP consent clause in a vendor MSA that our external counsel missed. The citation to Section 8(1) was spot on.",
+    quote: (
+      <>
+        Clauseium{" "}
+        <span className="font-medium text-brand-600">
+          caught a missing DPDP consent clause
+        </span>{" "}
+        in a vendor MSA that our external counsel missed. The citation to
+        Section 8(1) was spot on.
+      </>
+    ),
     name: "Priya Menon",
     title: "General Counsel · Series D Fintech",
     initials: "PM",
-    color: "bg-[#7c5cff]",
+    accent: "brand",
   },
   {
-    quote:
-      "We went from 3-day contract turnaround to same-day. The redlines come pre-drafted with Indian law citations — my team just reviews and sends.",
+    quote: (
+      <>
+        We went from{" "}
+        <span className="font-medium text-brand-600">
+          3-day contract turnaround to same-day
+        </span>
+        . The redlines come pre-drafted with Indian law citations — my team
+        just reviews and sends.
+      </>
+    ),
     name: "Arjun Subramanian",
     title: "VP Legal · Enterprise SaaS",
     initials: "AS",
-    color: "bg-[#1e40af]",
+    accent: "counsel",
   },
   {
-    quote:
-      "Finally a tool that knows the difference between Indian arbitration law and international norms. The SIAC vs. domestic flagging alone is worth the subscription.",
+    quote: (
+      <>
+        Finally a tool that knows the difference between Indian arbitration law
+        and international norms. The{" "}
+        <span className="font-medium text-brand-600">
+          SIAC vs. domestic arbitration flagging
+        </span>{" "}
+        alone is worth the subscription.
+      </>
+    ),
     name: "Nidhi Kapoor",
     title: "Head of Legal · E-commerce Unicorn",
     initials: "NK",
-    color: "bg-[#c9a449]",
+    accent: "low",
   },
 ];
+
+const accentMap = {
+  brand: "border-t-brand-500",
+  counsel: "border-t-counsel-500",
+  low: "border-t-risk-low",
+} as const;
 
 export function Testimonials() {
   return (
@@ -55,17 +86,23 @@ export function Testimonials() {
         <Stagger className="mt-14 grid grid-cols-1 gap-6 md:grid-cols-3">
           {items.map((t) => (
             <StaggerItem key={t.name}>
-              <div className="flex h-full flex-col rounded-2xl border border-paper-200 bg-white p-7 transition-colors hover:border-brand-500/20">
-                <div className="font-display text-[48px] leading-none text-brand-500/20">
+              <div
+                className={`relative flex h-full flex-col rounded-2xl border border-paper-200 border-t-2 bg-white p-7 transition-all duration-300 hover:border-brand-500/20 hover:shadow-[0_4px_20px_rgba(124,92,255,0.06)] ${accentMap[t.accent]}`}
+              >
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute left-5 top-2 select-none font-display text-[64px] leading-none text-brand-500/15"
+                  style={{ fontFamily: "Georgia, serif" }}
+                >
                   &ldquo;
-                </div>
-                <p className="mt-2 text-[15px] italic leading-relaxed text-paper-900">
+                </span>
+
+                <p className="relative mt-6 text-[15px] leading-relaxed text-paper-900">
                   {t.quote}
                 </p>
+
                 <div className="mt-auto flex items-center gap-3 border-t border-paper-200 pt-6">
-                  <div
-                    className={`flex h-11 w-11 items-center justify-center rounded-full font-display text-[14px] font-semibold text-white ${t.color}`}
-                  >
+                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-500/10 font-display text-[14px] font-semibold text-brand-600">
                     {t.initials}
                   </div>
                   <div>

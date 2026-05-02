@@ -1,8 +1,45 @@
 "use client";
 
 import { motion } from "framer-motion";
+import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+
+function Highlight({
+  risk,
+  index,
+  children,
+}: {
+  risk: "high" | "med" | "low";
+  index: number;
+  children: ReactNode;
+}) {
+  const tint =
+    risk === "high"
+      ? "bg-risk-high/15 decoration-risk-high decoration-wavy"
+      : risk === "med"
+        ? "bg-risk-med/15 decoration-risk-med decoration-wavy"
+        : "bg-risk-low/15 decoration-risk-low decoration-solid";
+  return (
+    <motion.span
+      initial={{ opacity: 0, scaleX: 0 }}
+      whileInView={{ opacity: 1, scaleX: 1 }}
+      viewport={{ once: true, amount: 0.3 }}
+      transition={{
+        delay: 1.0 + index * 0.8,
+        duration: 0.5,
+        ease: [0.16, 1, 0.3, 1],
+      }}
+      style={{ transformOrigin: "left", display: "inline-block" }}
+      className={cn(
+        "rounded px-1 underline underline-offset-4",
+        tint,
+      )}
+    >
+      {children}
+    </motion.span>
+  );
+}
 
 export function HeroProductPreview() {
   return (
@@ -85,18 +122,18 @@ export function HeroProductPreview() {
                 <span className="text-ink-500">14.1</span> Each party shall
                 indemnify and hold harmless the other party from and against
                 any{" "}
-                <span className="rounded bg-risk-high/15 px-1 underline decoration-risk-high decoration-wavy underline-offset-4">
+                <Highlight risk="high" index={0}>
                   losses, claims, damages, liabilities, costs and expenses of
                   any nature whatsoever
-                </span>{" "}
+                </Highlight>{" "}
                 arising out of or in connection with breach of this Agreement.
               </p>
               <p>
                 <span className="text-ink-500">14.2</span> Notwithstanding
                 clause 14.1, the aggregate liability of either party shall be{" "}
-                <span className="rounded bg-risk-med/15 px-1 underline decoration-risk-med decoration-wavy underline-offset-4">
+                <Highlight risk="med" index={1}>
                   limited to the fees paid in the preceding three (3) months
-                </span>
+                </Highlight>
                 , except for liability arising from gross negligence or wilful
                 misconduct.
               </p>
@@ -109,10 +146,10 @@ export function HeroProductPreview() {
               <p>
                 <span className="text-ink-500">15.1</span> This Agreement shall
                 be governed by and construed in accordance with{" "}
-                <span className="rounded bg-risk-low/15 px-1 underline decoration-risk-low decoration-solid underline-offset-4">
+                <Highlight risk="low" index={2}>
                   the laws of India and the courts at Bengaluru shall have
                   exclusive jurisdiction
-                </span>
+                </Highlight>
                 .
               </p>
               <p className="text-ink-500">

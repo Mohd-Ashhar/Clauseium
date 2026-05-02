@@ -4,18 +4,18 @@ import { Stagger, StaggerItem } from "@/components/motion/stagger";
 const steps = [
   {
     n: "01",
-    title: "Upload or paste",
+    title: "Drop your contract",
     body: "Drop a vendor MSA, NDA, or employment agreement. PDF, DOCX, or paste text directly.",
   },
   {
     n: "02",
-    title: "AI reviews against Indian law + your playbook",
+    title: "AI finds every risk in 6 minutes",
     body: "Clauseium reads every clause, flags risks, and drafts redlines citing the Indian Contract Act, DPDP, and your standards.",
   },
   {
     n: "03",
-    title: "Accept redlines, send back",
-    body: "One-click accept or modify. Export a clean redlined Word doc ready for the counterparty.",
+    title: "One click. Done.",
+    body: "Accept or modify each redline. Export a clean redlined Word doc ready for the counterparty.",
   },
 ];
 

@@ -121,7 +121,12 @@ export function ProductShowcase() {
 function ShowcaseMockup() {
   return (
     <div className="relative">
-      <div className="overflow-hidden rounded-2xl border border-ink-700 bg-ink-900 shadow-[0_20px_60px_rgba(10,11,13,0.18)]">
+      <div
+        className="overflow-hidden rounded-2xl border border-ink-700 bg-ink-900"
+        style={{
+          animation: "subtle-glow-pulse 4.5s ease-in-out infinite",
+        }}
+      >
         {/* Top bar */}
         <div className="flex items-center justify-between border-b border-ink-700 bg-ink-850 px-4 py-3">
           <div className="flex items-center gap-2.5">

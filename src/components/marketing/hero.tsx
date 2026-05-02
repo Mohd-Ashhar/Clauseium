@@ -70,9 +70,9 @@ export function Hero() {
 
         <FadeUp delay={0.2}>
           <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-ink-300 md:text-lg">
-            Clauseium reviews, redlines, and drafts contracts under Indian law
-            — grounded in the Indian Contract Act, DPDP, and your own playbook.
-            Every clause cited. Every risk flagged.
+            Upload a vendor MSA. Get a redlined Word doc in 6 minutes — every
+            clause checked against the Indian Contract Act, DPDP, and your
+            playbook. Every risk flagged. Every citation verified.
           </p>
         </FadeUp>
 

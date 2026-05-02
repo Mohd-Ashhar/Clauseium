@@ -43,7 +43,7 @@ export function FinalCTA() {
           >
             Stop reading the same NDA twice.
             <br />
-            <GradientText>Start shipping.</GradientText>
+            <GradientText>Start closing.</GradientText>
           </h2>
         </FadeUp>
         <FadeUp delay={0.1}>

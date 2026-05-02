@@ -10,6 +10,7 @@ import { TrustBadges } from "@/components/marketing/trust-badges";
 import { Pricing } from "@/components/marketing/pricing";
 import { FAQ } from "@/components/marketing/faq";
 import { FinalCTA } from "@/components/marketing/final-cta";
+import { InlineCTA } from "@/components/marketing/inline-cta";
 
 export default function HomePage() {
   return (
@@ -18,10 +19,20 @@ export default function HomePage() {
       <LogoCloud />
       <DarkToLightTransition />
       <FeaturesBento />
+      <InlineCTA
+        caption="See it in action with your own contract"
+        label="Book a 20-min demo"
+        variant="outline"
+      />
       <HowItWorks />
       <ProductShowcase />
       <StatsStrip />
       <Testimonials />
+      <InlineCTA
+        caption="Join 400+ Indian legal teams"
+        label="Start 14-day free trial"
+        variant="primary"
+      />
       <TrustBadges />
       <Pricing />
       <FAQ />
