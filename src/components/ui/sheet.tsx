@@ -60,3 +60,37 @@ export const SheetTitle = forwardRef<
   />
 ));
 SheetTitle.displayName = "SheetTitle";
+
+export const SheetDescription = forwardRef<
+  ElementRef<typeof DialogPrimitive.Description>,
+  ComponentPropsWithoutRef<typeof DialogPrimitive.Description>
+>(({ className, ...props }, ref) => (
+  <DialogPrimitive.Description
+    ref={ref}
+    className={cn("text-sm text-ink-300", className)}
+    {...props}
+  />
+));
+SheetDescription.displayName = "SheetDescription";
+
+// Visually-hidden helper for satisfying the Radix accessibility contract
+// when a title or description shouldn't appear on screen.
+export function VisuallyHidden({ children }: { children: React.ReactNode }) {
+  return (
+    <span
+      style={{
+        position: "absolute",
+        width: 1,
+        height: 1,
+        padding: 0,
+        margin: -1,
+        overflow: "hidden",
+        clip: "rect(0, 0, 0, 0)",
+        whiteSpace: "nowrap",
+        borderWidth: 0,
+      }}
+    >
+      {children}
+    </span>
+  );
+}
