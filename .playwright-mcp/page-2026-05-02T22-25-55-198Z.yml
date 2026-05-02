@@ -1,0 +1,868 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e5]: §
+      - navigation [ref=e6]:
+        - generic [ref=e7]:
+          - link "Dashboard" [ref=e8] [cursor=pointer]:
+            - /url: /dashboard
+            - img [ref=e9]
+          - link "Contracts" [ref=e14] [cursor=pointer]:
+            - /url: /dashboard/contracts
+            - img [ref=e15]
+          - link "Reviews" [ref=e18] [cursor=pointer]:
+            - /url: /dashboard/reviews
+            - img [ref=e19]
+          - link "Templates" [ref=e24] [cursor=pointer]:
+            - /url: /dashboard/templates
+            - img [ref=e25]
+          - link "Drafts" [ref=e29] [cursor=pointer]:
+            - /url: /dashboard/drafts
+            - img [ref=e30]
+        - link "Settings" [ref=e36] [cursor=pointer]:
+          - /url: /dashboard/settings
+          - img [ref=e37]
+      - generic [ref=e41]:
+        - button "PM" [ref=e42]:
+          - generic [ref=e43]: PM
+        - button "Expand sidebar" [ref=e44]:
+          - img [ref=e45]
+    - generic [ref=e47]:
+      - banner [ref=e48]:
+        - navigation "Breadcrumb" [ref=e50]:
+          - generic [ref=e51]:
+            - generic [ref=e52]: Workspace
+            - generic [ref=e53]: /
+          - generic [ref=e54]:
+            - generic [ref=e55]: Dashboard
+            - generic [ref=e56]: /
+          - generic [ref=e57]:
+            - generic [ref=e58]: Contracts
+            - generic [ref=e59]: /
+          - generic [ref=e61]: Ctr_001
+        - button "Open command palette" [ref=e63]:
+          - img [ref=e64]
+          - generic [ref=e67]: Search contracts, clauses, parties…
+          - generic [ref=e68]: ⌘K
+        - generic [ref=e69]:
+          - button "Notifications" [ref=e70]:
+            - img [ref=e71]
+          - button "Toggle theme" [ref=e75]:
+            - img [ref=e76]
+          - button "New Contract" [ref=e78]:
+            - img [ref=e79]
+            - generic [ref=e80]: New Contract
+      - main [ref=e81]:
+        - generic [ref=e83]:
+          - generic [ref=e84]:
+            - generic [ref=e85]:
+              - link "Back to dashboard" [ref=e86] [cursor=pointer]:
+                - /url: /dashboard
+                - img [ref=e87]
+              - generic [ref=e89]:
+                - generic "Vendor MSA — TechCo × Clauseium Pvt Ltd" [ref=e90]
+                - generic [ref=e91]: v2
+            - generic [ref=e92]:
+              - generic [ref=e93]:
+                - generic [ref=e94]: 4 High
+                - generic [ref=e95]: 7 Med
+                - generic [ref=e96]: 12 Std
+              - button "Export Redlined Word" [ref=e97]:
+                - img [ref=e98]
+                - generic [ref=e101]: Export Redlined Word
+              - button "More options" [ref=e103]:
+                - img [ref=e104]
+          - generic [ref=e109]:
+            - article [ref=e114]:
+              - generic [ref=e115]:
+                - heading "Vendor MSA — TechCo × Clauseium Pvt Ltd" [level=1] [ref=e116]
+                - paragraph [ref=e117]: Acme Cloud Services Pvt Ltd · Mumbai · v2
+              - paragraph [ref=e118]: "THIS MASTER SERVICES AGREEMENT (the \"Agreement\") is made and entered into as of the Effective Date by and between Acme Cloud Services Pvt Ltd, a company incorporated under the laws of India, and TechCo India Private Limited. The parties agree as follows:"
+              - generic [ref=e119]:
+                - button "View analysis for clause" [ref=e120]
+                - paragraph [ref=e121]:
+                  - text: "14.2"
+                  - generic [ref=e122]: Limitation of Liability.
+                  - button "Notwithstanding anything to the contrary, the aggregate liability of the Service Provider arising out of or in connection with this Agreement shall not exceed an amount equal to three (3) months of fees paid by the Customer in the twelve (12) months preceding the event giving rise to the claim." [ref=e123] [cursor=pointer]
+              - generic [ref=e124]:
+                - button "View analysis for clause" [ref=e125]
+                - paragraph [ref=e126]:
+                  - text: "8.3"
+                  - generic [ref=e127]: Data Protection.
+                  - button "The Service Provider shall implement reasonable security practices to protect Personal Data processed under this Agreement and shall comply with applicable data protection laws." [ref=e128] [cursor=pointer]
+              - generic [ref=e129]:
+                - button "View analysis for clause" [ref=e130]
+                - paragraph [ref=e131]:
+                  - text: "12.1"
+                  - generic [ref=e132]: Indemnification.
+                  - button "The Customer shall indemnify, defend and hold harmless the Service Provider from and against any and all third-party claims, damages, losses and expenses arising out of or in connection with the Customer's use of the Services." [ref=e133] [cursor=pointer]
+              - generic [ref=e134]:
+                - button "View analysis for clause" [ref=e135]
+                - paragraph [ref=e136]:
+                  - text: "16.4"
+                  - generic [ref=e137]: Auto-renewal.
+                  - button "This Agreement shall automatically renew for successive periods of one (1) year unless either Party provides written notice of non-renewal at least ninety (90) days prior to the expiration of the then-current term." [ref=e138] [cursor=pointer]
+              - generic [ref=e139]:
+                - button "View analysis for clause" [ref=e140]
+                - paragraph [ref=e141]:
+                  - text: "21.1"
+                  - generic [ref=e142]: Governing Law.
+                  - button "This Agreement shall be governed by and construed in accordance with the laws of India, without regard to its conflict of laws principles." [ref=e143] [cursor=pointer]
+              - generic [ref=e144]:
+                - button "View analysis for clause" [ref=e145]
+                - paragraph [ref=e146]:
+                  - text: "21.2"
+                  - generic [ref=e147]: Arbitration.
+                  - button "Any dispute arising out of this Agreement shall be referred to and finally resolved by arbitration administered by the Singapore International Arbitration Centre (SIAC) in accordance with the SIAC Rules then in force." [ref=e148] [cursor=pointer]
+              - generic [ref=e149]:
+                - button "View analysis for clause" [ref=e150]
+                - paragraph [ref=e151]:
+                  - text: "9.1"
+                  - generic [ref=e152]: IP Assignment.
+                  - button "All intellectual property rights in deliverables created by the Service Provider in the course of performing the Services shall be assigned to the Customer upon payment in full." [ref=e153] [cursor=pointer]
+              - generic [ref=e154]:
+                - button "View analysis for clause" [ref=e155]
+                - paragraph [ref=e156]:
+                  - text: "11.3"
+                  - generic [ref=e157]: Non-compete.
+                  - button "For a period of twenty-four (24) months following termination, the Customer shall not engage any competitor of the Service Provider for similar services within India." [ref=e158] [cursor=pointer]
+              - generic [ref=e159]:
+                - button "View analysis for clause" [ref=e160]
+                - paragraph [ref=e161]:
+                  - text: "5.1"
+                  - generic [ref=e162]: Payment Terms.
+                  - button "Customer shall pay all undisputed invoices within ninety (90) days of the invoice date." [ref=e163] [cursor=pointer]
+              - generic [ref=e164]:
+                - button "View analysis for clause" [ref=e165]
+                - paragraph [ref=e166]:
+                  - text: "17.2"
+                  - generic [ref=e167]: Force Majeure.
+                  - button "Neither Party shall be liable for delay or failure to perform due to causes beyond its reasonable control, including acts of God, war, and natural disasters." [ref=e168] [cursor=pointer]
+              - generic [ref=e169]:
+                - button "View analysis for clause" [ref=e170]
+                - paragraph [ref=e171]:
+                  - text: "13.1"
+                  - generic [ref=e172]: Insurance.
+                  - button "The Service Provider shall maintain commercial general liability insurance of not less than INR 5,00,00,000." [ref=e173] [cursor=pointer]
+              - generic [ref=e174]:
+                - button "View analysis for clause" [ref=e175]
+                - paragraph [ref=e176]:
+                  - text: "1.0"
+                  - generic [ref=e177]: Confidentiality.
+                  - text: Confidentiality clause as drafted is consistent with market-standard Indian commercial practice and our internal playbook.
+              - generic [ref=e178]:
+                - button "View analysis for clause" [ref=e179]
+                - paragraph [ref=e180]:
+                  - text: "2.0"
+                  - generic [ref=e181]: Term.
+                  - text: Term clause as drafted is consistent with market-standard Indian commercial practice and our internal playbook.
+              - generic [ref=e182]:
+                - button "View analysis for clause" [ref=e183]
+                - paragraph [ref=e184]:
+                  - text: "3.0"
+                  - generic [ref=e185]: Notices.
+                  - text: Notices clause as drafted is consistent with market-standard Indian commercial practice and our internal playbook.
+              - generic [ref=e186]:
+                - button "View analysis for clause" [ref=e187]
+                - paragraph [ref=e188]:
+                  - text: "4.0"
+                  - generic [ref=e189]: Entire Agreement.
+                  - text: Entire Agreement clause as drafted is consistent with market-standard Indian commercial practice and our internal playbook.
+              - generic [ref=e190]:
+                - button "View analysis for clause" [ref=e191]
+                - paragraph [ref=e192]:
+                  - text: "5.0"
+                  - generic [ref=e193]: Amendment.
+                  - text: Amendment clause as drafted is consistent with market-standard Indian commercial practice and our internal playbook.
+              - generic [ref=e194]:
+                - button "View analysis for clause" [ref=e195]
+                - paragraph [ref=e196]:
+                  - text: "6.0"
+                  - generic [ref=e197]: Severability.
+                  - text: Severability clause as drafted is consistent with market-standard Indian commercial practice and our internal playbook.
+              - generic [ref=e198]:
+                - button "View analysis for clause" [ref=e199]
+                - paragraph [ref=e200]:
+                  - text: "7.0"
+                  - generic [ref=e201]: Waiver.
+                  - text: Waiver clause as drafted is consistent with market-standard Indian commercial practice and our internal playbook.
+              - generic [ref=e202]:
+                - button "View analysis for clause" [ref=e203]
+                - paragraph [ref=e204]:
+                  - text: "8.0"
+                  - generic [ref=e205]: Assignment.
+                  - text: Assignment clause as drafted is consistent with market-standard Indian commercial practice and our internal playbook.
+              - generic [ref=e206]:
+                - button "View analysis for clause" [ref=e207]
+                - paragraph [ref=e208]:
+                  - text: "9.0"
+                  - generic [ref=e209]: Counterparts.
+                  - text: Counterparts clause as drafted is consistent with market-standard Indian commercial practice and our internal playbook.
+              - generic [ref=e210]:
+                - button "View analysis for clause" [ref=e211]
+                - paragraph [ref=e212]:
+                  - text: "10.0"
+                  - generic [ref=e213]: Survival.
+                  - text: Survival clause as drafted is consistent with market-standard Indian commercial practice and our internal playbook.
+              - generic [ref=e214]:
+                - button "View analysis for clause" [ref=e215]
+                - paragraph [ref=e216]:
+                  - text: "11.0"
+                  - generic [ref=e217]: Headings.
+                  - text: Headings clause as drafted is consistent with market-standard Indian commercial practice and our internal playbook.
+              - generic [ref=e218]:
+                - button "View analysis for clause" [ref=e219]
+                - paragraph [ref=e220]:
+                  - text: "12.0"
+                  - generic [ref=e221]: Interpretation.
+                  - text: Interpretation clause as drafted is consistent with market-standard Indian commercial practice and our internal playbook.
+              - generic [ref=e222]:
+                - button "View analysis for clause" [ref=e223]
+                - paragraph [ref=e224]:
+                  - text: "13.0"
+                  - generic [ref=e225]: Definitions.
+                  - text: Definitions clause as drafted is consistent with market-standard Indian commercial practice and our internal playbook.
+              - generic [ref=e226]:
+                - button "View analysis for clause" [ref=e227]
+                - paragraph [ref=e228]:
+                  - text: "14.0"
+                  - generic [ref=e229]: Acceptance.
+                  - text: Acceptance clause as drafted is consistent with market-standard Indian commercial practice and our internal playbook.
+              - generic [ref=e230]:
+                - button "View analysis for clause" [ref=e231]
+                - paragraph [ref=e232]:
+                  - text: "15.0"
+                  - generic [ref=e233]: Service Levels.
+                  - text: Service Levels clause as drafted is consistent with market-standard Indian commercial practice and our internal playbook.
+              - generic [ref=e234]:
+                - button "View analysis for clause" [ref=e235]
+                - paragraph [ref=e236]:
+                  - text: "16.0"
+                  - generic [ref=e237]: Acceptable Use.
+                  - text: Acceptable Use clause as drafted is consistent with market-standard Indian commercial practice and our internal playbook.
+              - generic [ref=e238]:
+                - button "View analysis for clause" [ref=e239]
+                - paragraph [ref=e240]:
+                  - text: "17.0"
+                  - generic [ref=e241]: Suspension.
+                  - text: Suspension clause as drafted is consistent with market-standard Indian commercial practice and our internal playbook.
+              - generic [ref=e242]:
+                - button "View analysis for clause" [ref=e243]
+                - paragraph [ref=e244]:
+                  - text: "18.0"
+                  - generic [ref=e245]: Cooperation.
+                  - text: Cooperation clause as drafted is consistent with market-standard Indian commercial practice and our internal playbook.
+              - generic [ref=e246]:
+                - button "View analysis for clause" [ref=e247]
+                - paragraph [ref=e248]:
+                  - text: "19.0"
+                  - generic [ref=e249]: Audit.
+                  - text: Audit clause as drafted is consistent with market-standard Indian commercial practice and our internal playbook.
+              - generic [ref=e250]:
+                - button "View analysis for clause" [ref=e251]
+                - paragraph [ref=e252]:
+                  - text: "20.0"
+                  - generic [ref=e253]: Records.
+                  - text: Records clause as drafted is consistent with market-standard Indian commercial practice and our internal playbook.
+              - generic [ref=e254]:
+                - button "View analysis for clause" [ref=e255]
+                - paragraph [ref=e256]:
+                  - text: "21.0"
+                  - generic [ref=e257]: Subcontracting.
+                  - text: Subcontracting clause as drafted is consistent with market-standard Indian commercial practice and our internal playbook.
+              - generic [ref=e258]:
+                - button "View analysis for clause" [ref=e259]
+                - paragraph [ref=e260]:
+                  - text: "22.0"
+                  - generic [ref=e261]: Publicity.
+                  - text: Publicity clause as drafted is consistent with market-standard Indian commercial practice and our internal playbook.
+              - generic [ref=e262]:
+                - button "View analysis for clause" [ref=e263]
+                - paragraph [ref=e264]:
+                  - text: "23.0"
+                  - generic [ref=e265]: Independent Contractor.
+                  - text: Independent Contractor clause as drafted is consistent with market-standard Indian commercial practice and our internal playbook.
+              - generic [ref=e266]:
+                - button "View analysis for clause" [ref=e267]
+                - paragraph [ref=e268]:
+                  - text: "24.0"
+                  - generic [ref=e269]: No Third-Party Beneficiaries.
+                  - text: No Third-Party Beneficiaries clause as drafted is consistent with market-standard Indian commercial practice and our internal playbook.
+              - generic [ref=e270]:
+                - button "View analysis for clause" [ref=e271]
+                - paragraph [ref=e272]: "[Missing: Anti-Bribery & Anti-Corruption — recommended addition. See analysis panel.]"
+              - generic [ref=e273]:
+                - button "View analysis for clause" [ref=e274]
+                - paragraph [ref=e275]: "[Missing: POSH Compliance — recommended addition. See analysis panel.]"
+              - paragraph [ref=e276]: IN WITNESS WHEREOF, the parties have executed this Agreement as of the date first written above.
+            - separator [ref=e277]
+            - generic [ref=e280]:
+              - generic [ref=e283]:
+                - generic [ref=e284]:
+                  - generic [ref=e285]:
+                    - heading "AI Review" [level=2] [ref=e286]
+                    - generic [ref=e287]: 37 clauses · 4 high risk · Updated 2h ago
+                  - generic [ref=e288]:
+                    - button "All (37)" [ref=e289]
+                    - button "High (4)" [ref=e290]
+                    - button "Medium (7)" [ref=e291]
+                    - button "Standard (24)" [ref=e292]
+                    - button "Missing (2)" [ref=e293]
+                - generic [ref=e294]:
+                  - generic [ref=e295]:
+                    - generic [ref=e296]:
+                      - generic [ref=e297]: Review Summary
+                      - generic [ref=e298]: v2
+                    - generic [ref=e299]:
+                      - generic [ref=e300]: 4 High
+                      - generic [ref=e301]: 7 Medium
+                      - generic [ref=e302]: 24 Standard
+                      - generic [ref=e303]: 2 Missing
+                    - generic [ref=e305]:
+                      - generic [ref=e306]: Overall risk score
+                      - generic [ref=e307]: 62/100
+                    - generic [ref=e310]:
+                      - img [ref=e311]
+                      - generic [ref=e313]:
+                        - paragraph [ref=e314]: "Recommendation: Escalate to senior counsel"
+                        - paragraph [ref=e315]: Liability cap and DPDP gaps require partner sign-off
+                    - generic [ref=e316]:
+                      - button "Accept all standard ✓" [ref=e317]
+                      - button "Export summary" [ref=e318]:
+                        - img [ref=e319]
+                        - text: Export summary
+                  - generic [ref=e322]:
+                    - article [ref=e323] [cursor=pointer]:
+                      - generic [ref=e324]:
+                        - generic [ref=e325]:
+                          - generic [ref=e326]: §8.3
+                          - heading "Data Protection" [level=3] [ref=e327]
+                        - generic [ref=e328]:
+                          - generic [ref=e329]:
+                            - img [ref=e330]
+                            - text: High
+                          - img [ref=e332]
+                      - paragraph [ref=e334]: Missing Data Principal rights, breach notification timeline, and DPA annexure required under DPDP Act 2023.
+                      - generic "Based on similar Indian commercial clauses and verified citations (98% confidence)" [ref=e336]:
+                        - generic [ref=e337]: Confidence
+                        - generic [ref=e349]: High
+                    - article [ref=e350] [cursor=pointer]:
+                      - generic [ref=e351]:
+                        - generic [ref=e352]:
+                          - generic [ref=e353]: §12.1
+                          - heading "Indemnification" [level=3] [ref=e354]
+                        - generic [ref=e355]:
+                          - generic [ref=e356]:
+                            - img [ref=e357]
+                            - text: High
+                          - img [ref=e359]
+                      - paragraph [ref=e361]: One-sided indemnification favouring vendor. No reciprocal IP or breach indemnity from Service Provider.
+                      - generic "Based on similar Indian commercial clauses and verified citations (94% confidence)" [ref=e363]:
+                        - generic [ref=e364]: Confidence
+                        - generic [ref=e376]: High
+                    - article [ref=e377] [cursor=pointer]:
+                      - generic [ref=e378]:
+                        - generic [ref=e379]:
+                          - generic [ref=e380]: §14.2
+                          - heading "Limitation of Liability" [level=3] [ref=e381]
+                        - generic [ref=e382]:
+                          - generic [ref=e383]:
+                            - img [ref=e384]
+                            - text: High
+                          - img [ref=e386]
+                      - paragraph [ref=e388]: Liability cap of 3 months of fees is well below industry standard for Indian SaaS MSAs.
+                      - generic "Based on similar Indian commercial clauses and verified citations (96% confidence)" [ref=e390]:
+                        - generic [ref=e391]: Confidence
+                        - generic [ref=e403]: High
+                    - article [ref=e404] [cursor=pointer]:
+                      - generic [ref=e405]:
+                        - generic [ref=e406]:
+                          - generic [ref=e407]: §16.4
+                          - heading "Auto-renewal" [level=3] [ref=e408]
+                        - generic [ref=e409]:
+                          - generic [ref=e410]:
+                            - img [ref=e411]
+                            - text: High
+                          - img [ref=e413]
+                      - paragraph [ref=e415]: Silent auto-renewal with 90-day exit window is non-standard for Indian SaaS contracts.
+                      - generic "Based on similar Indian commercial clauses and verified citations (88% confidence)" [ref=e417]:
+                        - generic [ref=e418]: Confidence
+                        - generic [ref=e430]: High
+                    - article [ref=e431] [cursor=pointer]:
+                      - generic [ref=e432]:
+                        - generic [ref=e433]:
+                          - generic [ref=e434]: §5.1
+                          - heading "Payment Terms" [level=3] [ref=e435]
+                        - generic [ref=e436]:
+                          - generic [ref=e437]:
+                            - img [ref=e438]
+                            - text: Medium
+                          - img [ref=e440]
+                      - paragraph [ref=e442]: Net-90 payment terms; market standard for Indian B2B SaaS is Net-30 to Net-45.
+                      - generic "Based on similar Indian commercial clauses and verified citations (89% confidence)" [ref=e444]:
+                        - generic [ref=e445]: Confidence
+                        - generic [ref=e457]: High
+                    - article [ref=e458] [cursor=pointer]:
+                      - generic [ref=e459]:
+                        - generic [ref=e460]:
+                          - generic [ref=e461]: §9.1
+                          - heading "IP Assignment" [level=3] [ref=e462]
+                        - generic [ref=e463]:
+                          - generic [ref=e464]:
+                            - img [ref=e465]
+                            - text: Medium
+                          - img [ref=e467]
+                      - paragraph [ref=e469]: Scope of IP assignment unclear — does not exclude pre-existing or background IP.
+                      - generic "Based on similar Indian commercial clauses and verified citations (90% confidence)" [ref=e471]:
+                        - generic [ref=e472]: Confidence
+                        - generic [ref=e484]: High
+                    - article [ref=e485] [cursor=pointer]:
+                      - generic [ref=e486]:
+                        - generic [ref=e487]:
+                          - generic [ref=e488]: §11.3
+                          - heading "Non-compete" [level=3] [ref=e489]
+                        - generic [ref=e490]:
+                          - generic [ref=e491]:
+                            - img [ref=e492]
+                            - text: Medium
+                          - img [ref=e494]
+                      - paragraph [ref=e496]: Geographic scope (all India) and duration (24 months) likely unenforceable post-termination.
+                      - generic "Based on similar Indian commercial clauses and verified citations (95% confidence)" [ref=e498]:
+                        - generic [ref=e499]: Confidence
+                        - generic [ref=e511]: High
+                    - article [ref=e512] [cursor=pointer]:
+                      - generic [ref=e513]:
+                        - generic [ref=e514]:
+                          - generic [ref=e515]: §13.1
+                          - heading "Insurance" [level=3] [ref=e516]
+                        - generic [ref=e517]:
+                          - generic [ref=e518]:
+                            - img [ref=e519]
+                            - text: Medium
+                          - img [ref=e521]
+                      - paragraph [ref=e523]: Insurance covers CGL only; missing cyber liability and professional indemnity cover.
+                      - generic "Based on similar Indian commercial clauses and verified citations (84% confidence)" [ref=e525]:
+                        - generic [ref=e526]: Confidence
+                        - generic [ref=e538]: Medium
+                    - article [ref=e539] [cursor=pointer]:
+                      - generic [ref=e540]:
+                        - generic [ref=e541]:
+                          - generic [ref=e542]: §17.2
+                          - heading "Force Majeure" [level=3] [ref=e543]
+                        - generic [ref=e544]:
+                          - generic [ref=e545]:
+                            - img [ref=e546]
+                            - text: Medium
+                          - img [ref=e548]
+                      - paragraph [ref=e550]: Force majeure list does not include pandemics, cyberattacks, or government action.
+                      - generic "Based on similar Indian commercial clauses and verified citations (87% confidence)" [ref=e552]:
+                        - generic [ref=e553]: Confidence
+                        - generic [ref=e565]: High
+                    - article [ref=e566] [cursor=pointer]:
+                      - generic [ref=e567]:
+                        - generic [ref=e568]:
+                          - generic [ref=e569]: §21.1
+                          - heading "Governing Law" [level=3] [ref=e570]
+                        - generic [ref=e571]:
+                          - generic [ref=e572]:
+                            - img [ref=e573]
+                            - text: Medium
+                          - img [ref=e575]
+                      - paragraph [ref=e577]: Governing law is India, but jurisdiction clause references Singapore — internal inconsistency.
+                      - generic "Based on similar Indian commercial clauses and verified citations (92% confidence)" [ref=e579]:
+                        - generic [ref=e580]: Confidence
+                        - generic [ref=e592]: High
+                    - article [ref=e593] [cursor=pointer]:
+                      - generic [ref=e594]:
+                        - generic [ref=e595]:
+                          - generic [ref=e596]: §21.2
+                          - heading "Arbitration" [level=3] [ref=e597]
+                        - generic [ref=e598]:
+                          - generic [ref=e599]:
+                            - img [ref=e600]
+                            - text: Medium
+                          - img [ref=e602]
+                      - paragraph [ref=e604]: SIAC seat for an India-governing-law contract — reconsider domestic seat.
+                      - generic "Based on similar Indian commercial clauses and verified citations (85% confidence)" [ref=e606]:
+                        - generic [ref=e607]: Confidence
+                        - generic [ref=e619]: High
+                    - article [ref=e620] [cursor=pointer]:
+                      - generic [ref=e621]:
+                        - generic [ref=e622]:
+                          - generic [ref=e623]: §—
+                          - heading "Anti-Bribery & Anti-Corruption" [level=3] [ref=e624]
+                        - generic [ref=e625]:
+                          - generic [ref=e626]:
+                            - img [ref=e627]
+                            - text: Missing
+                          - img [ref=e629]
+                      - paragraph [ref=e631]: No anti-bribery clause referencing the Prevention of Corruption Act, 1988.
+                      - generic "Based on similar Indian commercial clauses and verified citations (91% confidence)" [ref=e633]:
+                        - generic [ref=e634]: Confidence
+                        - generic [ref=e646]: High
+                    - article [ref=e647] [cursor=pointer]:
+                      - generic [ref=e648]:
+                        - generic [ref=e649]:
+                          - generic [ref=e650]: §—
+                          - heading "POSH Compliance" [level=3] [ref=e651]
+                        - generic [ref=e652]:
+                          - generic [ref=e653]:
+                            - img [ref=e654]
+                            - text: Missing
+                          - img [ref=e656]
+                      - paragraph [ref=e658]: No POSH (Sexual Harassment of Women at Workplace Act, 2013) compliance representation.
+                      - generic "Based on similar Indian commercial clauses and verified citations (93% confidence)" [ref=e660]:
+                        - generic [ref=e661]: Confidence
+                        - generic [ref=e673]: High
+                    - article [ref=e674] [cursor=pointer]:
+                      - generic [ref=e675]:
+                        - generic [ref=e676]:
+                          - generic [ref=e677]: §1.0
+                          - heading "Confidentiality" [level=3] [ref=e678]
+                        - generic [ref=e679]:
+                          - generic [ref=e680]:
+                            - img [ref=e681]
+                            - text: Standard
+                          - img [ref=e684]
+                      - paragraph [ref=e686]: Market-standard drafting; no changes required.
+                      - generic "Based on similar Indian commercial clauses and verified citations (95% confidence)" [ref=e688]:
+                        - generic [ref=e689]: Confidence
+                        - generic [ref=e701]: High
+                    - article [ref=e702] [cursor=pointer]:
+                      - generic [ref=e703]:
+                        - generic [ref=e704]:
+                          - generic [ref=e705]: §2.0
+                          - heading "Term" [level=3] [ref=e706]
+                        - generic [ref=e707]:
+                          - generic [ref=e708]:
+                            - img [ref=e709]
+                            - text: Standard
+                          - img [ref=e712]
+                      - paragraph [ref=e714]: Market-standard drafting; no changes required.
+                      - generic "Based on similar Indian commercial clauses and verified citations (95% confidence)" [ref=e716]:
+                        - generic [ref=e717]: Confidence
+                        - generic [ref=e729]: High
+                    - article [ref=e730] [cursor=pointer]:
+                      - generic [ref=e731]:
+                        - generic [ref=e732]:
+                          - generic [ref=e733]: §3.0
+                          - heading "Notices" [level=3] [ref=e734]
+                        - generic [ref=e735]:
+                          - generic [ref=e736]:
+                            - img [ref=e737]
+                            - text: Standard
+                          - img [ref=e740]
+                      - paragraph [ref=e742]: Market-standard drafting; no changes required.
+                      - generic "Based on similar Indian commercial clauses and verified citations (95% confidence)" [ref=e744]:
+                        - generic [ref=e745]: Confidence
+                        - generic [ref=e757]: High
+                    - article [ref=e758] [cursor=pointer]:
+                      - generic [ref=e759]:
+                        - generic [ref=e760]:
+                          - generic [ref=e761]: §4.0
+                          - heading "Entire Agreement" [level=3] [ref=e762]
+                        - generic [ref=e763]:
+                          - generic [ref=e764]:
+                            - img [ref=e765]
+                            - text: Standard
+                          - img [ref=e768]
+                      - paragraph [ref=e770]: Market-standard drafting; no changes required.
+                      - generic "Based on similar Indian commercial clauses and verified citations (95% confidence)" [ref=e772]:
+                        - generic [ref=e773]: Confidence
+                        - generic [ref=e785]: High
+                    - article [ref=e786] [cursor=pointer]:
+                      - generic [ref=e787]:
+                        - generic [ref=e788]:
+                          - generic [ref=e789]: §5.0
+                          - heading "Amendment" [level=3] [ref=e790]
+                        - generic [ref=e791]:
+                          - generic [ref=e792]:
+                            - img [ref=e793]
+                            - text: Standard
+                          - img [ref=e796]
+                      - paragraph [ref=e798]: Market-standard drafting; no changes required.
+                      - generic "Based on similar Indian commercial clauses and verified citations (95% confidence)" [ref=e800]:
+                        - generic [ref=e801]: Confidence
+                        - generic [ref=e813]: High
+                    - article [ref=e814] [cursor=pointer]:
+                      - generic [ref=e815]:
+                        - generic [ref=e816]:
+                          - generic [ref=e817]: §6.0
+                          - heading "Severability" [level=3] [ref=e818]
+                        - generic [ref=e819]:
+                          - generic [ref=e820]:
+                            - img [ref=e821]
+                            - text: Standard
+                          - img [ref=e824]
+                      - paragraph [ref=e826]: Market-standard drafting; no changes required.
+                      - generic "Based on similar Indian commercial clauses and verified citations (95% confidence)" [ref=e828]:
+                        - generic [ref=e829]: Confidence
+                        - generic [ref=e841]: High
+                    - article [ref=e842] [cursor=pointer]:
+                      - generic [ref=e843]:
+                        - generic [ref=e844]:
+                          - generic [ref=e845]: §7.0
+                          - heading "Waiver" [level=3] [ref=e846]
+                        - generic [ref=e847]:
+                          - generic [ref=e848]:
+                            - img [ref=e849]
+                            - text: Standard
+                          - img [ref=e852]
+                      - paragraph [ref=e854]: Market-standard drafting; no changes required.
+                      - generic "Based on similar Indian commercial clauses and verified citations (95% confidence)" [ref=e856]:
+                        - generic [ref=e857]: Confidence
+                        - generic [ref=e869]: High
+                    - article [ref=e870] [cursor=pointer]:
+                      - generic [ref=e871]:
+                        - generic [ref=e872]:
+                          - generic [ref=e873]: §8.0
+                          - heading "Assignment" [level=3] [ref=e874]
+                        - generic [ref=e875]:
+                          - generic [ref=e876]:
+                            - img [ref=e877]
+                            - text: Standard
+                          - img [ref=e880]
+                      - paragraph [ref=e882]: Market-standard drafting; no changes required.
+                      - generic "Based on similar Indian commercial clauses and verified citations (95% confidence)" [ref=e884]:
+                        - generic [ref=e885]: Confidence
+                        - generic [ref=e897]: High
+                    - article [ref=e898] [cursor=pointer]:
+                      - generic [ref=e899]:
+                        - generic [ref=e900]:
+                          - generic [ref=e901]: §9.0
+                          - heading "Counterparts" [level=3] [ref=e902]
+                        - generic [ref=e903]:
+                          - generic [ref=e904]:
+                            - img [ref=e905]
+                            - text: Standard
+                          - img [ref=e908]
+                      - paragraph [ref=e910]: Market-standard drafting; no changes required.
+                      - generic "Based on similar Indian commercial clauses and verified citations (95% confidence)" [ref=e912]:
+                        - generic [ref=e913]: Confidence
+                        - generic [ref=e925]: High
+                    - article [ref=e926] [cursor=pointer]:
+                      - generic [ref=e927]:
+                        - generic [ref=e928]:
+                          - generic [ref=e929]: §10.0
+                          - heading "Survival" [level=3] [ref=e930]
+                        - generic [ref=e931]:
+                          - generic [ref=e932]:
+                            - img [ref=e933]
+                            - text: Standard
+                          - img [ref=e936]
+                      - paragraph [ref=e938]: Market-standard drafting; no changes required.
+                      - generic "Based on similar Indian commercial clauses and verified citations (95% confidence)" [ref=e940]:
+                        - generic [ref=e941]: Confidence
+                        - generic [ref=e953]: High
+                    - article [ref=e954] [cursor=pointer]:
+                      - generic [ref=e955]:
+                        - generic [ref=e956]:
+                          - generic [ref=e957]: §11.0
+                          - heading "Headings" [level=3] [ref=e958]
+                        - generic [ref=e959]:
+                          - generic [ref=e960]:
+                            - img [ref=e961]
+                            - text: Standard
+                          - img [ref=e964]
+                      - paragraph [ref=e966]: Market-standard drafting; no changes required.
+                      - generic "Based on similar Indian commercial clauses and verified citations (95% confidence)" [ref=e968]:
+                        - generic [ref=e969]: Confidence
+                        - generic [ref=e981]: High
+                    - article [ref=e982] [cursor=pointer]:
+                      - generic [ref=e983]:
+                        - generic [ref=e984]:
+                          - generic [ref=e985]: §12.0
+                          - heading "Interpretation" [level=3] [ref=e986]
+                        - generic [ref=e987]:
+                          - generic [ref=e988]:
+                            - img [ref=e989]
+                            - text: Standard
+                          - img [ref=e992]
+                      - paragraph [ref=e994]: Market-standard drafting; no changes required.
+                      - generic "Based on similar Indian commercial clauses and verified citations (95% confidence)" [ref=e996]:
+                        - generic [ref=e997]: Confidence
+                        - generic [ref=e1009]: High
+                    - article [ref=e1010] [cursor=pointer]:
+                      - generic [ref=e1011]:
+                        - generic [ref=e1012]:
+                          - generic [ref=e1013]: §13.0
+                          - heading "Definitions" [level=3] [ref=e1014]
+                        - generic [ref=e1015]:
+                          - generic [ref=e1016]:
+                            - img [ref=e1017]
+                            - text: Standard
+                          - img [ref=e1020]
+                      - paragraph [ref=e1022]: Market-standard drafting; no changes required.
+                      - generic "Based on similar Indian commercial clauses and verified citations (95% confidence)" [ref=e1024]:
+                        - generic [ref=e1025]: Confidence
+                        - generic [ref=e1037]: High
+                    - article [ref=e1038] [cursor=pointer]:
+                      - generic [ref=e1039]:
+                        - generic [ref=e1040]:
+                          - generic [ref=e1041]: §14.0
+                          - heading "Acceptance" [level=3] [ref=e1042]
+                        - generic [ref=e1043]:
+                          - generic [ref=e1044]:
+                            - img [ref=e1045]
+                            - text: Standard
+                          - img [ref=e1048]
+                      - paragraph [ref=e1050]: Market-standard drafting; no changes required.
+                      - generic "Based on similar Indian commercial clauses and verified citations (95% confidence)" [ref=e1052]:
+                        - generic [ref=e1053]: Confidence
+                        - generic [ref=e1065]: High
+                    - article [ref=e1066] [cursor=pointer]:
+                      - generic [ref=e1067]:
+                        - generic [ref=e1068]:
+                          - generic [ref=e1069]: §15.0
+                          - heading "Service Levels" [level=3] [ref=e1070]
+                        - generic [ref=e1071]:
+                          - generic [ref=e1072]:
+                            - img [ref=e1073]
+                            - text: Standard
+                          - img [ref=e1076]
+                      - paragraph [ref=e1078]: Market-standard drafting; no changes required.
+                      - generic "Based on similar Indian commercial clauses and verified citations (95% confidence)" [ref=e1080]:
+                        - generic [ref=e1081]: Confidence
+                        - generic [ref=e1093]: High
+                    - article [ref=e1094] [cursor=pointer]:
+                      - generic [ref=e1095]:
+                        - generic [ref=e1096]:
+                          - generic [ref=e1097]: §16.0
+                          - heading "Acceptable Use" [level=3] [ref=e1098]
+                        - generic [ref=e1099]:
+                          - generic [ref=e1100]:
+                            - img [ref=e1101]
+                            - text: Standard
+                          - img [ref=e1104]
+                      - paragraph [ref=e1106]: Market-standard drafting; no changes required.
+                      - generic "Based on similar Indian commercial clauses and verified citations (95% confidence)" [ref=e1108]:
+                        - generic [ref=e1109]: Confidence
+                        - generic [ref=e1121]: High
+                    - article [ref=e1122] [cursor=pointer]:
+                      - generic [ref=e1123]:
+                        - generic [ref=e1124]:
+                          - generic [ref=e1125]: §17.0
+                          - heading "Suspension" [level=3] [ref=e1126]
+                        - generic [ref=e1127]:
+                          - generic [ref=e1128]:
+                            - img [ref=e1129]
+                            - text: Standard
+                          - img [ref=e1132]
+                      - paragraph [ref=e1134]: Market-standard drafting; no changes required.
+                      - generic "Based on similar Indian commercial clauses and verified citations (95% confidence)" [ref=e1136]:
+                        - generic [ref=e1137]: Confidence
+                        - generic [ref=e1149]: High
+                    - article [ref=e1150] [cursor=pointer]:
+                      - generic [ref=e1151]:
+                        - generic [ref=e1152]:
+                          - generic [ref=e1153]: §18.0
+                          - heading "Cooperation" [level=3] [ref=e1154]
+                        - generic [ref=e1155]:
+                          - generic [ref=e1156]:
+                            - img [ref=e1157]
+                            - text: Standard
+                          - img [ref=e1160]
+                      - paragraph [ref=e1162]: Market-standard drafting; no changes required.
+                      - generic "Based on similar Indian commercial clauses and verified citations (95% confidence)" [ref=e1164]:
+                        - generic [ref=e1165]: Confidence
+                        - generic [ref=e1177]: High
+                    - article [ref=e1178] [cursor=pointer]:
+                      - generic [ref=e1179]:
+                        - generic [ref=e1180]:
+                          - generic [ref=e1181]: §19.0
+                          - heading "Audit" [level=3] [ref=e1182]
+                        - generic [ref=e1183]:
+                          - generic [ref=e1184]:
+                            - img [ref=e1185]
+                            - text: Standard
+                          - img [ref=e1188]
+                      - paragraph [ref=e1190]: Market-standard drafting; no changes required.
+                      - generic "Based on similar Indian commercial clauses and verified citations (95% confidence)" [ref=e1192]:
+                        - generic [ref=e1193]: Confidence
+                        - generic [ref=e1205]: High
+                    - article [ref=e1206] [cursor=pointer]:
+                      - generic [ref=e1207]:
+                        - generic [ref=e1208]:
+                          - generic [ref=e1209]: §20.0
+                          - heading "Records" [level=3] [ref=e1210]
+                        - generic [ref=e1211]:
+                          - generic [ref=e1212]:
+                            - img [ref=e1213]
+                            - text: Standard
+                          - img [ref=e1216]
+                      - paragraph [ref=e1218]: Market-standard drafting; no changes required.
+                      - generic "Based on similar Indian commercial clauses and verified citations (95% confidence)" [ref=e1220]:
+                        - generic [ref=e1221]: Confidence
+                        - generic [ref=e1233]: High
+                    - article [ref=e1234] [cursor=pointer]:
+                      - generic [ref=e1235]:
+                        - generic [ref=e1236]:
+                          - generic [ref=e1237]: §21.0
+                          - heading "Subcontracting" [level=3] [ref=e1238]
+                        - generic [ref=e1239]:
+                          - generic [ref=e1240]:
+                            - img [ref=e1241]
+                            - text: Standard
+                          - img [ref=e1244]
+                      - paragraph [ref=e1246]: Market-standard drafting; no changes required.
+                      - generic "Based on similar Indian commercial clauses and verified citations (95% confidence)" [ref=e1248]:
+                        - generic [ref=e1249]: Confidence
+                        - generic [ref=e1261]: High
+                    - article [ref=e1262] [cursor=pointer]:
+                      - generic [ref=e1263]:
+                        - generic [ref=e1264]:
+                          - generic [ref=e1265]: §22.0
+                          - heading "Publicity" [level=3] [ref=e1266]
+                        - generic [ref=e1267]:
+                          - generic [ref=e1268]:
+                            - img [ref=e1269]
+                            - text: Standard
+                          - img [ref=e1272]
+                      - paragraph [ref=e1274]: Market-standard drafting; no changes required.
+                      - generic "Based on similar Indian commercial clauses and verified citations (95% confidence)" [ref=e1276]:
+                        - generic [ref=e1277]: Confidence
+                        - generic [ref=e1289]: High
+                    - article [ref=e1290] [cursor=pointer]:
+                      - generic [ref=e1291]:
+                        - generic [ref=e1292]:
+                          - generic [ref=e1293]: §23.0
+                          - heading "Independent Contractor" [level=3] [ref=e1294]
+                        - generic [ref=e1295]:
+                          - generic [ref=e1296]:
+                            - img [ref=e1297]
+                            - text: Standard
+                          - img [ref=e1300]
+                      - paragraph [ref=e1302]: Market-standard drafting; no changes required.
+                      - generic "Based on similar Indian commercial clauses and verified citations (95% confidence)" [ref=e1304]:
+                        - generic [ref=e1305]: Confidence
+                        - generic [ref=e1317]: High
+                    - article [ref=e1318] [cursor=pointer]:
+                      - generic [ref=e1319]:
+                        - generic [ref=e1320]:
+                          - generic [ref=e1321]: §24.0
+                          - heading "No Third-Party Beneficiaries" [level=3] [ref=e1322]
+                        - generic [ref=e1323]:
+                          - generic [ref=e1324]:
+                            - img [ref=e1325]
+                            - text: Standard
+                          - img [ref=e1328]
+                      - paragraph [ref=e1330]: Market-standard drafting; no changes required.
+                      - generic "Based on similar Indian commercial clauses and verified citations (95% confidence)" [ref=e1332]:
+                        - generic [ref=e1333]: Confidence
+                        - generic [ref=e1345]: High
+              - separator [ref=e1346]
+              - generic [ref=e1349]:
+                - generic [ref=e1351]:
+                  - img [ref=e1352]
+                  - heading "Ask Clauseium" [level=3] [ref=e1355]
+                - generic [ref=e1357]:
+                  - paragraph [ref=e1358]: Ask anything about this contract — grounded in Indian law.
+                  - generic [ref=e1359]:
+                    - button "Is this DPDP compliant?" [ref=e1360]
+                    - button "Compare to our standard MSA" [ref=e1361]
+                    - button "Summarize risks for the business team" [ref=e1362]
+                    - button "Draft a counterproposal for §14.2" [ref=e1363]
+                - textbox "Ask about this contract…" [ref=e1366]
+  - button "Open Next.js Dev Tools" [ref=e1372] [cursor=pointer]:
+    - img [ref=e1373]
+  - alert [ref=e1376]

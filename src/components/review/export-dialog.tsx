@@ -1,10 +1,11 @@
 "use client";
 
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { Check, FileText, Sparkles, X } from "lucide-react";
+import { Check, FileText, Loader2, Sparkles, X } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useReview } from "./review-context";
+import { hasModifiedClauses } from "@/lib/export/shared/decisions";
 
 type ExportFormat = "redlined" | "clean" | "summary" | "full";
 
@@ -32,13 +33,43 @@ const formats: { id: ExportFormat; label: string; description: string }[] = [
 ];
 
 export function ExportDialog() {
-  const { exportOpen, setExportOpen, toast } = useReview();
+  const { contract, clauseStates, exportOpen, setExportOpen, toast } = useReview();
   const [format, setFormat] = useState<ExportFormat>("redlined");
   const [includeReasoning, setIncludeReasoning] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
 
-  const handleExport = () => {
-    toast("Export feature coming soon — this is a preview", "info");
-    setExportOpen(false);
+  const handleExport = async () => {
+    if (isExporting) return;
+    const label = formats.find((f) => f.id === format)?.label ?? "file";
+    setIsExporting(true);
+    toast(`Generating ${label}…`, "info");
+    try {
+      const { exportContract } = await import("@/lib/export");
+      const { triggerDownload } = await import("@/lib/export/download");
+      const { blob, filename } = await exportContract({
+        contract,
+        clauseStates,
+        format,
+        includeReasoning,
+      });
+      triggerDownload(blob, filename);
+      if (
+        format === "clean" &&
+        hasModifiedClauses(contract.clauses ?? [], clauseStates)
+      ) {
+        toast(
+          "Some clauses are marked Modified — review the comments before sending.",
+          "info",
+        );
+      }
+      toast(`Downloaded ${filename}`, "success");
+      setExportOpen(false);
+    } catch (err) {
+      console.error("Export failed", err);
+      toast("Export failed — please try again", "info");
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   return (
@@ -117,15 +148,18 @@ export function ExportDialog() {
           <div className="flex justify-end gap-2 mt-6">
             <button
               onClick={() => setExportOpen(false)}
-              className="px-4 py-2 text-[13px] text-ink-300 hover:text-ink-100 hover:bg-ink-850 rounded-lg transition-colors"
+              disabled={isExporting}
+              className="px-4 py-2 text-[13px] text-ink-300 hover:text-ink-100 hover:bg-ink-850 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel
             </button>
             <button
               onClick={handleExport}
-              className="px-4 py-2 text-[13px] font-medium bg-brand-500 hover:bg-brand-600 text-white rounded-lg transition-colors"
+              disabled={isExporting}
+              className="px-4 py-2 text-[13px] font-medium bg-brand-500 hover:bg-brand-600 text-white rounded-lg transition-colors inline-flex items-center gap-2 disabled:opacity-70 disabled:cursor-wait"
             >
-              Export
+              {isExporting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              {isExporting ? "Generating…" : "Export"}
             </button>
           </div>
         </DialogPrimitive.Content>

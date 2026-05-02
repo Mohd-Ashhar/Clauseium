@@ -1,0 +1,173 @@
+import { StyleSheet } from "@react-pdf/renderer";
+import { colors } from "../shared/branding";
+
+export const styles = StyleSheet.create({
+  page: {
+    backgroundColor: "#ffffff",
+    color: colors.ink900,
+    paddingTop: 56,
+    paddingBottom: 64,
+    paddingHorizontal: 56,
+    fontSize: 10.5,
+    fontFamily: "Helvetica",
+    lineHeight: 1.5,
+  },
+  brandRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingBottom: 12,
+    marginBottom: 20,
+    backgroundColor: colors.paper50,
+    paddingTop: 8,
+    paddingHorizontal: 10,
+  },
+  brandMark: {
+    fontSize: 11,
+    fontFamily: "Helvetica-Bold",
+    color: colors.brand500,
+    letterSpacing: 0.6,
+  },
+  brandMeta: {
+    fontSize: 9,
+    color: colors.ink500,
+  },
+  title: {
+    fontSize: 22,
+    fontFamily: "Helvetica-Bold",
+    color: colors.ink900,
+    marginBottom: 6,
+  },
+  subtitle: {
+    fontSize: 11,
+    color: colors.ink500,
+    marginBottom: 18,
+  },
+  metaGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginBottom: 24,
+  },
+  metaCell: {
+    width: 230,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    marginRight: 8,
+    marginBottom: 6,
+    backgroundColor: colors.paper50,
+  },
+  metaLabel: {
+    fontSize: 8,
+    color: colors.ink500,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+    marginBottom: 2,
+  },
+  metaValue: {
+    fontSize: 10.5,
+    color: colors.ink900,
+    fontFamily: "Helvetica-Bold",
+  },
+  sectionHeading: {
+    fontSize: 12,
+    fontFamily: "Helvetica-Bold",
+    color: colors.ink900,
+    marginTop: 14,
+    marginBottom: 8,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+  },
+  riskRow: {
+    flexDirection: "row",
+    marginBottom: 16,
+  },
+  riskCell: {
+    width: 92,
+    marginRight: 4,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    backgroundColor: colors.paper50,
+  },
+  riskCount: {
+    fontSize: 18,
+    fontFamily: "Helvetica-Bold",
+  },
+  riskCountLabel: {
+    fontSize: 8.5,
+    color: colors.ink500,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+    marginTop: 2,
+  },
+  badge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    fontSize: 8.5,
+    fontFamily: "Helvetica-Bold",
+    color: "#ffffff",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    alignSelf: "flex-start",
+  },
+  clauseCard: {
+    paddingVertical: 8,
+    marginBottom: 12,
+  },
+  clauseCardBordered: {
+    borderWidth: 1,
+    borderColor: colors.paper200,
+    padding: 12,
+    marginBottom: 10,
+  },
+  clauseHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 6,
+  },
+  clauseNumber: {
+    fontSize: 9,
+    color: colors.ink500,
+    fontFamily: "Courier",
+  },
+  clauseTitle: {
+    fontSize: 12,
+    fontFamily: "Helvetica-Bold",
+    marginBottom: 4,
+  },
+  clauseSummary: {
+    fontSize: 10,
+    color: colors.ink900,
+    marginBottom: 6,
+  },
+  clauseLabel: {
+    fontSize: 8.5,
+    fontFamily: "Helvetica-Bold",
+    color: colors.ink500,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+    marginTop: 6,
+    marginBottom: 2,
+  },
+  clauseBodyText: {
+    fontSize: 10,
+    color: colors.ink900,
+  },
+  citation: {
+    fontSize: 9,
+    color: colors.ink500,
+    marginTop: 2,
+  },
+  citationVerified: {
+    color: colors.riskLow,
+    fontFamily: "Helvetica-Bold",
+  },
+  citationPartial: {
+    color: colors.riskMed,
+    fontFamily: "Helvetica-Bold",
+  },
+  citationUnverified: {
+    color: colors.riskHigh,
+    fontFamily: "Helvetica-Bold",
+  },
+});
