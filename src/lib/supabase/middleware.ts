@@ -1,14 +1,15 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { SUPABASE_ANON_KEY, SUPABASE_URL } from "./env";
+import { getSupabaseEnv } from "./env";
 
 const PROTECTED_PREFIX = "/dashboard";
 const AUTH_PAGES = new Set(["/login", "/signup", "/forgot-password"]);
 
 export async function updateSession(request: NextRequest) {
+  const { url, anonKey } = getSupabaseEnv();
   let response = NextResponse.next({ request });
 
-  const supabase = createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  const supabase = createServerClient(url, anonKey, {
     cookies: {
       getAll() {
         return request.cookies.getAll();
