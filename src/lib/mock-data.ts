@@ -6,6 +6,16 @@ import type {
   TopClauseFlag,
   User,
 } from "@/types/contract";
+import {
+  cloudClauses,
+  consultingClauses,
+  dpaClauses,
+  msaDocumentSections,
+  ndaClauses,
+  partnershipClauses,
+  saasClauses,
+  saasDocumentSections,
+} from "./mock-contracts-text";
 
 // Anchor "now" so demo data is stable across renders within a session.
 const now = new Date();
@@ -458,6 +468,7 @@ export const contracts: Contract[] = [
     pageCount: 32,
     tags: ["DPDP", "Cross-border", "SaaS"],
     clauses: msaClauses,
+    documentSections: msaDocumentSections,
   },
   {
     id: "ctr_002",
@@ -486,6 +497,8 @@ export const contracts: Contract[] = [
     fileSize: "2.1 MB",
     pageCount: 18,
     tags: ["Auto-renewal", "Payments"],
+    clauses: saasClauses,
+    documentSections: saasDocumentSections,
   },
   {
     id: "ctr_003",
@@ -514,6 +527,7 @@ export const contracts: Contract[] = [
     fileSize: "1.2 MB",
     pageCount: 6,
     tags: ["NDA", "M&A"],
+    clauses: ndaClauses,
   },
   {
     id: "ctr_004",
@@ -570,6 +584,7 @@ export const contracts: Contract[] = [
     fileSize: "8.5 MB",
     pageCount: 42,
     tags: ["Cross-border", "DPDP", "Cloud"],
+    clauses: cloudClauses,
   },
   {
     id: "ctr_006",
@@ -598,6 +613,7 @@ export const contracts: Contract[] = [
     fileSize: "3.2 MB",
     pageCount: 22,
     tags: ["Consulting", "IP"],
+    clauses: consultingClauses,
   },
   {
     id: "ctr_007",
@@ -627,6 +643,7 @@ export const contracts: Contract[] = [
     fileSize: "2.9 MB",
     pageCount: 19,
     tags: ["DPDP", "Cross-border", "DPA"],
+    clauses: dpaClauses,
   },
   {
     id: "ctr_008",
@@ -655,6 +672,7 @@ export const contracts: Contract[] = [
     fileSize: "5.4 MB",
     pageCount: 28,
     tags: ["FinTech", "Partnership", "RBI"],
+    clauses: partnershipClauses,
   },
 ];
 

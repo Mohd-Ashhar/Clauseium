@@ -149,3 +149,12 @@ body.app-shell {
   background: var(--color-ink-950);
   color: var(--color-ink-100);
 }
+
+/* Document viewer: pulse a section briefly when it becomes active. */
+@keyframes doc-section-pulse {
+  0% { background-color: rgba(80, 110, 255, 0.18); }
+  100% { background-color: rgba(80, 110, 255, 0); }
+}
+.doc-section-pulse {
+  animation: doc-section-pulse 1.5s ease-out;
+}

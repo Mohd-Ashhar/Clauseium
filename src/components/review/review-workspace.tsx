@@ -20,13 +20,23 @@ export function ReviewWorkspace({ contract }: { contract: Contract }) {
   const { collapsed, toggleCollapsed } = useSidebar();
   const searchParams = useSearchParams();
   const isDemo = searchParams?.get("demo") === "1";
-  const [showLoading, setShowLoading] = useState(isDemo);
+  const [showLoading, setShowLoading] = useState(false);
 
   // Auto-collapse the app sidebar on mount.
   useEffect(() => {
     if (!collapsed) toggleCollapsed();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Show the analyzing-loader on first visit per contract (or whenever ?demo=1).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const key = `clauseium:hasSeenLoading:${contract.id}`;
+    if (isDemo || !window.localStorage.getItem(key)) {
+      setShowLoading(true);
+      window.localStorage.setItem(key, "1");
+    }
+  }, [contract.id, isDemo]);
 
   return (
     <ReviewProvider contract={contract}>

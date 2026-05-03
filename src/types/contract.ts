@@ -77,6 +77,21 @@ export interface RiskSummary {
   escalationReason?: string;
 }
 
+export interface DocumentHighlight {
+  text: string;
+  riskLevel: RiskLevel;
+}
+
+export interface DocumentSection {
+  sectionNumber: string;
+  title: string;
+  content: string;
+  clauseId?: string;
+  riskLevel?: RiskLevel;
+  highlights?: DocumentHighlight[];
+  isHeading?: boolean;
+}
+
 export interface Contract {
   id: string;
   title: string;
@@ -97,6 +112,7 @@ export interface Contract {
   pageCount: number;
   tags: string[];
   clauses?: ClauseAnalysis[];
+  documentSections?: DocumentSection[];
 }
 
 export interface DashboardMetrics {
