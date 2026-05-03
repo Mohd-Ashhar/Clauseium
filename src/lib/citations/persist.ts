@@ -2,12 +2,18 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ClassificationResult, ClauseInput } from "@/lib/classification/types";
 import { verifyCitationsForClause } from "./pipeline";
+import {
+  finalConfidence,
+  finalizeRiskConfidence,
+  type RiskAnalysisResult,
+} from "@/lib/risk";
 
 const CONCURRENCY = 4;
 
 export interface VerifyAndPersistOptions {
   perCallTimeoutMs?: number;
   signal?: AbortSignal;
+  riskByClauseId?: Map<string, RiskAnalysisResult>;
 }
 
 export async function verifyAndPersistCitations(
@@ -21,14 +27,18 @@ export async function verifyAndPersistCitations(
   const byId = new Map<string, ClassificationResult>();
   for (const c of classifications) byId.set(c.clauseId, c);
 
+  const riskById = opts.riskByClauseId;
+
   let cursor = 0;
+  let contractIdRef: string | null = null;
   const runners: Promise<void>[] = [];
   const next = async () => {
     while (cursor < clauses.length) {
       const i = cursor++;
       const clause = clauses[i];
       const cls = byId.get(clause.id);
-      const carrier = cls?.reasoning ?? "";
+      const risk = riskById?.get(clause.id);
+      const carrier = buildCarrier(cls?.reasoning ?? "", risk);
 
       const out = await verifyCitationsForClause(
         {
@@ -37,10 +47,10 @@ export async function verifyAndPersistCitations(
           citationCarrier: carrier,
         },
         { supabase: client },
-        opts,
+        { perCallTimeoutMs: opts.perCallTimeoutMs, signal: opts.signal },
       );
 
-      const { error } = await client
+      const { data, error } = await client
         .from("clauses")
         .update({
           citations: out.citations,
@@ -48,12 +58,26 @@ export async function verifyAndPersistCitations(
           verification_log: [out.pipelineLog],
           citations_updated_at: new Date().toISOString(),
         })
-        .eq("id", clause.id);
+        .eq("id", clause.id)
+        .select("contract_id")
+        .maybeSingle();
 
       if (error) {
         console.error(
           `[citations] update failed for clause ${clause.id}: ${error.message}`,
         );
+        continue;
+      }
+      if (data?.contract_id) contractIdRef = data.contract_id as string;
+
+      if (risk && contractIdRef) {
+        const updated = finalConfidence(
+          null,
+          risk.confidence,
+          out.trustScore,
+          0,
+        );
+        await finalizeRiskConfidence(client, contractIdRef, clause.id, updated);
       }
     }
   };
@@ -62,4 +86,19 @@ export async function verifyAndPersistCitations(
     runners.push(next());
   }
   await Promise.all(runners);
+}
+
+function buildCarrier(
+  classificationReasoning: string,
+  risk: RiskAnalysisResult | undefined,
+): string {
+  if (!risk) return classificationReasoning;
+  return [
+    classificationReasoning,
+    risk.issue,
+    risk.explanation,
+    risk.suggestion,
+  ]
+    .filter((s) => typeof s === "string" && s.length > 0)
+    .join("\n");
 }

@@ -13,6 +13,11 @@ import {
   persistClassifications,
 } from "@/lib/classification";
 import { verifyAndPersistCitations } from "@/lib/citations/persist";
+import {
+  analyzeClauseRisks,
+  persistRiskAnalyses,
+  type RiskAnalysisResult,
+} from "@/lib/risk";
 
 const ERROR_MESSAGE_MAX = 500;
 
@@ -69,8 +74,31 @@ export async function processContract(contract: ContractRecord): Promise<void> {
         const results = await classifyClauses(clauseInputs);
         await persistClassifications(client, contract.id, results, randomUUID());
 
+        let riskByClauseId: Map<string, RiskAnalysisResult> | undefined;
         try {
-          await verifyAndPersistCitations(client, clauseInputs, results);
+          const riskInputs = clauseInputs.map((c) => {
+            const cls = results.find((r) => r.clauseId === c.id);
+            return {
+              clauseId: c.id,
+              clauseText: c.text,
+              category: cls?.category ?? "other",
+              classificationConfidence: cls?.confidence ?? 0,
+            };
+          });
+          const riskResults = await analyzeClauseRisks(riskInputs);
+          await persistRiskAnalyses(client, contract.id, riskResults);
+          riskByClauseId = new Map(riskResults.map((r) => [r.clauseId, r]));
+        } catch (riskErr) {
+          console.error(
+            `[risk] non-fatal failure for contract ${contract.id}:`,
+            riskErr instanceof Error ? riskErr.message : riskErr,
+          );
+        }
+
+        try {
+          await verifyAndPersistCitations(client, clauseInputs, results, {
+            riskByClauseId,
+          });
         } catch (citErr) {
           console.error(
             `[citations] non-fatal failure for contract ${contract.id}:`,

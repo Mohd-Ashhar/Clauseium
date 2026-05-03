@@ -66,6 +66,7 @@ export interface ClauseAnalysis {
   isFromPlaybook: boolean;
   marketPosition: "above" | "at" | "below";
   trustScore?: number;
+  issue?: string;
 }
 
 export interface RiskSummary {
