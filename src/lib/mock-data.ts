@@ -25,7 +25,7 @@ const daysAgo = (d: number) => new Date(now.getTime() - d * 24 * 60 * 60 * 1000)
 export const currentUser: User = {
   id: "usr_001",
   name: "Priya Menon",
-  email: "priya@clauseium.in",
+  email: "priya@clauseium.com",
   role: "admin",
   initials: "PM",
   avatarColor: "bg-brand-500",

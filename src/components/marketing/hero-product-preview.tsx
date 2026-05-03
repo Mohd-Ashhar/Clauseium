@@ -74,7 +74,7 @@ export function HeroProductPreview() {
           </div>
           <div className="ml-3 flex h-6 flex-1 items-center justify-center rounded-md border border-ink-700 bg-ink-800/60 px-3 font-mono text-[11px] text-ink-500">
             <span className="text-ink-700">●</span>
-            <span className="ml-2">app.clauseium.in/review/vendor-msa-001</span>
+            <span className="ml-2">app.clauseium.com/review/vendor-msa-001</span>
           </div>
           <div className="hidden items-center gap-2 md:flex">
             <span className="font-mono text-[10px] uppercase tracking-wider text-ink-500">
