@@ -12,6 +12,7 @@ import {
   classifyClauses,
   persistClassifications,
 } from "@/lib/classification";
+import { verifyAndPersistCitations } from "@/lib/citations/persist";
 
 const ERROR_MESSAGE_MAX = 500;
 
@@ -61,10 +62,21 @@ export async function processContract(contract: ContractRecord): Promise<void> {
         .eq("contract_id", contract.id);
       if (rowsError) throw rowsError;
       if (rows && rows.length > 0) {
-        const results = await classifyClauses(
-          rows.map((r) => ({ id: r.id as string, text: r.clause_text as string })),
-        );
+        const clauseInputs = rows.map((r) => ({
+          id: r.id as string,
+          text: r.clause_text as string,
+        }));
+        const results = await classifyClauses(clauseInputs);
         await persistClassifications(client, contract.id, results, randomUUID());
+
+        try {
+          await verifyAndPersistCitations(client, clauseInputs, results);
+        } catch (citErr) {
+          console.error(
+            `[citations] non-fatal failure for contract ${contract.id}:`,
+            citErr instanceof Error ? citErr.message : citErr,
+          );
+        }
       }
     } catch (clfErr) {
       console.error(

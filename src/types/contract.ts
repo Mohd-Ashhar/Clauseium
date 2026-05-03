@@ -48,6 +48,7 @@ export interface LegalCitation {
   section: string;
   status: CitationStatus;
   url?: string;
+  warning?: string;
 }
 
 export interface ClauseAnalysis {
@@ -64,6 +65,7 @@ export interface ClauseAnalysis {
   confidence: number;
   isFromPlaybook: boolean;
   marketPosition: "above" | "at" | "below";
+  trustScore?: number;
 }
 
 export interface RiskSummary {
