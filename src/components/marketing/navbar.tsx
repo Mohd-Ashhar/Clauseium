@@ -65,7 +65,7 @@ export function Navbar() {
 
         <div className="hidden items-center gap-3 md:flex">
           <Link
-            href="#"
+            href="/login"
             className={cn(
               "text-sm font-medium transition-colors",
               scrolled
@@ -76,7 +76,7 @@ export function Navbar() {
             Sign in
           </Link>
           <Button size="sm" variant="primary" asChild>
-            <Link href="#cta">Book a demo</Link>
+            <Link href="/signup">Start free trial</Link>
           </Button>
         </div>
 
@@ -109,7 +109,7 @@ export function Navbar() {
             <div className="mt-auto flex flex-col gap-3 border-t border-ink-700 pt-6">
               <SheetClose asChild>
                 <Link
-                  href="#"
+                  href="/login"
                   className="text-sm font-medium text-ink-300 hover:text-white"
                 >
                   Sign in
@@ -117,7 +117,7 @@ export function Navbar() {
               </SheetClose>
               <SheetClose asChild>
                 <Button asChild variant="primary" size="md" className="w-full">
-                  <Link href="#cta">Book a demo</Link>
+                  <Link href="/signup">Start free trial</Link>
                 </Button>
               </SheetClose>
             </div>

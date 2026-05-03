@@ -4,7 +4,6 @@ import type {
   Contract,
   DashboardMetrics,
   TopClauseFlag,
-  User,
 } from "@/types/contract";
 import {
   cloudClauses,
@@ -22,14 +21,7 @@ const now = new Date();
 const hoursAgo = (h: number) => new Date(now.getTime() - h * 60 * 60 * 1000);
 const daysAgo = (d: number) => new Date(now.getTime() - d * 24 * 60 * 60 * 1000);
 
-export const currentUser: User = {
-  id: "usr_001",
-  name: "Priya Menon",
-  email: "priya@clauseium.com",
-  role: "admin",
-  initials: "PM",
-  avatarColor: "bg-brand-500",
-};
+// `currentUser` removed — the signed-in user comes from `getCurrentUser()` (see src/lib/auth/get-current-user.ts).
 
 const teamMembers = {
   priya: { name: "Priya Menon", initials: "PM", color: "bg-brand-500" },

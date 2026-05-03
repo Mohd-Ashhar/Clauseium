@@ -4,13 +4,17 @@ import { ActivityFeed } from "@/components/app/activity-feed";
 import { AttentionCard, HighRiskCard } from "@/components/app/action-cards";
 import { ContractTable } from "@/components/app/contract-table";
 import { EmptyState } from "@/components/app/empty-state";
-import { contracts, currentUser } from "@/lib/mock-data";
+import { contracts } from "@/lib/mock-data";
 import { formatLongDate } from "@/lib/format";
 import { getDashboardGreeting } from "@/lib/dashboard-greeting";
+import { getCurrentUser } from "@/lib/auth/get-current-user";
+import { redirect } from "next/navigation";
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
   const today = new Date();
-  const { title, subtitle, state } = getDashboardGreeting(currentUser, contracts, today);
+  const { title, subtitle, state } = getDashboardGreeting(user, contracts, today);
 
   if (contracts.length === 0) {
     return (

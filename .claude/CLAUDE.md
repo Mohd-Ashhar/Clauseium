@@ -11,6 +11,17 @@ Next.js 14 + TypeScript + Supabase + pgvector + Anthropic Claude API.
 - Vector search: pgvector with hybrid BM25+semantic — see /lib/rag/search.ts
 - File processing: Queue via BullMQ — contracts > 10 pages must be async
 
+## Authentication
+- Identity comes from Supabase Auth. Never import `currentUser` from mock data — use
+  `getCurrentUser()` from `/lib/auth/get-current-user.ts` in server components.
+- Server-side: always `supabase.auth.getUser()`, never `getSession()`. `getSession`
+  reads cookies blindly; `getUser` validates against Supabase.
+- All auth mutations go through server actions in `/lib/auth/actions.ts`. Do not call
+  `supabase.auth.signIn*` from client components.
+- Protected routes live under `/dashboard*` and are gated by both root `middleware.ts`
+  and the `(app)` layout (defence in depth).
+- Env vars required: see `.env.local.example`.
+
 ## Indian Legal Domain Rules (CRITICAL)
 - Every AI-generated citation MUST be verified against our corpus before display
 - Never use the phrase "legal advice" — always "legal information" or "legal analysis"

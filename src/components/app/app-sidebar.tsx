@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronLeft, LogOut, Settings, User as UserIcon } from "lucide-react";
+import { ChevronLeft, Settings, User as UserIcon } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { SignOutMenuItem } from "@/components/auth/sign-out-menu-item";
+import type { User } from "@/types/contract";
 import { useSidebar } from "./sidebar-context";
 import { primaryNav, settingsNav, type NavItem } from "./sidebar-nav";
-import { currentUser } from "@/lib/mock-data";
 
 function NavRow({ item, collapsed, active }: { item: NavItem; collapsed: boolean; active: boolean }) {
   const Icon = item.icon;
@@ -50,7 +51,7 @@ function NavRow({ item, collapsed, active }: { item: NavItem; collapsed: boolean
   );
 }
 
-export function AppSidebar() {
+export function AppSidebar({ user }: { user: User }) {
   const pathname = usePathname() ?? "";
   const { collapsed, toggleCollapsed, mobileOpen, setMobileOpen } = useSidebar();
   const [profileOpen, setProfileOpen] = useState(false);
@@ -136,17 +137,17 @@ export function AppSidebar() {
               <div
                 className={cn(
                   "h-8 w-8 rounded-full flex items-center justify-center text-[11px] font-semibold text-white shrink-0",
-                  currentUser.avatarColor,
+                  user.avatarColor,
                 )}
               >
-                {currentUser.initials}
+                {user.initials}
               </div>
               {!collapsed && (
                 <div className="flex-1 min-w-0">
                   <div className="text-[13px] text-ink-100 font-medium leading-tight truncate">
-                    {currentUser.name}
+                    {user.name}
                   </div>
-                  <div className="text-[11px] text-ink-500 truncate">{currentUser.email}</div>
+                  <div className="text-[11px] text-ink-500 truncate">{user.email}</div>
                 </div>
               )}
             </button>
@@ -171,9 +172,7 @@ export function AppSidebar() {
                   <Settings className="h-3.5 w-3.5" /> Preferences
                 </button>
                 <div className="my-1 border-t border-ink-700" />
-                <button className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-ink-300 hover:bg-ink-850 hover:text-ink-100">
-                  <LogOut className="h-3.5 w-3.5" /> Sign out
-                </button>
+                <SignOutMenuItem />
               </div>
             )}
           </div>
