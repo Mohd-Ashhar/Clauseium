@@ -21,13 +21,18 @@ export async function POST(
   }
 
   const { id } = await params;
+  const force = new URL(req.url).searchParams.get("force") === "1";
+  const claimableStatuses = force
+    ? ["queued", "failed", "ready", "processing"]
+    : ["queued", "failed"];
+
   const client = createServiceRoleClient();
 
   const { data: claimed, error: claimError } = await client
     .from("contracts")
     .update({ status: "processing", error_message: null })
     .eq("id", id)
-    .in("status", ["queued", "failed"])
+    .in("status", claimableStatuses)
     .select("*")
     .maybeSingle();
 
