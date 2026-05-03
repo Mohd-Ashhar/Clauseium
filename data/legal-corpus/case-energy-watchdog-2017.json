@@ -1,0 +1,31 @@
+{
+  "kind": "case",
+  "case_name": "Energy Watchdog v. Central Electricity Regulatory Commission",
+  "citation": "(2017) 14 SCC 80",
+  "court": "Supreme Court of India",
+  "year": 2017,
+  "url": "https://indiankanoon.org/doc/120195345/",
+  "headnote": "Force majeure — change in foreign law and rise in price of imported coal — whether power purchase agreements stood frustrated under Section 56 of the Indian Contract Act, 1872 — distinction between contractual force majeure clauses (Section 32) and the doctrine of frustration (Section 56) — held, where parties have provided for force majeure in the contract itself, Section 32 governs and Section 56 has no role; rise in fuel cost or unprofitability is not force majeure absent express coverage.",
+  "parts": [
+    {
+      "label": "facts",
+      "text": "Adani Power and Coastal Gujarat Power had entered into Power Purchase Agreements (PPAs) with Gujarat and Haryana distribution companies for the supply of power generated at their imported-coal-based plants in Mundra. Following changes in Indonesian regulations in 2010 and 2011, the export price of Indonesian coal rose sharply. The generators sought compensatory tariffs, claiming force majeure or change in law under the PPAs and, in the alternative, frustration under Section 56 of the Indian Contract Act, 1872."
+    },
+    {
+      "label": "issues",
+      "text": "Whether the change in Indonesian law and the consequent steep rise in the price of imported coal amounted to a force majeure event under the PPAs, or, alternatively, whether the contracts stood frustrated under Section 56 of the Indian Contract Act, 1872, entitling the generators to compensatory tariffs."
+    },
+    {
+      "label": "holding",
+      "text": "Held: A change in Indonesian law cannot be a 'change in Indian law' within the force majeure clause of the PPAs. A mere rise in fuel costs or the contract becoming onerous or commercially unviable does not amount to force majeure or frustration. Force majeure under contract is governed by Section 32 of the Indian Contract Act, 1872; Section 56 has no application where the contract itself provides for the consequences of a frustrating event. Compensatory tariff was not warranted."
+    },
+    {
+      "label": "reasoning",
+      "text": "The Court drew a sharp distinction between Section 32 and Section 56 of the Indian Contract Act, 1872. Where parties have themselves provided for the consequences of an unforeseen event in the contract — as in the force majeure clauses of these PPAs — the matter is governed by Section 32 (contingent contracts). Section 56, dealing with frustration, comes into play only where there is no such provision and the supervening event renders the contract impossible. Mere economic hardship, increase in fuel cost, or the contract becoming onerous does not, by itself, frustrate a contract. The generators had assumed the commercial risk of fuel-price fluctuation; absent express words covering the eventuality, the courts will not rewrite the bargain."
+    },
+    {
+      "label": "obiter",
+      "text": "The judgment reaffirmed the narrow scope of frustration in Indian law: the doctrine is confined to events that strike at the root of the contract and is not a device to relieve parties from contracts that have become commercially unprofitable."
+    }
+  ]
+}

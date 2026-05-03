@@ -1,0 +1,28 @@
+{
+  "kind": "statute",
+  "statute_name": "Digital Personal Data Protection Act, 2023",
+  "year": 2023,
+  "url": "https://www.indiacode.nic.in/handle/123456789/2023-DPDP",
+  "sections": [
+    {
+      "number": "6",
+      "heading": "Consent",
+      "body": "The consent given by the Data Principal to the processing of her personal data shall be free, specific, informed, unconditional and unambiguous with a clear affirmative action, and shall signify an agreement to the processing of her personal data for the specified purpose and be limited to such personal data as is necessary for such specified purpose.\n\nEvery request for consent shall be presented to the Data Principal in a clear and plain language, giving her the option to access such request in English or any language specified in the Eighth Schedule to the Constitution of India and providing the contact details of a Data Protection Officer or other person authorised by the Data Fiduciary to respond to any communication from the Data Principal.\n\nThe Data Principal shall have the right to withdraw her consent at any time, with the ease of doing so being comparable to the ease with which such consent was given. The consequences of the withdrawal of consent shall be borne by the Data Principal, and such withdrawal shall not affect the lawfulness of processing of personal data based on consent before its withdrawal."
+    },
+    {
+      "number": "8",
+      "heading": "General obligations of Data Fiduciary",
+      "body": "A Data Fiduciary shall, irrespective of any agreement to the contrary or failure of a Data Principal to carry out the duties provided under this Act, be responsible for complying with the provisions of this Act and the rules made thereunder in respect of any processing undertaken by it or on its behalf by a Data Processor.\n\nA Data Fiduciary may engage, appoint, use or otherwise involve a Data Processor to process personal data on its behalf for any activity related to offering of goods or services to Data Principals only under a valid contract.\n\nA Data Fiduciary shall make reasonable efforts to ensure the accuracy and completeness of personal data, where such data is likely to be used to make a decision that affects the Data Principal, or where such data is likely to be disclosed to another Data Fiduciary.\n\nA Data Fiduciary shall implement appropriate technical and organisational measures to ensure effective observance of the provisions of this Act and the rules made thereunder, and shall protect personal data in its possession or under its control by taking reasonable security safeguards to prevent personal data breach."
+    },
+    {
+      "number": "11",
+      "heading": "Right to access information about personal data",
+      "body": "A Data Principal shall have the right to obtain from the Data Fiduciary to whom she has previously given consent for the processing of personal data, on a request made by her in such manner as may be prescribed:\n\n(a) a summary of personal data which is being processed by such Data Fiduciary and the processing activities undertaken by that Data Fiduciary with respect to such personal data;\n\n(b) the identities of all other Data Fiduciaries and Data Processors with whom the personal data has been shared by such Data Fiduciary, along with a description of the personal data so shared; and\n\n(c) any other information related to the personal data of such Data Principal and its processing as may be prescribed."
+    },
+    {
+      "number": "13",
+      "heading": "Right to grievance redressal",
+      "body": "A Data Principal shall have the right to readily available means of grievance redressal provided by a Data Fiduciary or Consent Manager in respect of any act or omission of such Data Fiduciary or Consent Manager regarding the performance of its obligations in relation to the personal data of such Data Principal or the exercise of her rights under the provisions of this Act.\n\nThe Data Fiduciary or Consent Manager shall respond to any grievances referred to in sub-section (1) within such period as may be prescribed.\n\nThe Data Principal shall exhaust the opportunity of redressing her grievance under this section before approaching the Board."
+    }
+  ]
+}

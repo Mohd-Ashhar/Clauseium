@@ -1,0 +1,27 @@
+{
+  "kind": "case",
+  "case_name": "Satyabrata Ghose v. Mugneeram Bangur & Co.",
+  "citation": "AIR 1954 SC 44",
+  "court": "Supreme Court of India",
+  "year": 1954,
+  "url": "https://indiankanoon.org/doc/1213120/",
+  "headnote": "Doctrine of frustration — Section 56, Indian Contract Act, 1872 — meaning of 'impossible' — held, 'impossible' in Section 56 is not used in its literal sense but means impracticable and useless from the point of view of the object and purpose of the contract; English doctrine of frustration is essentially a part of Indian statutory law under Section 56.",
+  "parts": [
+    {
+      "label": "facts",
+      "text": "The defendant company had agreed to sell a plot of land to the plaintiff's assignor as part of a development scheme in Calcutta. After receipt of part payment, war-time requisition orders were passed by the government affecting the land. The defendant treated the contract as cancelled on the ground that it had become impossible of performance. The plaintiff, as assignee, sued for specific performance."
+    },
+    {
+      "label": "issues",
+      "text": "Whether the war-time requisition rendered the contract impossible of performance and discharged the parties under Section 56 of the Indian Contract Act, 1872, or whether the requisition was a temporary impediment that did not strike at the root of the contract."
+    },
+    {
+      "label": "holding",
+      "text": "Held: The contract was not frustrated. The requisition was of a temporary nature; the work of development had not even commenced and there was no time fixed for completion. The contract retained its commercial substance. The defendant's repudiation was therefore unjustified, and the plaintiff was entitled to relief."
+    },
+    {
+      "label": "reasoning",
+      "text": "The Court held that the doctrine of frustration is, in truth, an aspect of the law relating to the discharge of contract by reason of supervening impossibility or illegality of the act agreed to be done, and is therefore covered by Section 56 of the Indian Contract Act, 1872. The word 'impossible' in Section 56 has not been used in the sense of physical or literal impossibility. The performance of an act may not be literally impossible but it may be impracticable and useless from the point of view of the object and purpose which the parties had in view. If an untoward event or change of circumstance totally upsets the very foundation upon which the parties rested their bargain, it can very well be said that the promisor finds it impossible to do the act which he promised to do. In the present case, the requisition order was temporary, the work had not begun, and no date was fixed for completion; the foundation of the contract had not been destroyed."
+    }
+  ]
+}

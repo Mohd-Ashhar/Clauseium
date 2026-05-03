@@ -7,7 +7,8 @@
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "ingest:legal": "tsx --require ./scripts/server-only-shim.cjs scripts/ingest-legal-corpus.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
@@ -29,11 +30,14 @@
     "lucide-react": "^1.14.0",
     "mammoth": "^1.12.0",
     "next": "^16.2.4",
+    "openai": "^6.35.0",
+    "p-retry": "^7.1.1",
     "pdf-parse": "^2.4.5",
     "postcss": "^8.5.13",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "react-resizable-panels": "^4.11.0",
+    "server-only": "^0.0.1",
     "tailwind-merge": "^3.5.0",
     "tailwindcss": "^4.2.4",
     "typescript": "^6.0.3",
@@ -41,6 +45,7 @@
   },
   "devDependencies": {
     "@types/pdf-parse": "^1.1.5",
+    "tsx": "^4.21.0",
     "vitest": "^2.1.8"
   }
 }

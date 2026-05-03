@@ -1,0 +1,28 @@
+{
+  "kind": "statute",
+  "statute_name": "Indian Contract Act, 1872",
+  "year": 1872,
+  "url": "https://www.indiacode.nic.in/handle/123456789/2187",
+  "sections": [
+    {
+      "number": "27",
+      "heading": "Agreement in restraint of trade, void",
+      "body": "Every agreement by which any one is restrained from exercising a lawful profession, trade or business of any kind, is to that extent void.\n\nException 1 — Saving of agreement not to carry on business of which goodwill is sold: One who sells the goodwill of a business may agree with the buyer to refrain from carrying on a similar business, within specified local limits, so long as the buyer, or any person deriving title to the goodwill from him, carries on a like business therein, provided that such limits appear to the Court reasonable, regard being had to the nature of the business."
+    },
+    {
+      "number": "56",
+      "heading": "Agreement to do impossible act",
+      "body": "An agreement to do an act impossible in itself is void.\n\nA contract to do an act which, after the contract is made, becomes impossible, or, by reason of some event which the promisor could not prevent, unlawful, becomes void when the act becomes impossible or unlawful.\n\nWhere one person has promised to do something which he knew, or, with reasonable diligence, might have known, and which the promisee did not know, to be impossible or unlawful, such promisor must make compensation to such promisee for any loss which such promisee sustains through the non-performance of the promise."
+    },
+    {
+      "number": "73",
+      "heading": "Compensation for loss or damage caused by breach of contract",
+      "body": "When a contract has been broken, the party who suffers by such breach is entitled to receive, from the party who has broken the contract, compensation for any loss or damage caused to him thereby, which naturally arose in the usual course of things from such breach, or which the parties knew, when they made the contract, to be likely to result from the breach of it.\n\nSuch compensation is not to be given for any remote and indirect loss or damage sustained by reason of the breach.\n\nExplanation — In estimating the loss or damage arising from a breach of contract, the means which existed of remedying the inconvenience caused by the non-performance of the contract must be taken into account."
+    },
+    {
+      "number": "74",
+      "heading": "Compensation for breach of contract where penalty stipulated for",
+      "body": "When a contract has been broken, if a sum is named in the contract as the amount to be paid in case of such breach, or if the contract contains any other stipulation by way of penalty, the party complaining of the breach is entitled, whether or not actual damage or loss is proved to have been caused thereby, to receive from the party who has broken the contract reasonable compensation not exceeding the amount so named or, as the case may be, the penalty stipulated for.\n\nExplanation — A stipulation for increased interest from the date of default may be a stipulation by way of penalty.\n\nLiquidated damages and penalty are not strictly distinguished under Indian law; the court will award reasonable compensation not exceeding the named sum, irrespective of whether actual loss is proved."
+    }
+  ]
+}

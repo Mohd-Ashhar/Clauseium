@@ -1,0 +1,31 @@
+{
+  "kind": "case",
+  "case_name": "Justice K. S. Puttaswamy (Retd.) v. Union of India",
+  "citation": "(2017) 10 SCC 1",
+  "court": "Supreme Court of India",
+  "year": 2017,
+  "url": "https://indiankanoon.org/doc/91938676/",
+  "headnote": "Right to privacy — fundamental right — Article 21 of the Constitution of India — informational privacy and data protection — held, the right to privacy is a fundamental right protected as an intrinsic part of the right to life and personal liberty under Article 21 and as part of the freedoms guaranteed by Part III of the Constitution; informational privacy is a facet of this right and must be safeguarded by an appropriate data protection regime.",
+  "parts": [
+    {
+      "label": "facts",
+      "text": "A nine-judge Constitution Bench was constituted to determine whether the right to privacy is a fundamental right under the Constitution of India, in the context of constitutional challenges to the Aadhaar scheme requiring biometric and demographic data collection from residents."
+    },
+    {
+      "label": "issues",
+      "text": "Whether the right to privacy is a constitutionally protected fundamental right; whether earlier decisions in M.P. Sharma and Kharak Singh, which held there was no such fundamental right, lay down the correct position of law; and the scope and content of the right to privacy, including informational privacy."
+    },
+    {
+      "label": "holding",
+      "text": "Held: The right to privacy is a fundamental right protected as an intrinsic part of the right to life and personal liberty under Article 21 and as part of the freedoms guaranteed by Part III of the Constitution. M.P. Sharma and the majority view in Kharak Singh, to the extent that they hold that privacy is not a constitutionally protected right, are overruled."
+    },
+    {
+      "label": "reasoning",
+      "text": "The Court held that privacy is a constitutionally protected right which emerges primarily from the guarantee of life and personal liberty in Article 21, but also from other facets of freedom and dignity recognised by the rights guaranteed by Part III. Privacy includes at its core the preservation of personal intimacies, the sanctity of family life, marriage, procreation, the home and sexual orientation. It also encompasses informational privacy — the right of an individual to control the dissemination of personal information. The Court directed the Union of India to put in place a robust data protection regime, observing that informational privacy in the age of the internet requires a careful and sensitive balance between individual interests and the legitimate concerns of the State. Any limitation on the right to privacy must satisfy the threefold test of legality, legitimate State aim, and proportionality."
+    },
+    {
+      "label": "obiter",
+      "text": "The judgment laid the constitutional foundation that subsequently informed the legislative drafting of the Digital Personal Data Protection Act, 2023, including its provisions on consent, data fiduciary obligations, data principal rights and grievance redressal."
+    }
+  ]
+}
