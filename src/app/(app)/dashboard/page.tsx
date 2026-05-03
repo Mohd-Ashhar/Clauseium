@@ -1,9 +1,9 @@
-import { Plus } from "lucide-react";
 import { ActionBanner } from "@/components/app/action-banner";
 import { ActivityFeed } from "@/components/app/activity-feed";
 import { AttentionCard, HighRiskCard } from "@/components/app/action-cards";
 import { ContractTable } from "@/components/app/contract-table";
 import { EmptyState } from "@/components/app/empty-state";
+import { UploadButton } from "@/components/app/upload-button";
 import { contracts } from "@/lib/mock-data";
 import { formatLongDate } from "@/lib/format";
 import { getDashboardGreeting } from "@/lib/dashboard-greeting";
@@ -66,12 +66,7 @@ export default async function DashboardPage() {
         </div>
         <div className="flex items-center gap-3">
           <p className="text-sm text-ink-500">{formatLongDate(today)}</p>
-          {state === "caught_up" && (
-            <button className="inline-flex items-center gap-1.5 bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium px-3.5 py-1.5 rounded-lg transition-colors">
-              <Plus className="h-4 w-4" />
-              Upload a contract
-            </button>
-          )}
+          {state === "caught_up" && <UploadButton />}
         </div>
       </header>
 

@@ -3,6 +3,7 @@
 import { Bell, Menu, Moon, Plus, Search } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useSidebar } from "./sidebar-context";
+import { useUploadDialog } from "./upload-dialog";
 
 const segmentLabels: Record<string, string> = {
   dashboard: "Dashboard",
@@ -39,6 +40,7 @@ function buildBreadcrumb(pathname: string): { label: string; href?: string }[] {
 
 export function TopBar() {
   const { setMobileOpen } = useSidebar();
+  const { open: openUpload } = useUploadDialog();
   const pathname = usePathname() ?? "/dashboard";
   const crumbs = buildBreadcrumb(pathname);
 
@@ -102,7 +104,10 @@ export function TopBar() {
         >
           <Moon className="h-4 w-4" />
         </button>
-        <button className="h-9 inline-flex items-center gap-1.5 bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium px-3.5 rounded-lg transition-colors">
+        <button
+          onClick={openUpload}
+          className="h-9 inline-flex items-center gap-1.5 bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium px-3.5 rounded-lg transition-colors"
+        >
           <Plus className="h-4 w-4" />
           <span className="hidden sm:inline">New Contract</span>
         </button>

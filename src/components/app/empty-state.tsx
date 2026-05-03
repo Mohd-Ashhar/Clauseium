@@ -1,4 +1,5 @@
 import { FileText, Plus } from "lucide-react";
+import { UploadButton } from "./upload-button";
 
 export function EmptyState() {
   return (
@@ -16,13 +17,7 @@ export function EmptyState() {
         Upload your first contract to see Clauseium in action.
       </p>
       <div className="flex flex-col sm:flex-row gap-2">
-        <button className="inline-flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
-          <Plus className="h-4 w-4" />
-          Upload a contract
-        </button>
-        <button className="inline-flex items-center text-sm text-ink-300 hover:text-ink-100 hover:bg-ink-800 px-4 py-2 rounded-lg transition-colors">
-          Or try with a sample MSA
-        </button>
+        <UploadButton />
       </div>
     </div>
   );
