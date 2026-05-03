@@ -1,0 +1,17 @@
+[
+  {
+    "text": "12.2 Either Party may terminate this Agreement for convenience by giving the other Party not less than thirty (30) days' written notice of 30 days. The provisions of Clauses 14, 15 and 18 shall survive termination of this Agreement.",
+    "expectedCategory": "termination",
+    "expectedMinConfidence": 0.85
+  },
+  {
+    "text": "The Company may terminate this Agreement immediately for cause upon written notice to the Service Provider in the event of a material breach that remains uncured for a cure period of fifteen (15) days.",
+    "expectedCategory": "termination",
+    "expectedMinConfidence": 0.85
+  },
+  {
+    "text": "The obligations of confidentiality and indemnification shall survive the termination or expiry of this Agreement.",
+    "expectedCategory": "termination",
+    "expectedMinConfidence": 0.5
+  }
+]

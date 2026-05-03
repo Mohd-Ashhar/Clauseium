@@ -1,0 +1,17 @@
+[
+  {
+    "text": "5.1 The Customer shall pay each undisputed invoice within thirty (30) days of receipt. All fees are exclusive of GST and applicable TDS shall be deducted at source.",
+    "expectedCategory": "payment_terms",
+    "expectedMinConfidence": 0.85
+  },
+  {
+    "text": "Late payment shall attract interest at the rate of 1.5% per month or the maximum rate permitted by law, whichever is lower.",
+    "expectedCategory": "payment_terms",
+    "expectedMinConfidence": 0.85
+  },
+  {
+    "text": "Invoices shall be raised on a monthly basis and shall be due and payable net 45 from the date of invoice.",
+    "expectedCategory": "payment_terms",
+    "expectedMinConfidence": 0.85
+  }
+]

@@ -1,0 +1,17 @@
+[
+  {
+    "text": "9.1 The Consultant hereby assigns to the Company all right, title and interest in and to all intellectual property, including patents, copyrights, trademarks and trade secrets, created by the Consultant in the course of providing the Services.",
+    "expectedCategory": "ip_assignment",
+    "expectedMinConfidence": 0.85
+  },
+  {
+    "text": "All works developed under this Agreement shall constitute work made for hire and shall be the sole and exclusive property of the Customer.",
+    "expectedCategory": "ip_assignment",
+    "expectedMinConfidence": 0.85
+  },
+  {
+    "text": "The Contractor irrevocably waives all moral rights in the deliverables in favour of the Company to the extent permitted by applicable law.",
+    "expectedCategory": "ip_assignment",
+    "expectedMinConfidence": 0.5
+  }
+]

@@ -1,0 +1,17 @@
+[
+  {
+    "text": "14.1 The Service Provider shall indemnify, defend and hold harmless the Customer and its affiliates, directors, officers and employees from and against any and all losses, damages, costs and expenses (including reasonable attorney's fees) arising out of or in connection with any breach of this Agreement.",
+    "expectedCategory": "indemnification",
+    "expectedMinConfidence": 0.85
+  },
+  {
+    "text": "Each Party (the \"Indemnifying Party\") agrees to hold harmless the other Party (the \"Indemnified Party\") from any third-party claims arising out of the Indemnifying Party's gross negligence or willful misconduct.",
+    "expectedCategory": "indemnification",
+    "expectedMinConfidence": 0.85
+  },
+  {
+    "text": "The Vendor shall indemnify the Company against any losses suffered as a result of breach by the Vendor of any representation, warranty or covenant under this Agreement, in accordance with Section 73 of the Indian Contract Act, 1872.",
+    "expectedCategory": "indemnification",
+    "expectedMinConfidence": 0.6
+  }
+]

@@ -1,4 +1,5 @@
 import "server-only";
+import { randomUUID } from "node:crypto";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import type { ContractRecord } from "@/types/ingestion";
 import { parsePdf } from "./parse-pdf";
@@ -7,6 +8,10 @@ import { normalize } from "./normalize";
 import { detectStructure } from "./structure";
 import { persistContract } from "./persist";
 import { structuredDocumentSchema } from "./schemas";
+import {
+  classifyClauses,
+  persistClassifications,
+} from "@/lib/classification";
 
 const ERROR_MESSAGE_MAX = 500;
 
@@ -48,6 +53,25 @@ export async function processContract(contract: ContractRecord): Promise<void> {
 
     const validated = structuredDocumentSchema.parse(structured);
     await persistContract(client, contract.id, validated, pageCount);
+
+    try {
+      const { data: rows, error: rowsError } = await client
+        .from("clauses")
+        .select("id, clause_text")
+        .eq("contract_id", contract.id);
+      if (rowsError) throw rowsError;
+      if (rows && rows.length > 0) {
+        const results = await classifyClauses(
+          rows.map((r) => ({ id: r.id as string, text: r.clause_text as string })),
+        );
+        await persistClassifications(client, contract.id, results, randomUUID());
+      }
+    } catch (clfErr) {
+      console.error(
+        `[classification] non-fatal failure for contract ${contract.id}:`,
+        clfErr instanceof Error ? clfErr.message : clfErr,
+      );
+    }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     await client

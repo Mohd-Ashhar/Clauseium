@@ -1,0 +1,17 @@
+[
+  {
+    "text": "15.1 In no event shall either Party's aggregate liability arising out of or in connection with this Agreement exceed the total fees paid by the Customer to the Service Provider during the twelve (12) months immediately preceding the claim.",
+    "expectedCategory": "limitation_of_liability",
+    "expectedMinConfidence": 0.85
+  },
+  {
+    "text": "Notwithstanding anything to the contrary, neither Party shall be liable to the other for any indirect, incidental, consequential, punitive or exemplary damages, including loss of profits, revenue or goodwill.",
+    "expectedCategory": "limitation_of_liability",
+    "expectedMinConfidence": 0.85
+  },
+  {
+    "text": "The Supplier's total liability under this Agreement shall not exceed INR 50,00,000 (Rupees Fifty Lakhs only) in the aggregate.",
+    "expectedCategory": "limitation_of_liability",
+    "expectedMinConfidence": 0.85
+  }
+]

@@ -1,0 +1,17 @@
+[
+  {
+    "text": "16.1 The Service Provider shall process Personal Data strictly in accordance with the Digital Personal Data Protection Act, 2023 (\"DPDP Act\") and applicable rules thereunder.",
+    "expectedCategory": "data_protection_dpdp",
+    "expectedMinConfidence": 0.85
+  },
+  {
+    "text": "For the purposes of the DPDP Act, 2023, the Customer is the Data Fiduciary and the Service Provider acts as a Data Processor with respect to the Personal Data of Data Principals.",
+    "expectedCategory": "data_protection_dpdp",
+    "expectedMinConfidence": 0.85
+  },
+  {
+    "text": "The Vendor shall comply with the SPDI Rules, 2011 and any successor regulations notified under the Information Technology Act, 2000.",
+    "expectedCategory": "data_protection_dpdp",
+    "expectedMinConfidence": 0.5
+  }
+]

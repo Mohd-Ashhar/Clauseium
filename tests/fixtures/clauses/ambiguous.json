@@ -1,0 +1,10 @@
+[
+  {
+    "text": "This Agreement shall be governed by the laws of India and the courts at Mumbai shall have exclusive jurisdiction over any disputes arising hereunder.",
+    "note": "Hits both governing_law and jurisdiction strongly — should trigger LLM disambiguation due to tie."
+  },
+  {
+    "text": "The parties shall cooperate in good faith to resolve any disputes amicably.",
+    "note": "No strong category signals — should classify as other or low-confidence."
+  }
+]

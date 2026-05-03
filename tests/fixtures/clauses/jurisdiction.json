@@ -1,0 +1,17 @@
+[
+  {
+    "text": "20.2 Subject to Clause 19 (Arbitration), the courts at Mumbai shall have exclusive jurisdiction over any disputes arising out of or in connection with this Agreement.",
+    "expectedCategory": "jurisdiction",
+    "expectedMinConfidence": 0.85
+  },
+  {
+    "text": "Any disputes shall be subject to the exclusive jurisdiction of the Bombay High Court.",
+    "expectedCategory": "jurisdiction",
+    "expectedMinConfidence": 0.85
+  },
+  {
+    "text": "The Parties hereby submit to the exclusive jurisdiction of the courts at New Delhi.",
+    "expectedCategory": "jurisdiction",
+    "expectedMinConfidence": 0.85
+  }
+]

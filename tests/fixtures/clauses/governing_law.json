@@ -1,0 +1,12 @@
+[
+  {
+    "text": "20.1 This Agreement shall be governed by and construed in accordance with the laws of India, without regard to its conflict of laws principles.",
+    "expectedCategory": "governing_law",
+    "expectedMinConfidence": 0.85
+  },
+  {
+    "text": "The construction, validity and performance of this Agreement shall be governed by the substantive laws of India, including without limitation the Indian Contract Act, 1872.",
+    "expectedCategory": "governing_law",
+    "expectedMinConfidence": 0.85
+  }
+]
