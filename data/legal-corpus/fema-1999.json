@@ -1,0 +1,23 @@
+{
+  "kind": "statute",
+  "statute_name": "Foreign Exchange Management Act, 1999",
+  "year": 1999,
+  "url": "https://indiankanoon.org/doc/188117/",
+  "sections": [
+    {
+      "number": "3",
+      "heading": "Dealing in foreign exchange, etc.",
+      "body": "Save as otherwise provided in this Act, rules or regulations made thereunder, or with the general or special permission of the Reserve Bank, no person shall:\n\n(a) deal in or transfer any foreign exchange or foreign security to any person not being an authorised person;\n\n(b) make any payment to or for the credit of any person resident outside India in any manner;\n\n(c) receive otherwise through an authorised person, any payment by order or on behalf of any person resident outside India in any manner; or\n\n(d) enter into any financial transaction in India as consideration for or in association with acquisition or creation or transfer of a right to acquire, any asset outside India by any person.\n\nExplanation — For the purposes of this clause, 'financial transaction' means making any payment to, or for the credit of any person, or receiving any payment for, by order or on behalf of any person, or drawing, issuing or negotiating any bill of exchange or promissory note, or transferring any security or acknowledging any debt."
+    },
+    {
+      "number": "5",
+      "heading": "Current account transactions",
+      "body": "Any person may sell or draw foreign exchange to or from an authorised person if such sale or drawal is a current account transaction:\n\nProvided that the Central Government may, in public interest and in consultation with the Reserve Bank, impose such reasonable restrictions for current account transactions as may be prescribed."
+    },
+    {
+      "number": "6",
+      "heading": "Capital account transactions",
+      "body": "Subject to the provisions of sub-section (2), any person may sell or draw foreign exchange to or from an authorised person for a capital account transaction.\n\nThe Reserve Bank may, in consultation with the Central Government, specify any class or classes of capital account transactions, involving debt instruments, which are permissible; the limit up to which foreign exchange shall be admissible for such transactions; and any conditions which may be placed on such transactions.\n\nWithout prejudice to the generality of the provisions of sub-section (2), the Reserve Bank may, by regulations, prohibit, restrict or regulate the following: transfer or issue of any foreign security by a person resident in India; transfer or issue of any security by a person resident outside India; any borrowing or lending in foreign exchange in whatever form or by whatever name called; any borrowing or lending in rupees in whatever form or by whatever name called between a person resident in India and a person resident outside India; deposits between persons resident in India and persons resident outside India; export, import or holding of currency or currency notes; transfer of immovable property outside India by a person resident in India."
+    }
+  ]
+}

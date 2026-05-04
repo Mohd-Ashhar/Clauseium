@@ -172,11 +172,12 @@ function ruleOnlyResult(
   if (!primary) {
     return standardFallback(clauseId, "rule");
   }
+  const allHints = aggregateCitationHints(findings);
   return {
     clauseId,
     riskLevel: primary.level,
     issue: primary.issue,
-    explanation: primary.explanation,
+    explanation: ensureCitations(primary.explanation, allHints, primary.level),
     suggestion: primary.suggestion,
     confidence: round3(primary.confidence),
     method: "rule",

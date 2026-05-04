@@ -13,10 +13,15 @@ export const chatRequestSchema = z
     messages: z.array(chatMessageSchema).min(1).max(MAX_MESSAGES),
     clause_id: z.string().uuid().optional(),
   })
-  .refine((v) => v.messages[v.messages.length - 1].role === "user", {
-    message: "the last message must be from the user",
-    path: ["messages"],
-  });
+  .refine(
+    (v) =>
+      v.messages.length > 0 &&
+      v.messages[v.messages.length - 1].role === "user",
+    {
+      message: "the last message must be from the user",
+      path: ["messages"],
+    },
+  );
 
 export type ChatMessage = z.infer<typeof chatMessageSchema>;
 export type ChatRequest = z.infer<typeof chatRequestSchema>;

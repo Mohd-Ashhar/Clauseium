@@ -14,10 +14,10 @@ export const oneSidedIndemnity: RuleFn = ({ lower }) => {
     level: "high",
     issue: "Indemnity appears one-sided (no mutuality).",
     explanation:
-      "The indemnity is owed by one party only with no reciprocal obligation. Mutual indemnification is the SaaS market norm in India and asymmetry shifts unbounded risk to the customer or vendor without consideration.",
+      "The indemnity is owed by one party only with no reciprocal obligation. Mutual indemnification is the SaaS market norm in India and asymmetry shifts unbounded risk without consideration. Asymmetric indemnities also expose the indemnified loss recovery to disproportionate-penalty challenges under [CITE: Indian Contract Act 1872 | s.74 | 1872].",
     suggestion:
       "Convert to mutual: 'Each Party shall indemnify, defend and hold harmless the other Party against third-party claims arising from (a) breach of this Agreement, (b) gross negligence or wilful misconduct, and (c) infringement of intellectual property rights.'",
-    citationHints: [],
+    citationHints: ["Indian Contract Act 1872 | s.74 | 1872"],
     confidence: 0.8,
     needsLlm: true,
   };
@@ -63,7 +63,7 @@ export const indemnityNoThirdPartyTrigger: RuleFn = ({ lower }) => {
     level: "low",
     issue: "Indemnity trigger is unclear (no reference to third-party claims).",
     explanation:
-      "Indemnities should be triggered by third-party claims, not by the indemnified party's own losses; otherwise the clause overlaps with general liability and may be construed as a penalty under Indian Contract Act §74.",
+      "Indemnities should be triggered by third-party claims, not by the indemnified party's own losses; otherwise the clause overlaps with general liability and may be construed as a disproportionate penalty under [CITE: Indian Contract Act 1872 | s.74 | 1872].",
     suggestion:
       "Clarify: 'The indemnifying Party shall defend the indemnified Party against any third-party claim, suit or proceeding arising from …'",
     citationHints: ["Indian Contract Act 1872 | s.74 | 1872"],

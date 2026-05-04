@@ -55,7 +55,7 @@ export async function verifyAndPersistCitations(
         .update({
           citations: out.citations,
           trust_score: out.trustScore,
-          verification_log: [out.pipelineLog],
+          verification_log: [out.pipelineLog, ...out.verifyLogs],
           citations_updated_at: new Date().toISOString(),
         })
         .eq("id", clause.id)

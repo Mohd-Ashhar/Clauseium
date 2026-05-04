@@ -11,6 +11,7 @@ import type {
   PipelineLogEntry,
   VerificationResult,
   VerifiedAnalysis,
+  VerifyLogEntry,
   VerifyOptions,
 } from "./types";
 
@@ -33,6 +34,7 @@ export interface VerifyOutput {
   trustScore: number;
   results: VerificationResult[];
   pipelineLog: PipelineLogEntry;
+  verifyLogs: VerifyLogEntry[];
 }
 
 export async function verifyCitationsForClause(
@@ -53,6 +55,7 @@ export async function verifyCitationsForClause(
       trustScore: empty.trustScore,
       results: [],
       pipelineLog: log,
+      verifyLogs: [],
     };
   }
 
@@ -74,32 +77,32 @@ export async function verifyCitationsForClause(
 
   const gated = applyQualityGate(results);
 
-  for (const r of results) {
-    logVerification({
-      evt: "citation.verify",
-      ts: new Date().toISOString(),
-      citation_id: r.citation.id,
-      raw: r.citation.raw,
-      clause_id: input.clauseId,
-      sources: {
-        local: {
-          checked: r.local.checked,
-          confirmed: r.local.confirmed,
-          latency_ms: r.local.latencyMs,
-          relevance: r.local.relevance,
-          error: r.local.error,
-        },
-        kanoon: {
-          checked: r.kanoon.checked,
-          confirmed: r.kanoon.confirmed,
-          latency_ms: r.kanoon.latencyMs,
-          error: r.kanoon.error,
-          cache_hit: r.kanoon.cacheHit,
-        },
+  const verifyLogs: VerifyLogEntry[] = results.map((r) => ({
+    evt: "citation.verify" as const,
+    ts: new Date().toISOString(),
+    citation_id: r.citation.id,
+    raw: r.citation.raw,
+    clause_id: input.clauseId,
+    sources: {
+      local: {
+        checked: r.local.checked,
+        confirmed: r.local.confirmed,
+        latency_ms: r.local.latencyMs,
+        relevance: r.local.relevance,
+        error: r.local.error,
       },
-      decision: makeDecision(r, gated),
-    });
-  }
+      kanoon: {
+        checked: r.kanoon.checked,
+        confirmed: r.kanoon.confirmed,
+        latency_ms: r.kanoon.latencyMs,
+        error: r.kanoon.error,
+        cache_hit: r.kanoon.cacheHit,
+      },
+    },
+    decision: makeDecision(r, gated),
+  }));
+
+  for (const entry of verifyLogs) logVerification(entry);
 
   const log = makePipelineLog(input.clauseId, gated, Date.now() - start);
   logPipeline(log);
@@ -110,6 +113,7 @@ export async function verifyCitationsForClause(
     trustScore: gated.trustScore,
     results,
     pipelineLog: log,
+    verifyLogs,
   };
 }
 
@@ -140,7 +144,7 @@ export async function verifyClauseAnalysis(
     ...analysis,
     citations: out.citations,
     trustScore: out.trustScore,
-    verificationLog: [out.pipelineLog],
+    verificationLog: [out.pipelineLog, ...out.verifyLogs],
   };
 }
 

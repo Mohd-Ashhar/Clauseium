@@ -109,18 +109,55 @@ async function exactMatch(
   supabase: SupabaseClient,
 ): Promise<LegalDocumentRow | null> {
   const canonStatute = canonicalize(citation.caseOrStatute);
+  // Strip a trailing year + any punctuation so ilike substring search matches
+  // both "Indian Contract Act, 1872" and "Indian Contract Act 1872".
+  const statuteForLike = canonStatute.replace(/[\s,]+(1[89]\d{2}|20\d{2})\s*$/, "").trim();
   const section = extractSectionNumber(citation.sectionOrCitation);
 
   if (section) {
+    // Direct legal_documents lookup (original path; works when section is
+    // denormalized onto the document row).
     const { data } = await supabase
       .from("legal_documents")
       .select("id, source, statute_name, section, case_name, citation, url, year")
       .eq("source", "statute")
-      .ilike("statute_name", `%${canonStatute}%`)
+      .ilike("statute_name", `%${statuteForLike}%`)
       .ilike("section", `${section}%`)
       .limit(1);
     const row = (data ?? [])[0] as LegalDocumentRow | undefined;
     if (row) return row;
+
+    // Fallback: in the current production schema, sections live in
+    // legal_chunks.metadata, not on the document row. Resolve via chunk
+    // metadata, then look up the parent document.
+    const { data: chunkRows, error: chunkErr } = await supabase
+      .from("legal_chunks")
+      .select("document_id, metadata")
+      .ilike("metadata->>statute_name", `%${statuteForLike}%`)
+      .ilike("metadata->>section", `${section}%`)
+      .limit(1);
+    if (chunkErr) {
+      console.warn(
+        `[citations] local-check chunks lookup error for ${statuteForLike} s.${section}: ${chunkErr.message}`,
+      );
+    }
+    const chunk = (chunkRows ?? [])[0] as
+      | { document_id: string; metadata: Record<string, unknown> }
+      | undefined;
+    if (chunk) {
+      const { data: docRows } = await supabase
+        .from("legal_documents")
+        .select("id, source, statute_name, section, case_name, citation, url, year")
+        .eq("id", chunk.document_id)
+        .limit(1);
+      const doc = (docRows ?? [])[0] as LegalDocumentRow | undefined;
+      if (doc) {
+        return {
+          ...doc,
+          section: (chunk.metadata?.section as string | null) ?? doc.section,
+        };
+      }
+    }
   }
 
   // Case lookup by name + optional year.

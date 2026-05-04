@@ -44,26 +44,24 @@ export async function POST(
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  if (!isChatLlmAvailable()) {
-    return NextResponse.json(
-      { error: "chat_unavailable", message: "ANTHROPIC_API_KEY not configured" },
-      { status: 503 },
-    );
-  }
-
-  let parsed: ReturnType<typeof chatRequestSchema.parse>;
+  let json: unknown;
   try {
-    const json = await req.json();
-    parsed = chatRequestSchema.parse(json);
-  } catch (err) {
+    json = await req.json();
+  } catch {
     return NextResponse.json(
-      {
-        error: "invalid_body",
-        message: err instanceof Error ? err.message : "invalid JSON",
-      },
+      { error: "invalid_body", message: "invalid JSON" },
       { status: 400 },
     );
   }
+
+  const parseResult = chatRequestSchema.safeParse(json);
+  if (!parseResult.success) {
+    return NextResponse.json(
+      { error: "invalid_body", issues: parseResult.error.flatten() },
+      { status: 400 },
+    );
+  }
+  const parsed = parseResult.data;
 
   const { id: contractId } = await params;
   const { messages, clause_id } = parsed;
@@ -91,6 +89,16 @@ export async function POST(
         message: `contract status is ${contract.status}`,
       },
       { status: 409 },
+    );
+  }
+
+  if (!isChatLlmAvailable()) {
+    return NextResponse.json(
+      {
+        error: "chat_unavailable",
+        message: "ANTHROPIC_API_KEY not configured",
+      },
+      { status: 503 },
     );
   }
 

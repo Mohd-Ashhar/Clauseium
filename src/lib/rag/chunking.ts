@@ -42,11 +42,12 @@ export function chunkStatute(seed: StatuteSeed): ChunkInput[] {
 
     if (subClauses.length > 1 && !onlyOneClause) {
       for (const sub of subClauses) {
-        const subSection = extractLeadingNumber(sub.text) ?? sub.text.slice(0, 8);
+        const subSection = extractLeadingNumber(sub.text);
+        if (subSection === null) continue;
         out.push({
           ord: ord++,
           text: `${seed.statute_name}\n${heading}\n\n${sub.text}`,
-          metadata: baseMeta(`${sec.number}${subSection ? `(${subSection})` : ""}`),
+          metadata: baseMeta(`${sec.number}(${subSection})`),
         });
       }
     }
@@ -148,6 +149,11 @@ function hardSplit(text: string): string[] {
 }
 
 function extractLeadingNumber(text: string): string | null {
-  const m = /^\s*\(?([0-9]+|[a-z]{1,3})\)?\s+/i.exec(text);
-  return m ? m[1] : null;
+  // Lettered clauses must be parenthesised: "(a) ...", "(iv) ...".
+  const lettered = /^\s*\(([a-z]{1,5})\)\s+/i.exec(text);
+  if (lettered) return lettered[1];
+  // Numbered clauses must be followed by "." or ")" or "(": "1. ...", "1) ...".
+  const numbered = /^\s*(\d+(?:\.\d+)*)[.)]\s+/.exec(text);
+  if (numbered) return numbered[1];
+  return null;
 }

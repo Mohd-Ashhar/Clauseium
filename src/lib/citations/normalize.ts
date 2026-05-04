@@ -39,8 +39,11 @@ export function jaccard(a: string, b: string): number {
 }
 
 export function extractSectionNumber(s: string): string | null {
-  const m = s.match(/section\s+([0-9]+[a-z]?(?:\([0-9a-z]+\))?)/i);
-  if (m) return m[1].toLowerCase();
+  // Match "section 73", "sec 73", "sec. 73", "s. 73", "s.73", "s 73"
+  const prefixed = s.match(
+    /\b(?:section|sec\.?|s\.?)\s*([0-9]+[a-z]?(?:\([0-9a-z]+\))?)/i,
+  );
+  if (prefixed) return prefixed[1].toLowerCase();
   const bare = s.match(/^\s*([0-9]+[a-z]?(?:\([0-9a-z]+\))?)\s*$/i);
   if (bare) return bare[1].toLowerCase();
   return null;
