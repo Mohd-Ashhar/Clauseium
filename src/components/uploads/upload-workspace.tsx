@@ -27,6 +27,9 @@ import {
 import type { StructuredDocument } from "@/types/ingestion";
 import type {
   CitationStatus,
+  ClauseAnalysis,
+  ClauseCategory,
+  Contract,
   LegalCitation,
   RiskLevel,
 } from "@/types/contract";
@@ -110,6 +113,18 @@ const CITATION_LABELS: Record<CitationStatus, string> = {
   unverified: "unverified",
 };
 
+const CATEGORY_TO_CONTRACT: Record<ClassificationLabel, ClauseCategory> = {
+  indemnification: "indemnification",
+  limitation_of_liability: "limitation_of_liability",
+  termination: "termination",
+  governing_law: "governing_law",
+  jurisdiction: "jurisdiction",
+  data_protection_dpdp: "data_protection_dpdp",
+  payment_terms: "payment_terms",
+  ip_assignment: "ip_assignment",
+  other: "confidentiality",
+};
+
 export interface ClauseWorkspaceItem {
   id: string;
   position: number;
@@ -157,6 +172,89 @@ export interface UploadWorkspaceProps {
   structured: StructuredDocument;
   clauses: ClauseWorkspaceItem[];
   summary: WorkspaceSummary;
+}
+
+function buildContractForExport(args: {
+  contractId: string;
+  contractTitle: string;
+  originalFilename: string;
+  pageCount: number | null;
+  clauses: ClauseWorkspaceItem[];
+  summary: WorkspaceSummary;
+}): Contract {
+  const { contractId, contractTitle, originalFilename, pageCount, clauses, summary } = args;
+
+  const analysisClauses: ClauseAnalysis[] = clauses
+    .slice()
+    .sort((a, b) => a.position - b.position)
+    .map((c) => {
+      const category: ClauseCategory = c.classification
+        ? CATEGORY_TO_CONTRACT[c.classification.category]
+        : "confidentiality";
+      const cleanText = stripCiteTokens(c.text) || c.text;
+      const cleanIssue = stripCiteTokens(c.risk?.issue ?? null);
+      const cleanReasoning = stripCiteTokens(c.risk?.explanation ?? null);
+      const cleanSuggestion = stripCiteTokens(c.risk?.suggestion ?? null);
+      const level: RiskLevel = c.risk?.level ?? "standard";
+      const summaryText = cleanIssue || (level === "missing"
+        ? "Required clause not present in this contract."
+        : level === "standard" || level === "low"
+          ? "Matches our playbook and the Indian commercial benchmark corpus."
+          : "Material risk identified for reviewer attention.");
+      return {
+        id: c.id,
+        clauseNumber: String(c.position),
+        category,
+        title: c.sectionTitle || `Clause ${c.position}`,
+        originalText: cleanText,
+        riskLevel: level,
+        summary: summaryText,
+        reasoning: cleanReasoning || "",
+        suggestedRedline: cleanSuggestion || undefined,
+        citations: c.citations,
+        confidence: c.risk?.confidence ?? 0,
+        isFromPlaybook: false,
+        marketPosition: "at",
+        trustScore: c.trustScore ?? undefined,
+        issue: cleanIssue || undefined,
+      };
+    });
+
+  const totalRisky = summary.high * 6 + summary.medium * 2 + summary.missing * 3;
+  const ceiling = summary.totalClauses * 6;
+  const overall = ceiling === 0 ? 0 : Math.min(1, totalRisky / ceiling);
+  const overallScore = Math.round(overall * 100);
+
+  const fileSize = pageCount ? `${pageCount} pages` : originalFilename;
+
+  return {
+    id: contractId,
+    title: contractTitle,
+    counterparty: "—",
+    contractType: "msa",
+    jurisdiction: "India",
+    governingLaw: "Indian Contract Act, 1872",
+    status: "in_progress",
+    riskSummary: {
+      high: summary.high,
+      medium: summary.medium,
+      low: summary.low,
+      standard: summary.standard,
+      missing: summary.missing,
+      overallScore,
+      escalationRecommended: summary.high > 0,
+    },
+    totalClauses: summary.totalClauses,
+    reviewedClauses: 0,
+    uploadedBy: "—",
+    uploadedAt: new Date(),
+    lastUpdated: new Date(),
+    version: 1,
+    fileSize,
+    pageCount: pageCount ?? 0,
+    tags: [],
+    clauses: analysisClauses,
+  };
 }
 
 type FilterLevel = "all" | "high" | "medium" | "standard" | "missing";
@@ -248,6 +346,48 @@ export function UploadWorkspace({
     }
   };
 
+  const [isExporting, setIsExporting] = useState(false);
+  const exportContractAs = async (
+    format: "redlined" | "clean" | "summary" | "full",
+  ) => {
+    if (isExporting) return;
+    setIsExporting(true);
+    const labelMap = {
+      redlined: "Redlined Word doc",
+      clean: "Clean Word doc",
+      summary: "Risk summary PDF",
+      full: "Full analysis report",
+    } as const;
+    toast(`Generating ${labelMap[format]}…`, "info");
+    try {
+      const contract = buildContractForExport({
+        contractId,
+        contractTitle,
+        originalFilename,
+        pageCount,
+        clauses,
+        summary,
+      });
+      const [{ exportContract }, { triggerDownload }] = await Promise.all([
+        import("@/lib/export"),
+        import("@/lib/export/download"),
+      ]);
+      const { blob, filename } = await exportContract({
+        contract,
+        clauseStates,
+        format,
+        includeReasoning: true,
+      });
+      triggerDownload(blob, filename);
+      toast(`Downloaded ${filename}`, "success");
+    } catch (err) {
+      console.error("Export failed", err);
+      toast("Export failed — please try again", "info");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const acceptAllStandard = () => {
     let count = 0;
     for (const c of clauses) {
@@ -297,6 +437,8 @@ export function UploadWorkspace({
         pageCount={pageCount}
         summary={summary}
         toast={toast}
+        onExport={exportContractAs}
+        isExporting={isExporting}
       />
 
       <div className="hidden lg:flex flex-1 min-h-0">
@@ -371,12 +513,16 @@ function TopBar({
   pageCount,
   summary,
   toast,
+  onExport,
+  isExporting,
 }: {
   contractTitle: string;
   originalFilename: string;
   pageCount: number | null;
   summary: WorkspaceSummary;
   toast: (m: string, t?: "success" | "info") => void;
+  onExport: (format: "redlined" | "clean" | "summary" | "full") => Promise<void>;
+  isExporting: boolean;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const stdCount = summary.standard + summary.low;
@@ -430,12 +576,15 @@ function TopBar({
 
         <button
           type="button"
-          onClick={() => toast("Export coming in next phase", "info")}
-          className="inline-flex items-center gap-1.5 bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium px-3.5 py-1.5 rounded-lg transition-colors"
+          onClick={() => void onExport("redlined")}
+          disabled={isExporting}
+          className="inline-flex items-center gap-1.5 bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium px-3.5 py-1.5 rounded-lg transition-colors disabled:opacity-70 disabled:cursor-wait"
         >
           <Download className="h-3.5 w-3.5" />
-          <span className="hidden sm:inline">Export Redlined Word</span>
-          <span className="sm:hidden">Export</span>
+          <span className="hidden sm:inline">
+            {isExporting ? "Generating…" : "Export Redlined Word"}
+          </span>
+          <span className="sm:hidden">{isExporting ? "…" : "Export"}</span>
         </button>
 
         <div className="relative">
