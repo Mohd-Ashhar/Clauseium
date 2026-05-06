@@ -14,6 +14,7 @@ import {
   Download,
   ExternalLink,
   Gavel,
+  GripHorizontal,
   Info,
   MessageSquare,
   MoreHorizontal,
@@ -312,28 +313,20 @@ export function UploadWorkspace({
           </Panel>
           <Separator className="w-1 bg-ink-700 hover:bg-brand-500 data-[resize-state=dragging]:bg-brand-500 transition-colors cursor-col-resize" />
           <Panel defaultSize={45} minSize={30} maxSize={65} className="min-w-0">
-            <Group orientation="vertical" className="flex flex-col h-full">
-              <Panel defaultSize={58} minSize={20} className="min-h-0">
-                <AnalysisPane
-                  contractId={contractId}
-                  summary={summary}
-                  clauses={visible}
-                  filter={filter}
-                  setFilter={setFilter}
-                  activeClauseId={activeClauseId}
-                  setActiveClauseId={setActiveClauseId}
-                  clauseStates={clauseStates}
-                  setClauseAction={setClauseAction}
-                  resetClauseAction={resetClauseAction}
-                  acceptAllStandard={acceptAllStandard}
-                  toast={toast}
-                />
-              </Panel>
-              <Separator className="h-1 bg-ink-700 hover:bg-brand-500 data-[resize-state=dragging]:bg-brand-500 transition-colors cursor-row-resize" />
-              <Panel defaultSize={42} minSize={20} maxSize={80} className="min-h-0">
-                <AskAiChat contractId={contractId} />
-              </Panel>
-            </Group>
+            <RightColumn
+              contractId={contractId}
+              summary={summary}
+              clauses={visible}
+              filter={filter}
+              setFilter={setFilter}
+              activeClauseId={activeClauseId}
+              setActiveClauseId={setActiveClauseId}
+              clauseStates={clauseStates}
+              setClauseAction={setClauseAction}
+              resetClauseAction={resetClauseAction}
+              acceptAllStandard={acceptAllStandard}
+              toast={toast}
+            />
           </Panel>
         </Group>
       </div>
@@ -601,6 +594,135 @@ function DocumentPane({
             ))}
           </div>
         </article>
+      </div>
+    </div>
+  );
+}
+
+// Right column = AnalysisPane on top + AskAiChat on bottom, with a draggable
+// horizontal resizer between them. We manage height in pixels (instead of using
+// react-resizable-panels) because the chat needs a guaranteed minimum so the
+// input box always stays visible above the fold.
+const ASK_AI_DEFAULT_HEIGHT = 420;
+const ASK_AI_MIN_HEIGHT = 56; // collapsed → just the header
+const ASK_AI_HEADER_ONLY = 56;
+const ANALYSIS_MIN_HEIGHT = 200;
+
+function RightColumn({
+  contractId,
+  summary,
+  clauses,
+  filter,
+  setFilter,
+  activeClauseId,
+  setActiveClauseId,
+  clauseStates,
+  setClauseAction,
+  resetClauseAction,
+  acceptAllStandard,
+  toast,
+}: AnalysisPaneProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [askHeight, setAskHeight] = useState(ASK_AI_DEFAULT_HEIGHT);
+  const [collapsed, setCollapsed] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  const lastExpandedRef = useRef(ASK_AI_DEFAULT_HEIGHT);
+
+  const effectiveHeight = collapsed ? ASK_AI_HEADER_ONLY : askHeight;
+
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (collapsed) return;
+    e.preventDefault();
+    (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
+    setDragging(true);
+    const startY = e.clientY;
+    const startHeight = askHeight;
+    const containerRect = containerRef.current?.getBoundingClientRect();
+    const containerHeight = containerRect?.height ?? 800;
+
+    const onMove = (ev: PointerEvent) => {
+      const delta = startY - ev.clientY; // dragging up grows the chat
+      const next = startHeight + delta;
+      const max = Math.max(ASK_AI_MIN_HEIGHT, containerHeight - ANALYSIS_MIN_HEIGHT);
+      const clamped = Math.min(max, Math.max(ASK_AI_MIN_HEIGHT, next));
+      setAskHeight(clamped);
+    };
+    const onUp = () => {
+      setDragging(false);
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  };
+
+  const toggleCollapsed = () => {
+    if (collapsed) {
+      setCollapsed(false);
+      setAskHeight(lastExpandedRef.current);
+    } else {
+      lastExpandedRef.current = askHeight;
+      setCollapsed(true);
+    }
+  };
+
+  const expandToFill = () => {
+    const containerHeight =
+      containerRef.current?.getBoundingClientRect().height ?? 800;
+    setCollapsed(false);
+    setAskHeight(Math.max(ASK_AI_MIN_HEIGHT, containerHeight - ANALYSIS_MIN_HEIGHT));
+  };
+
+  return (
+    <div ref={containerRef} className="h-full flex flex-col bg-ink-900 min-h-0">
+      <div className="flex-1 min-h-0">
+        <AnalysisPane
+          contractId={contractId}
+          summary={summary}
+          clauses={clauses}
+          filter={filter}
+          setFilter={setFilter}
+          activeClauseId={activeClauseId}
+          setActiveClauseId={setActiveClauseId}
+          clauseStates={clauseStates}
+          setClauseAction={setClauseAction}
+          resetClauseAction={resetClauseAction}
+          acceptAllStandard={acceptAllStandard}
+          toast={toast}
+        />
+      </div>
+
+      <div
+        role="separator"
+        aria-orientation="horizontal"
+        aria-label="Resize Ask Clauseium panel"
+        onPointerDown={onPointerDown}
+        onDoubleClick={() => setAskHeight(ASK_AI_DEFAULT_HEIGHT)}
+        className={cn(
+          "group relative h-2 shrink-0 flex items-center justify-center bg-ink-800 border-y border-ink-700 transition-colors",
+          collapsed ? "cursor-default" : "cursor-row-resize hover:bg-brand-500/20",
+          dragging && "bg-brand-500/30",
+        )}
+      >
+        <GripHorizontal
+          className={cn(
+            "h-3 w-3 text-ink-500 transition-colors pointer-events-none",
+            !collapsed && "group-hover:text-brand-300",
+            dragging && "text-brand-200",
+          )}
+        />
+      </div>
+
+      <div
+        style={{ height: `${effectiveHeight}px` }}
+        className="shrink-0 overflow-hidden border-t border-ink-700/60"
+      >
+        <AskAiChat
+          contractId={contractId}
+          collapsed={collapsed}
+          onToggleCollapsed={toggleCollapsed}
+          onExpand={expandToFill}
+        />
       </div>
     </div>
   );

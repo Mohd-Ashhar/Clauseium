@@ -6,7 +6,16 @@ import {
   useRef,
   useState,
 } from "react";
-import { ArrowUp, CheckCircle2, ExternalLink, Sparkles } from "lucide-react";
+import {
+  ArrowUp,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  ExternalLink,
+  Maximize2,
+  Sparkles,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface RefBundle {
   ref_id: string;
@@ -39,9 +48,17 @@ const QUICK_PROMPTS = [
 
 export interface AskAiChatProps {
   contractId: string;
+  collapsed?: boolean;
+  onToggleCollapsed?: () => void;
+  onExpand?: () => void;
 }
 
-export function AskAiChat({ contractId }: AskAiChatProps) {
+export function AskAiChat({
+  contractId,
+  collapsed = false,
+  onToggleCollapsed,
+  onExpand,
+}: AskAiChatProps) {
   const [messages, setMessages] = useState<UiMessage[]>([]);
   const [input, setInput] = useState("");
   const [thinking, setThinking] = useState(false);
@@ -188,31 +205,75 @@ export function AskAiChat({ contractId }: AskAiChatProps) {
 
   return (
     <div className="h-full flex flex-col bg-ink-900 min-h-0">
-      <header className="flex items-center justify-between px-4 py-2.5 border-b border-ink-700 shrink-0">
+      <header
+        className={cn(
+          "flex items-center justify-between px-4 py-2.5 border-b border-ink-700 shrink-0",
+          onToggleCollapsed && "cursor-pointer select-none hover:bg-ink-850/60 transition-colors",
+        )}
+        onClick={onToggleCollapsed ? () => onToggleCollapsed() : undefined}
+      >
         <div className="flex items-center gap-1.5">
           <Sparkles className="h-3.5 w-3.5 text-brand-400" />
           <h3 className="text-[13px] font-semibold text-ink-100">
             Ask Clauseium
           </h3>
         </div>
-        {!isEmpty && (
-          <button
-            type="button"
-            onClick={() => {
-              abortRef.current?.abort();
-              setMessages([]);
-              setError(null);
-            }}
-            className="text-[12px] text-ink-500 hover:text-ink-300 transition-colors"
-          >
-            Clear chat
-          </button>
-        )}
+        <div className="flex items-center gap-1">
+          {!isEmpty && !collapsed && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                abortRef.current?.abort();
+                setMessages([]);
+                setError(null);
+              }}
+              className="text-[12px] text-ink-500 hover:text-ink-300 transition-colors px-2 py-1 rounded"
+            >
+              Clear chat
+            </button>
+          )}
+          {onExpand && !collapsed && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onExpand();
+              }}
+              className="h-7 w-7 inline-flex items-center justify-center text-ink-500 hover:text-ink-200 hover:bg-ink-800 rounded transition-colors"
+              aria-label="Expand chat to fill"
+              title="Expand to fill"
+            >
+              <Maximize2 className="h-3.5 w-3.5" />
+            </button>
+          )}
+          {onToggleCollapsed && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleCollapsed();
+              }}
+              className="h-7 w-7 inline-flex items-center justify-center text-ink-500 hover:text-ink-200 hover:bg-ink-800 rounded transition-colors"
+              aria-label={collapsed ? "Expand chat" : "Collapse chat"}
+              title={collapsed ? "Expand chat" : "Collapse chat"}
+            >
+              {collapsed ? (
+                <ChevronUp className="h-3.5 w-3.5" />
+              ) : (
+                <ChevronDown className="h-3.5 w-3.5" />
+              )}
+            </button>
+          )}
+        </div>
       </header>
 
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto dark-scrollbar px-4 py-4 space-y-3"
+        className={cn(
+          "flex-1 overflow-y-auto dark-scrollbar px-4 py-4 space-y-3",
+          collapsed && "hidden",
+        )}
       >
         {isEmpty ? (
           <EmptyState onPick={send} />
@@ -228,13 +289,18 @@ export function AskAiChat({ contractId }: AskAiChatProps) {
         )}
       </div>
 
-      {error && (
+      {error && !collapsed && (
         <div className="px-4 pb-2 text-[11px] text-risk-high">
           {explainError(error)}
         </div>
       )}
 
-      <div className="px-4 pb-4 pt-2 shrink-0 border-t border-ink-700">
+      <div
+        className={cn(
+          "px-4 pb-4 pt-2 shrink-0 border-t border-ink-700",
+          collapsed && "hidden",
+        )}
+      >
         <form
           onSubmit={(e) => {
             e.preventDefault();
