@@ -71,9 +71,14 @@ export async function verifyAndPersistCitations(
       if (data?.contract_id) contractIdRef = data.contract_id as string;
 
       if (risk && contractIdRef) {
+        // Decompose the persisted risk confidence back into rule/llm slots
+        // based on which path produced it, so finalConfidence applies the
+        // trust-score weighting to the correct branch of its formula.
+        const ruleConf = risk.method === "rule" ? risk.confidence : null;
+        const llmConf = risk.method === "rule" ? null : risk.confidence;
         const updated = finalConfidence(
-          null,
-          risk.confidence,
+          ruleConf,
+          llmConf,
           out.trustScore,
           0,
         );

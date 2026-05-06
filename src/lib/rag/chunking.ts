@@ -12,13 +12,18 @@ const MAX_PART_CHARS = 1800;
 export function chunkStatute(seed: StatuteSeed): ChunkInput[] {
   const out: ChunkInput[] = [];
   let ord = 0;
-  const baseMeta = (section: string): Metadata => ({
+  const sectionUrls = seed.section_urls ?? {};
+  // Per-section URL wins over the act-level fallback so citation pills
+  // deep-link to a section page rather than the act overview.
+  const urlFor = (sectionNumber: string): string | undefined =>
+    sectionUrls[sectionNumber] ?? seed.url;
+  const baseMeta = (section: string, parentNumber: string): Metadata => ({
     source: "statute",
     statute_name: seed.statute_name,
     section,
     year: seed.year,
     jurisdiction: "India",
-    url: seed.url,
+    url: urlFor(parentNumber),
   });
 
   for (const sec of seed.sections) {
@@ -29,7 +34,7 @@ export function chunkStatute(seed: StatuteSeed): ChunkInput[] {
     out.push({
       ord: ord++,
       text: sectionText,
-      metadata: baseMeta(sec.number),
+      metadata: baseMeta(sec.number, sec.number),
     });
 
     const structured = detectStructure(cleanedBody);
@@ -47,7 +52,7 @@ export function chunkStatute(seed: StatuteSeed): ChunkInput[] {
         out.push({
           ord: ord++,
           text: `${seed.statute_name}\n${heading}\n\n${sub.text}`,
-          metadata: baseMeta(`${sec.number}(${subSection})`),
+          metadata: baseMeta(`${sec.number}(${subSection})`, sec.number),
         });
       }
     }

@@ -130,7 +130,10 @@ export function detectStructure(text: string): StructuredDocument {
     const kept = sec.clauses
       .filter((c) => c.text.length >= MIN_CLAUSE_LENGTH)
       .map((c) => ({
-        id: c.number ? `${slug(sec.title)}-${c.number}-${randomUUID().slice(0, 8)}` : randomUUID(),
+        // Always emit a real UUID — the clauses.id column is uuid-typed and
+        // persistContract uses this id directly. The earlier "slug-num-uuid"
+        // debug form broke INSERTs ("invalid input syntax for type uuid").
+        id: randomUUID(),
         text: c.number ? `${c.number} ${c.text}` : c.text,
         position: position++,
       }));

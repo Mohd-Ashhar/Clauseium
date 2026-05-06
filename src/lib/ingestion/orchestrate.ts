@@ -6,7 +6,7 @@ import { parsePdf } from "./parse-pdf";
 import { parseDocx } from "./parse-docx";
 import { normalize } from "./normalize";
 import { detectStructure } from "./structure";
-import { persistContract } from "./persist";
+import { finalizeContractReady, persistContract } from "./persist";
 import { structuredDocumentSchema } from "./schemas";
 import {
   classifyClauses,
@@ -112,6 +112,12 @@ export async function processContract(contract: ContractRecord): Promise<void> {
         clfErr instanceof Error ? clfErr.message : clfErr,
       );
     }
+
+    // Flip to ready only after every downstream stage has had a chance to
+    // write its per-clause columns. Until this point the contract has been
+    // sitting in 'processing'. Downstream failures are caught and logged
+    // above so they never prevent finalization.
+    await finalizeContractReady(client, contract.id);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     await client

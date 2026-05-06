@@ -19,6 +19,30 @@ export interface SearchOptions {
 const DEFAULT_TOP_K = 8;
 const K_EACH = 30;
 
+// Module-scoped flag so the empty-corpus warning fires at most once per
+// process. Silent corpus emptiness used to hide misconfigured deploys —
+// this surface it without spamming logs.
+let emptyCorpusChecked = false;
+
+async function warnIfCorpusEmpty(
+  supa: ReturnType<typeof createServiceRoleClient>,
+): Promise<void> {
+  if (emptyCorpusChecked) return;
+  emptyCorpusChecked = true;
+  const { count, error } = await supa
+    .from("legal_documents")
+    .select("id", { count: "exact", head: true });
+  if (error) {
+    console.warn(`rag.search corpus check failed: ${error.message}`);
+    return;
+  }
+  if ((count ?? 0) === 0) {
+    console.warn(
+      "rag.search corpus empty — did you run npm run ingest:legal?",
+    );
+  }
+}
+
 export async function searchLegalCorpus(
   query: string,
   opts: SearchOptions = {},
@@ -30,6 +54,7 @@ export async function searchLegalCorpus(
   const start = Date.now();
 
   const supa = createServiceRoleClient();
+  await warnIfCorpusEmpty(supa);
   const qEmbedding = await embedQuery(trimmed);
 
   const { data, error } = await supa.rpc("hybrid_legal_search", {

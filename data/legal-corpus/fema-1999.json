@@ -2,7 +2,12 @@
   "kind": "statute",
   "statute_name": "Foreign Exchange Management Act, 1999",
   "year": 1999,
-  "url": "https://indiankanoon.org/doc/188117/",
+  "url": "https://indiankanoon.org/search/?formInput=foreign+exchange+management+act+1999",
+  "section_urls": {
+    "3": "https://indiankanoon.org/search/?formInput=section+3+foreign+exchange+management+act+1999",
+    "5": "https://indiankanoon.org/search/?formInput=section+5+foreign+exchange+management+act+1999",
+    "6": "https://indiankanoon.org/search/?formInput=section+6+foreign+exchange+management+act+1999"
+  },
   "sections": [
     {
       "number": "3",

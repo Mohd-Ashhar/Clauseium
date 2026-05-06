@@ -115,21 +115,10 @@ async function exactMatch(
   const section = extractSectionNumber(citation.sectionOrCitation);
 
   if (section) {
-    // Direct legal_documents lookup (original path; works when section is
-    // denormalized onto the document row).
-    const { data } = await supabase
-      .from("legal_documents")
-      .select("id, source, statute_name, section, case_name, citation, url, year")
-      .eq("source", "statute")
-      .ilike("statute_name", `%${statuteForLike}%`)
-      .ilike("section", `${section}%`)
-      .limit(1);
-    const row = (data ?? [])[0] as LegalDocumentRow | undefined;
-    if (row) return row;
-
-    // Fallback: in the current production schema, sections live in
-    // legal_chunks.metadata, not on the document row. Resolve via chunk
-    // metadata, then look up the parent document.
+    // Resolve via legal_chunks.metadata first — chunks carry per-section
+    // URLs (e.g. Indian Kanoon section pages) while legal_documents.url is
+    // act-level. Preferring the chunk URL means citation pills deep-link
+    // to the right section instead of the act overview.
     const { data: chunkRows, error: chunkErr } = await supabase
       .from("legal_chunks")
       .select("document_id, metadata")
@@ -152,12 +141,29 @@ async function exactMatch(
         .limit(1);
       const doc = (docRows ?? [])[0] as LegalDocumentRow | undefined;
       if (doc) {
+        const chunkUrl =
+          typeof chunk.metadata?.url === "string"
+            ? (chunk.metadata.url as string)
+            : null;
         return {
           ...doc,
+          url: chunkUrl ?? doc.url,
           section: (chunk.metadata?.section as string | null) ?? doc.section,
         };
       }
     }
+
+    // Fallback: legal_documents direct lookup (works when section is
+    // denormalized onto the document row).
+    const { data } = await supabase
+      .from("legal_documents")
+      .select("id, source, statute_name, section, case_name, citation, url, year")
+      .eq("source", "statute")
+      .ilike("statute_name", `%${statuteForLike}%`)
+      .ilike("section", `${section}%`)
+      .limit(1);
+    const row = (data ?? [])[0] as LegalDocumentRow | undefined;
+    if (row) return row;
   }
 
   // Case lookup by name + optional year.

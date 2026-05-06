@@ -2,7 +2,12 @@
   "kind": "statute",
   "statute_name": "Arbitration and Conciliation Act, 1996",
   "year": 1996,
-  "url": "https://indiankanoon.org/doc/1306164/",
+  "url": "https://indiankanoon.org/search/?formInput=arbitration+and+conciliation+act+1996",
+  "section_urls": {
+    "9": "https://indiankanoon.org/search/?formInput=section+9+arbitration+and+conciliation+act+1996",
+    "11": "https://indiankanoon.org/search/?formInput=section+11+arbitration+and+conciliation+act+1996",
+    "20": "https://indiankanoon.org/search/?formInput=section+20+arbitration+and+conciliation+act+1996"
+  },
   "sections": [
     {
       "number": "9",

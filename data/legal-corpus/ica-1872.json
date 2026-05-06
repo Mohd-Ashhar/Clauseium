@@ -2,7 +2,13 @@
   "kind": "statute",
   "statute_name": "Indian Contract Act, 1872",
   "year": 1872,
-  "url": "https://www.indiacode.nic.in/handle/123456789/2187",
+  "url": "https://indiankanoon.org/search/?formInput=indian+contract+act+1872",
+  "section_urls": {
+    "27": "https://indiankanoon.org/search/?formInput=section+27+indian+contract+act+1872",
+    "56": "https://indiankanoon.org/search/?formInput=section+56+indian+contract+act+1872",
+    "73": "https://indiankanoon.org/search/?formInput=section+73+indian+contract+act+1872",
+    "74": "https://indiankanoon.org/search/?formInput=section+74+indian+contract+act+1872"
+  },
   "sections": [
     {
       "number": "27",

@@ -2,7 +2,11 @@
   "kind": "statute",
   "statute_name": "Micro, Small and Medium Enterprises Development Act, 2006",
   "year": 2006,
-  "url": "https://indiankanoon.org/doc/1543037/",
+  "url": "https://indiankanoon.org/search/?formInput=micro+small+and+medium+enterprises+development+act+2006",
+  "section_urls": {
+    "15": "https://indiankanoon.org/search/?formInput=section+15+msmed+act+2006",
+    "16": "https://indiankanoon.org/search/?formInput=section+16+msmed+act+2006"
+  },
   "sections": [
     {
       "number": "15",

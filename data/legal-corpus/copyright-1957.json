@@ -2,7 +2,12 @@
   "kind": "statute",
   "statute_name": "Copyright Act, 1957",
   "year": 1957,
-  "url": "https://indiankanoon.org/doc/1568146/",
+  "url": "https://indiankanoon.org/search/?formInput=copyright+act+1957",
+  "section_urls": {
+    "17": "https://indiankanoon.org/search/?formInput=section+17+copyright+act+1957",
+    "19": "https://indiankanoon.org/search/?formInput=section+19+copyright+act+1957",
+    "57": "https://indiankanoon.org/search/?formInput=section+57+copyright+act+1957"
+  },
   "sections": [
     {
       "number": "17",

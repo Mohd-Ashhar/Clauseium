@@ -8,6 +8,7 @@ import { contracts } from "@/lib/mock-data";
 import { formatLongDate } from "@/lib/format";
 import { getDashboardGreeting } from "@/lib/dashboard-greeting";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
+import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
 export default async function DashboardPage() {
@@ -15,6 +16,20 @@ export default async function DashboardPage() {
   if (!user) redirect("/login");
   const today = new Date();
   const { title, subtitle, state } = getDashboardGreeting(user, contracts, today);
+
+  // The contract table + risk cards are still mock-driven; only the
+  // "Start reviewing" CTA points at a real uploaded contract so the user
+  // can land in the live workspace from the dashboard. Migrating the rest
+  // of the dashboard to Supabase is tracked as follow-up work.
+  const supabase = await createClient();
+  const { data: realContractRow } = await supabase
+    .from("contracts")
+    .select("id")
+    .eq("status", "ready")
+    .order("processed_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const realContractId = (realContractRow?.id as string | undefined) ?? null;
 
   if (contracts.length === 0) {
     return (
@@ -88,12 +103,18 @@ export default async function DashboardPage() {
         />
       </section>
 
-      {/* Action banner — only when something needs the user */}
+      {/* Action banner — only when something needs the user. Prefer a real
+          uploaded contract so the CTA lands in the live workspace; fall back
+          to the legacy mock route only when none exist. */}
       {needsAttention > 0 && firstUrgent && (
         <ActionBanner
           count={needsAttention}
           estimatedMinutes={estimatedMinutes}
-          firstHref={`/dashboard/contracts/${firstUrgent.id}`}
+          firstHref={
+            realContractId
+              ? `/dashboard/uploads/${realContractId}`
+              : `/dashboard/contracts/${firstUrgent.id}`
+          }
         />
       )}
 

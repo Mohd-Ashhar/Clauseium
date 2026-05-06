@@ -2,7 +2,13 @@
   "kind": "statute",
   "statute_name": "Digital Personal Data Protection Act, 2023",
   "year": 2023,
-  "url": "https://www.indiacode.nic.in/handle/123456789/2023-DPDP",
+  "url": "https://indiankanoon.org/search/?formInput=digital+personal+data+protection+act+2023",
+  "section_urls": {
+    "6": "https://indiankanoon.org/search/?formInput=section+6+digital+personal+data+protection+act+2023",
+    "8": "https://indiankanoon.org/search/?formInput=section+8+digital+personal+data+protection+act+2023",
+    "11": "https://indiankanoon.org/search/?formInput=section+11+digital+personal+data+protection+act+2023",
+    "13": "https://indiankanoon.org/search/?formInput=section+13+digital+personal+data+protection+act+2023"
+  },
   "sections": [
     {
       "number": "6",

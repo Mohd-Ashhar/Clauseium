@@ -63,16 +63,30 @@ function makeSupabase(
     return chain;
   };
 
-  const chunksChain = {
-    select: () => chunksChain,
-    eq: () => chunksChain,
-    limit: () => Promise.resolve(legalChunks),
+  // Two distinct paths use legal_chunks:
+  //   1. metadata lookup in local-check.ts (ilike + limit) — return empty so
+  //      the test falls through to the legal_documents fixture below.
+  //   2. embedding lookup for relevance scoring (eq + limit) — return the
+  //      embedding fixture so cosine similarity can be computed.
+  const makeChunksChain = () => {
+    let usedIlike = false;
+    const chain = {
+      select: () => chain,
+      eq: () => chain,
+      ilike: () => {
+        usedIlike = true;
+        return chain;
+      },
+      limit: () =>
+        Promise.resolve(usedIlike ? { data: [], error: null } : legalChunks),
+    };
+    return chain;
   };
 
   return {
     from: (table: string) => {
       if (table === "legal_documents") return builder("legal_documents");
-      if (table === "legal_chunks") return chunksChain;
+      if (table === "legal_chunks") return makeChunksChain();
       throw new Error(`unexpected table ${table}`);
     },
   } as unknown as SupabaseClient;

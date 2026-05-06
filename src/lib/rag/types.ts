@@ -18,6 +18,11 @@ export const statuteSeedSchema = z.object({
   statute_name: z.string().min(1),
   year: z.number().int(),
   url: z.string().url().optional(),
+  // Per-section deep-links. Key is the section number ("73", "74", "6"…),
+  // value is a publicly-reachable URL. When present this wins over `url`
+  // for the matching section in chunk metadata, so citation pills land
+  // on a section-specific page rather than the act overview.
+  section_urls: z.record(z.string(), z.string().url()).optional(),
   sections: z
     .array(
       z.object({

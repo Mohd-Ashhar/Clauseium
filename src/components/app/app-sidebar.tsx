@@ -12,41 +12,72 @@ import { primaryNav, settingsNav, type NavItem } from "./sidebar-nav";
 
 function NavRow({ item, collapsed, active }: { item: NavItem; collapsed: boolean; active: boolean }) {
   const Icon = item.icon;
-  return (
-    <Link
-      href={item.href}
-      className={cn(
-        "group relative flex items-center gap-3 h-10 px-3 mx-2 text-sm transition-colors",
-        active
-          ? "bg-brand-500/10 text-brand-200 rounded-r-lg border-l-2 border-brand-500"
-          : "text-ink-300 hover:bg-ink-850 hover:text-ink-100 rounded-lg",
-        collapsed && "justify-center px-0 mx-2",
-      )}
-      title={collapsed ? item.label : undefined}
-    >
+  const baseRow = cn(
+    "group relative flex items-center gap-3 h-10 px-3 mx-2 text-sm transition-colors",
+    collapsed && "justify-center px-0 mx-2",
+  );
+  const interactiveRow = active
+    ? "bg-brand-500/10 text-brand-200 rounded-r-lg border-l-2 border-brand-500"
+    : "text-ink-300 hover:bg-ink-850 hover:text-ink-100 rounded-lg";
+  const disabledRow = "text-ink-500 cursor-not-allowed rounded-lg opacity-70";
+
+  const inner = (
+    <>
       <Icon
         className={cn(
           "shrink-0 h-4 w-4",
-          active ? "text-brand-400" : "text-ink-500 group-hover:text-ink-300",
+          item.disabled
+            ? "text-ink-600"
+            : active
+              ? "text-brand-400"
+              : "text-ink-500 group-hover:text-ink-300",
         )}
       />
       {!collapsed && (
         <>
           <span className="flex-1 truncate font-normal">{item.label}</span>
-          {item.badge && (
-            <span
-              className={cn(
-                "text-[10px] font-medium px-1.5 py-0.5 rounded-full",
-                item.badgeTone === "attention"
-                  ? "bg-risk-med/15 text-risk-med"
-                  : "bg-ink-700 text-ink-200",
-              )}
-            >
-              {item.badge}
+          {item.disabled ? (
+            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-ink-800 text-ink-500">
+              Soon
             </span>
+          ) : (
+            item.badge && (
+              <span
+                className={cn(
+                  "text-[10px] font-medium px-1.5 py-0.5 rounded-full",
+                  item.badgeTone === "attention"
+                    ? "bg-risk-med/15 text-risk-med"
+                    : "bg-ink-700 text-ink-200",
+                )}
+              >
+                {item.badge}
+              </span>
+            )
           )}
         </>
       )}
+    </>
+  );
+
+  if (item.disabled) {
+    return (
+      <div
+        className={cn(baseRow, disabledRow)}
+        title={collapsed ? `${item.label} (coming soon)` : "Coming soon"}
+        aria-disabled="true"
+      >
+        {inner}
+      </div>
+    );
+  }
+
+  return (
+    <Link
+      href={item.href}
+      className={cn(baseRow, interactiveRow)}
+      title={collapsed ? item.label : undefined}
+    >
+      {inner}
     </Link>
   );
 }
