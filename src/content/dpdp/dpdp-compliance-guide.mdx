@@ -1,0 +1,298 @@
+---
+title: "DPDP Act Compliance Guide for Indian Companies (2026)"
+description: "A practical guide to the Digital Personal Data Protection Act, 2023 for Indian counsel. Covers data fiduciary obligations, consent, breach notification, and contract drafting under DPDP."
+slug: "dpdp-compliance-guide"
+category: "dpdp"
+keywords:
+  - "DPDP Act compliance"
+  - "Digital Personal Data Protection Act India"
+  - "DPDP Act 2023 guide"
+  - "data fiduciary India"
+  - "DPDP rules 2025"
+  - "personal data India contracts"
+author:
+  name: "[Author Name]"
+  role: "Advocate, Bar Council of [State]"
+  enrollment: "Enrollment No. [XXX/YYYY]"
+  linkedin: "https://www.linkedin.com/in/clauseium-advocate"
+  bio: "Practising advocate specialising in commercial contracts, technology law, and DPDP compliance for Indian SaaS and fintech companies."
+publishedAt: "2026-05-07"
+updatedAt: "2026-05-07"
+difficulty: "intermediate"
+applicableLaws:
+  - name: "Digital Personal Data Protection Act, 2023"
+    sections: ["§ 4", "§ 5", "§ 6", "§ 8", "§ 9", "§ 11", "§ 33"]
+  - name: "Information Technology Act, 2000"
+    sections: ["§ 43A", "§ 72A"]
+  - name: "Indian Contract Act, 1872"
+    sections: ["§ 73"]
+relatedTemplates:
+  - "nda-template-india"
+relatedArticles: []
+cta:
+  type: "demo_book"
+  text: "Book a DPDP review demo"
+  gated: false
+faq:
+  - question: "When does the DPDP Act 2023 come into full force?"
+    answer: "The DPDP Act received presidential assent in August 2023 but enforcement is staged through the DPDP Rules. The draft DPDP Rules were published by MeitY in January 2025 with comments closed in February 2025. Most operative provisions are expected to be notified in tranches through 2026, with an 18-month transition window for full compliance once the Data Protection Board is operationalised."
+  - question: "Who is a data fiduciary under the DPDP Act?"
+    answer: "A data fiduciary is any person who, alone or in conjunction with others, determines the purpose and means of processing personal data. In practice, this includes virtually every Indian company that collects customer email addresses, employee data, or KYC information. Section 2(i) of the Act defines the term, and Section 5 imposes the core notice and consent obligations on every data fiduciary."
+  - question: "Do I need DPCO (Data Protection Officer) appointment?"
+    answer: "Only Significant Data Fiduciaries (SDFs) must appoint a Data Protection Officer based in India under Section 10. The Central Government will notify which fiduciaries qualify as SDFs based on volume and sensitivity of data, and the criteria appear in the DPDP Rules. Most SaaS companies under 50,000 active users will not be SDFs, but should still appoint a contact person under Section 5."
+  - question: "What are the penalties under the DPDP Act?"
+    answer: "Penalties go up to ₹250 crore per breach for failure to take reasonable security safeguards (Schedule, Item 1), ₹200 crore for failure to notify a personal data breach to the Board (Item 2), and ₹150 crore for failure to fulfil obligations to children (Item 3). The Data Protection Board imposes these after inquiry under Section 27."
+  - question: "How does DPDP affect existing customer contracts?"
+    answer: "Existing contracts that authorise data processing remain valid, but the data fiduciary must ensure that any consent obtained still meets DPDP standards (free, specific, informed, unconditional, unambiguous). Contracts with processors must be updated to include the obligations under Section 8(5), particularly the requirement that the processor process data only on the fiduciary's instruction. Most counsel are addending existing contracts rather than re-papering them."
+  - question: "Can I transfer personal data outside India?"
+    answer: "Yes, subject to Section 16. The Central Government may notify a list of restricted countries to which transfers are prohibited. Transfers to non-restricted countries are permitted without additional approvals. As of May 2026, the restricted-country list has not been notified, so cross-border transfers remain unrestricted other than sectoral RBI directions for financial data."
+schema:
+  type: "Article"
+---
+
+<div className="not-prose mb-10 rounded-2xl border border-brand-200 bg-brand-50 p-6 md:p-7">
+  <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.16em] text-brand-600">
+    TL;DR
+  </div>
+  <p className="mt-2 text-[15px] leading-relaxed text-paper-900/85">
+    The Digital Personal Data Protection Act, 2023 imposes notice, consent,
+    and breach-notification obligations on every Indian company that handles
+    personal data. The Act is in force; the operational Rules were drafted
+    in January 2025 and are being notified in tranches through 2026.
+    In-house counsel should focus on three things: (1) refreshing privacy
+    notices to meet <strong>Section 5</strong>, (2) updating processor
+    contracts to meet <strong>Section 8(5)</strong>, and (3) building a
+    72-hour breach-notification workflow with the Data Protection Board.
+  </p>
+</div>
+
+## Why DPDP changes the calculus for Indian counsel
+
+Privacy law in India operated for two decades through a patchwork: Section
+43A of the IT Act 2000, the SPDI Rules 2011, sectoral RBI and IRDAI
+directions, and the constitutional right recognised in *Justice K. S.
+Puttaswamy v Union of India*. None of those imposed real teeth. A company
+that mishandled customer data faced reputational risk and the occasional
+₹50,000 IT Act penalty. The DPDP Act, 2023 changes the order of magnitude:
+penalties run up to ₹250 crore per breach, the Data Protection Board has
+investigatory powers, and class-action-style complaints are explicitly
+contemplated.
+
+For in-house counsel, the practical effect is that every contract touching
+personal data — vendor agreements, marketing platforms, payroll providers,
+analytics tools — needs to be reviewed under the new regime. The team
+that papered the GDPR sweep in 2018 will recognise the workflow, but DPDP
+diverges from GDPR in important ways: it does not have a "legitimate
+interest" basis, the consent standard is closer to the GDPR concept of
+"explicit consent" for all processing, and the territorial scope is broader
+than GDPR's offer-of-goods test.
+
+This guide walks through what to do in the first 90, 180, and 365 days of a
+DPDP compliance programme, with reference to the operative sections and the
+draft DPDP Rules. It is written for counsel at Indian-headquartered SaaS,
+fintech, and e-commerce companies. Multinational fact patterns are flagged
+where they diverge.
+
+## What changes the moment DPDP is fully notified
+
+<DpdpTimeline>
+  <DpdpEvent date="Aug 2023" label="DPDP Act receives Presidential assent" status="done">
+    The Act becomes law but enforcement awaits notification of operative provisions and Rules.
+  </DpdpEvent>
+  <DpdpEvent date="Jan 2025" label="Draft DPDP Rules published" status="done">
+    MeitY publishes the draft Rules covering notice templates, consent manager registration, breach reporting, and SDF criteria. Public consultation closes February 2025.
+  </DpdpEvent>
+  <DpdpEvent date="2026" label="Phased notification of operative sections" status="active">
+    Sections 5 (notice), 6 (consent), 8 (security), and 11 (data principal rights) expected to be notified first, with an 18-month transition window for compliance.
+  </DpdpEvent>
+  <DpdpEvent date="2027+" label="Data Protection Board fully operational" status="upcoming">
+    Board begins receiving complaints, conducting inquiries, and imposing penalties. Significant Data Fiduciary list notified.
+  </DpdpEvent>
+</DpdpTimeline>
+
+## The first 90 days: notice and consent
+
+The first thing to fix is your privacy notice. Section 5(1) requires every
+data fiduciary to give the data principal a notice — at or before requesting
+consent — that contains the personal data being processed, the purpose, the
+manner of exercising rights under Sections 11–14, and the manner of making a
+complaint to the Board. The draft Rules attach a notice template (Schedule
+A, Form 1) which most counsel will adopt verbatim with minor adaptation.
+
+Two practical traps:
+
+1. **Pre-existing data**. Section 5(2) requires fiduciaries holding data
+   collected before the Act to notify principals "as soon as it is
+   reasonably practicable." For most SaaS companies that means a one-time
+   email campaign within 90 days of notification, including a refresh of
+   continuing consents. The notice does not require renewal of consent if
+   the original consent was free, specific, informed, and unambiguous —
+   but courts will look at the documentation, so the notice should
+   explicitly invite withdrawal and reaffirmation.
+2. **Layered notice**. The Act permits a layered approach: a short
+   summary at point of collection, with the full notice one click away.
+   This is preferable for mobile flows where 800-word notices kill
+   conversion. Make sure the layered approach is genuine, not a dark
+   pattern. The draft Rules expect a "clear and plain language" standard
+   that mirrors
+   <LegalCitation statute="Digital Personal Data Protection Act, 2023" section="5" text="Every Data Fiduciary shall, on or before requesting consent, give the Data Principal a notice in clear and plain language, accompanied by an English-language version if requested, informing them of the personal data and the purpose for which it is processed." />.
+
+For consent itself, the standard under Section 6 is that consent shall be
+free, specific, informed, unconditional, and unambiguous, with a clear
+affirmative action. Pre-ticked boxes do not count. Bundling consent for
+multiple purposes is permitted only if each purpose is clearly disclosed.
+Withdrawal must be as easy as giving consent — the canonical example is a
+one-click "withdraw" link in every marketing email, mirroring the GDPR
+unsubscribe pattern.
+
+## Days 90–180: vendor and processor contracts
+
+Section 8(5) requires every data fiduciary to enter into a "valid contract"
+with any data processor it engages. The contract must obligate the
+processor to:
+
+- Process personal data only on the fiduciary's documented instructions.
+- Implement reasonable security safeguards (the Section 8(4) standard).
+- Notify the fiduciary of any personal data breach without undue delay.
+- Return or delete personal data on termination.
+- Permit audits and provide reasonable cooperation with the Board.
+
+Most existing SaaS DPAs (Data Processing Agreements) drafted for GDPR
+substantially comply. The gaps are typically:
+
+- **Sub-processor approval** — GDPR requires either prior written or general
+  authorisation; DPDP is silent, so many counsel are adding an India-specific
+  general authorisation clause with a 30-day notice for changes.
+- **Breach notification window** — GDPR's 72-hour standard is industry
+  practice, but DPDP's "without undue delay" gives counsel some flexibility.
+  The draft Rules require fiduciaries to notify the Board within 72 hours, so
+  any longer processor window simply pushes risk back to the fiduciary.
+- **Cross-border transfer restrictions** — DPDP Section 16 allows transfers
+  to all countries except those notified by the Central Government. The
+  notified list has not yet appeared, so most contracts include a
+  forward-looking clause permitting transfers subject to applicable law.
+
+<ClauseExample title="DPDP-compliant processor obligation" jurisdiction="India">
+
+The Processor shall:
+(a) process Personal Data solely on the documented instructions of the
+Fiduciary, including with regard to transfers to a third country, unless
+required to do so by Indian law;
+(b) implement Reasonable Security Safeguards as defined under Section 8(4)
+of the Act and any standards prescribed by the Data Protection Board;
+(c) notify the Fiduciary of any Personal Data Breach without undue delay
+and in any event within forty-eight (48) hours of becoming aware of it,
+together with the information required under Rule 7 of the DPDP Rules; and
+(d) on termination of this Agreement, at the option of the Fiduciary,
+return or delete all Personal Data and certify the same in writing.
+
+</ClauseExample>
+
+## Days 180–365: rights, retention, and breach response
+
+The second half of the first year is about operationalising data principal
+rights and breach response. Section 11 grants individuals the right to
+obtain confirmation, summary, identities of fiduciaries with whom data is
+shared, correction, and erasure. The fiduciary must respond within the
+period prescribed in the Rules — 90 days under the current draft.
+
+Set up an internal **Rights Request workflow** with the following stages:
+
+1. Intake — webform, email, or in-app submission. The intake must verify
+   identity without collecting more data than necessary.
+2. Triage — within 7 days, identify the request type and assigned owner.
+3. Discovery — locate all systems holding the principal's data. This is
+   where most companies fail; modern SaaS stacks have data in 30+ systems.
+4. Action — execute the correction, erasure, or summary.
+5. Response — within 90 days, with documented evidence.
+
+Erasure rights have one significant carve-out under Section 12(3): if the
+fiduciary is required to retain data under "any law for the time being in
+force," it may continue to retain it. For Indian companies this includes
+KYC retention under PMLA Rules (5 years post-relationship), tax records
+under the Income Tax Act (8 years), and corporate records under the
+Companies Act (8 years). Document these as a **Retention Schedule** so the
+erasure refusal is defensible.
+
+For breach response, the trigger is "personal data breach" as defined in
+Section 2(u). The notification obligation applies to the Board and, where
+required, to affected principals. The current draft Rule 7 requires:
+
+- Within 72 hours of becoming aware: a preliminary notification to the
+  Board with categories of data, number of principals affected, and likely
+  consequences.
+- Within 30 days: a detailed report including remediation steps.
+
+Practical tip: build the 72-hour pipeline now, even before the Rules are
+notified. The fastest way to fail a DPDP investigation is to discover that
+your incident response runbook predates DPDP and assumes only the IT Act 43A
+window.
+
+## How DPDP affects standard commercial contracts
+
+For in-house counsel, the everyday contracting question is: which clauses
+need a DPDP refresh? Roughly:
+
+| Contract type        | DPDP impact                                            | Action                                                                             |
+| -------------------- | ------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| Customer SaaS / MSA  | Customer is Fiduciary, you are Processor              | Add DPA referencing Section 8(5) obligations                                       |
+| Vendor / SaaS in    | You are Fiduciary, vendor is Processor                | Demand DPA from vendor; refuse to onboard without one                              |
+| Employment           | You are Fiduciary; employee data is personal data     | Refresh employment privacy notice; add explicit consent for non-mandatory uses     |
+| NDA                  | If personal data is in scope, becomes a processor agreement | Use DPDP-aware NDA template ([India NDA Template](/resources/templates/nda-template-india)) |
+| Marketing partnership | Joint controllers / co-fiduciaries                    | Allocate notice and consent obligations explicitly                                 |
+| Data brokerage       | Sale prohibited without consent + purpose disclosure  | Re-paper with explicit purpose-bound consent                                       |
+
+The temptation is to address all six categories at once via a master DPA
+template. That works for the Processor categories, but Employment and
+Marketing partnerships need bespoke language because the fiduciary
+relationship differs.
+
+## What to do if you are a Significant Data Fiduciary
+
+The Central Government will notify SDFs based on volume and sensitivity of
+data, processing risk, and impact on national interest. The current draft
+Rules suggest thresholds around aggregate annual personal data processed,
+but the final criteria are not yet published. If you are likely to be an
+SDF, prepare for three additional obligations under Section 10:
+
+1. **Appoint a Data Protection Officer** based in India, reporting to the
+   Board of Directors. The DPO is the point of contact for principals and
+   the Board.
+2. **Independent Data Auditor** appointment to audit compliance annually.
+3. **Data Protection Impact Assessment (DPIA)** before processing personal
+   data for new high-risk activities — a lighter version of the GDPR DPIA.
+
+Most BFSI-regulated entities, healthcare providers, and large e-commerce
+platforms should assume SDF status is coming and structure their compliance
+programme accordingly.
+
+## How Clauseium accelerates DPDP contract review
+
+DPDP compliance reviews mean reading every vendor contract and every
+customer DPA against a fixed list of obligations. Clauseium runs that scan
+in minutes per contract: it extracts the processing role (fiduciary,
+processor, joint), checks for the eight Section 8(5) obligations, flags
+cross-border transfer language, and verifies breach notification windows.
+Each finding cites the exact DPDP section and links to the relevant clause
+in the contract.
+
+[Try Clauseium free →](/signup)
+
+## Final compliance checklist
+
+For a counsel who has read this guide and wants a one-page action list:
+
+- [ ] Privacy notice updated to Section 5 standard (90 days)
+- [ ] Consent flow audited for "free, specific, informed, unambiguous" (90 days)
+- [ ] Pre-existing data notification campaign run (90 days)
+- [ ] Vendor DPA template drafted to Section 8(5) (180 days)
+- [ ] All processor contracts re-papered or addended (180 days)
+- [ ] Rights request workflow live (270 days)
+- [ ] Retention Schedule documented and adopted (270 days)
+- [ ] 72-hour breach response runbook tested (365 days)
+- [ ] DPO appointed if SDF criteria likely (when notified)
+- [ ] Annual DPDP audit calendared (when notified)
+
+Companies that work through this list in the order above will be ahead of
+roughly 90% of Indian businesses when the Data Protection Board begins
+operations.

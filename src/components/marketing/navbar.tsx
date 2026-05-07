@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,22 +9,31 @@ import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetTitle } from "@/com
 import { cn } from "@/lib/utils";
 
 const links = [
-  { label: "Product", href: "#features" },
-  { label: "Pricing", href: "#pricing" },
-  { label: "Customers", href: "#testimonials" },
-  { label: "Resources", href: "#faq" },
+  { label: "Product", href: "/#features" },
+  { label: "Pricing", href: "/#pricing" },
+  { label: "Customers", href: "/#testimonials" },
+  { label: "Resources", href: "/resources" },
   { label: "Docs", href: "#" },
 ];
 
-export function Navbar() {
-  const [scrolled, setScrolled] = useState(false);
+export function Navbar({ forceLight = false }: { forceLight?: boolean }) {
+  const pathname = usePathname();
+  const lightByRoute =
+    forceLight ||
+    pathname?.startsWith("/resources") ||
+    false;
+  const [scrolled, setScrolled] = useState(lightByRoute);
 
   useEffect(() => {
+    if (lightByRoute) {
+      setScrolled(true);
+      return;
+    }
     const onScroll = () => setScrolled(window.scrollY > window.innerHeight * 0.85);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  }, [lightByRoute]);
 
   return (
     <header

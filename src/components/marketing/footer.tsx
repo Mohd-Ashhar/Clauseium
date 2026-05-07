@@ -16,29 +16,36 @@ const GithubIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-const product = [
-  "Contract Review",
-  "Clause Drafter",
-  "DPDP Scanner",
-  "Word Add-in",
-  "API",
-  "Pricing",
+interface FooterLink {
+  label: string;
+  href: string;
+}
+
+const product: FooterLink[] = [
+  { label: "Contract Review", href: "/#features" },
+  { label: "Clause Drafter", href: "/#features" },
+  { label: "DPDP Scanner", href: "/#features" },
+  { label: "Word Add-in", href: "#" },
+  { label: "API", href: "#" },
+  { label: "Pricing", href: "/#pricing" },
 ];
-const resources = [
-  "Blog",
-  "Documentation",
-  "Changelog",
-  "Case Studies",
-  "Indian Law Guides",
-  "DPDP Compliance Guide",
+
+const resources: FooterLink[] = [
+  { label: "All Resources", href: "/resources" },
+  { label: "Contract Templates", href: "/resources/templates" },
+  { label: "DPDP Compliance", href: "/resources/dpdp" },
+  { label: "Clause Library", href: "/resources/clauses" },
+  { label: "Indian Law Guides", href: "/resources/guides" },
+  { label: "Glossary", href: "/resources/glossary" },
 ];
-const company = [
-  "About",
-  "Careers",
-  "Contact",
-  "Legal Advisory Board",
-  "Security",
-  "Privacy Policy",
+
+const company: FooterLink[] = [
+  { label: "About", href: "#" },
+  { label: "Careers", href: "#" },
+  { label: "Contact", href: "#" },
+  { label: "Legal Advisory Board", href: "#" },
+  { label: "Security", href: "#" },
+  { label: "Privacy Policy", href: "#" },
 ];
 
 export function Footer() {
@@ -107,7 +114,7 @@ function FooterColumn({
   items,
 }: {
   title: string;
-  items: string[];
+  items: FooterLink[];
 }) {
   return (
     <div>
@@ -115,13 +122,13 @@ function FooterColumn({
         {title}
       </div>
       <ul className="mt-4 flex flex-col gap-2.5">
-        {items.map((label) => (
-          <li key={label}>
+        {items.map((item) => (
+          <li key={item.label}>
             <Link
-              href="#"
+              href={item.href}
               className="text-[14px] text-ink-300/80 transition-colors hover:text-white"
             >
-              {label}
+              {item.label}
             </Link>
           </li>
         ))}
