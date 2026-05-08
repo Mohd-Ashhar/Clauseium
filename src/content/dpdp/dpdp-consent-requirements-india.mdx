@@ -1,0 +1,367 @@
+---
+title: "DPDP Consent Requirements for Indian Companies (2026 Guide)"
+description: "A practical guide to consent under the Digital Personal Data Protection Act, 2023. Covers the free-specific-informed-unambiguous standard, Consent Managers, withdrawal, and pre-existing data."
+slug: "dpdp-consent-requirements-india"
+category: "dpdp"
+keywords:
+  - "DPDP consent requirements"
+  - "DPDP Act consent India"
+  - "consent manager DPDP"
+  - "data principal consent India"
+  - "DPDP Section 6"
+  - "personal data consent India"
+author:
+  name: "[Author Name]"
+  role: "Advocate, Bar Council of [State]"
+  enrollment: "Enrollment No. [XXX/YYYY]"
+  linkedin: "https://www.linkedin.com/in/clauseium-advocate"
+  bio: "Practising advocate specialising in commercial contracts, technology law, and DPDP compliance for Indian SaaS and fintech companies."
+publishedAt: "2026-05-09"
+updatedAt: "2026-05-09"
+difficulty: "intermediate"
+applicableLaws:
+  - name: "Digital Personal Data Protection Act, 2023"
+    sections: ["§ 5", "§ 6", "§ 7", "§ 9"]
+  - name: "Information Technology Act, 2000"
+    sections: ["§ 43A"]
+  - name: "Indian Contract Act, 1872"
+    sections: ["§ 13", "§ 14"]
+relatedTemplates:
+  - "saas-agreement-template-india"
+relatedArticles:
+  - "dpdp-compliance-guide"
+cta:
+  type: "demo_book"
+  text: "Audit your consent flows with Clauseium"
+  gated: false
+faq:
+  - question: "What is the consent standard under the DPDP Act?"
+    answer: "Section 6 of the DPDP Act, 2023 requires consent that is free, specific, informed, unconditional, and unambiguous, with a clear affirmative action. Pre-ticked checkboxes, opt-out mechanisms, and consent bundled across unrelated purposes do not meet this standard. The consent request must be in plain language, accompanied by an English version on request."
+  - question: "Are pre-existing customer consents valid under DPDP?"
+    answer: "Pre-existing consents remain valid if the original consent met DPDP-equivalent standards (free, specific, informed, unambiguous). For consents collected under the SPDI Rules 2011 or earlier informal practices, most counsel recommend a refresh notification and an opt-out window rather than re-collecting consent. Section 5(2) requires data fiduciaries to notify principals as soon as reasonably practicable after the Act's enforcement."
+  - question: "What is a Consent Manager under the DPDP Act?"
+    answer: "Section 6(7) introduces Consent Managers — entities registered with the Data Protection Board that act on behalf of data principals to give, manage, review, and withdraw consent across multiple data fiduciaries. They function similarly to Account Aggregators in the financial sector. The draft DPDP Rules detail registration criteria, governance, and operational standards."
+  - question: "Can consent be withdrawn under DPDP?"
+    answer: "Yes. Section 6(4) gives data principals an unconditional right to withdraw consent at any time. Withdrawal must be as easy as giving consent. The data fiduciary must cease processing within a reasonable period and ensure that data processors also cease. Withdrawal does not affect the lawfulness of processing before withdrawal or processing on grounds other than consent."
+  - question: "Is opt-out consent valid for marketing emails under DPDP?"
+    answer: "No. Marketing communications using personal data require affirmative opt-in consent under Section 6. The pre-checked or opt-out model that was tolerable under the SPDI Rules is no longer compliant. The template marketing privacy notice should include a separate, granular consent for marketing distinct from service-delivery consent."
+  - question: "Does DPDP allow consent for children?"
+    answer: "Section 9 prohibits processing of children's personal data (under 18) except with verifiable parental consent. The verification mechanism is to be prescribed in the DPDP Rules. Tracking, behavioural monitoring, and targeted advertising at children are prohibited regardless of consent. Online platforms must implement age-gating mechanisms."
+schema:
+  type: "Article"
+---
+
+<div className="not-prose mb-10 rounded-2xl border border-brand-200 bg-brand-50 p-6 md:p-7">
+  <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.16em] text-brand-600">
+    TL;DR
+  </div>
+  <p className="mt-2 text-[15px] leading-relaxed text-paper-900/85">
+    The DPDP Act, 2023 requires consent that is <strong>free, specific,
+    informed, unconditional, and unambiguous</strong>, with a clear
+    affirmative action. Pre-ticked boxes, bundled cross-purpose consent,
+    and opt-out marketing models all fail this test.
+    <strong>Section 6(4)</strong> grants an unconditional withdrawal
+    right that must be as easy as giving consent.
+    <strong>Section 9</strong> prohibits processing of children's data
+    without verifiable parental consent. Most Indian counsel underestimate
+    the operational difficulty of separating consent from terms of service
+    — the two cannot be bundled.
+  </p>
+</div>
+
+## Why consent is the hardest DPDP obligation to operationalise
+
+Most of the DPDP Act translates cleanly into existing compliance
+workflows. The notice obligation under Section 5 is a privacy-policy
+update. The Section 8(5) processor contract obligation is a DPA refresh,
+covered in the [DPDP compliance guide](/resources/dpdp/dpdp-compliance-guide).
+The breach notification obligation is an incident-response runbook
+update.
+
+Consent is different. The Section 6 standard demands a structural
+re-think of how Indian companies collect personal data, and most existing
+consent flows fail at least one of the five tests. A signup screen that
+bundles "I accept the Terms of Service and Privacy Policy" into a single
+checkbox is not specific. A WhatsApp opt-in for "all communications" is
+not granular. A loyalty programme enrollment that conditions reward
+points on consenting to marketing is not unconditional.
+
+This guide walks through the Section 6 standard in operational detail,
+then maps the gap analysis for typical Indian B2C and B2B consent flows,
+and ends with a 30/60/90-day remediation plan. It is written for in-house
+counsel and product teams who need to ship consent fixes rather than
+debate them in committee.
+
+## The five tests under Section 6(1)
+
+Section 6(1) of the DPDP Act sets the consent standard:
+
+> "The consent given by the Data Principal shall be free, specific,
+> informed, unconditional and unambiguous with a clear affirmative
+> action..."
+
+Each adjective is a separate compliance test. A consent flow must pass
+all five — failing any one invalidates the consent and the underlying
+processing.
+
+### Free
+
+Consent is "free" only when refusal is genuinely costless. Two patterns
+fail this test:
+
+- **Bundled with terms of service**: making consent a precondition for
+  using the service when the data isn't required to provide the service
+  is not free consent. The classical example: an e-commerce platform
+  conditioning checkout on consenting to behavioural advertising.
+- **Penalised refusal**: charging extra, withholding features, or
+  degrading service in exchange for refusing optional processing.
+
+The DPDP standard mirrors GDPR Article 7(4): consent is presumed not
+free where performance of a contract is conditional on consent for
+processing not necessary for that contract.
+
+### Specific
+
+The consent request must identify each processing purpose. A single
+"yes" cannot cover six unrelated purposes. The draft DPDP Rules expect
+granular consent — separate yes-no controls for service delivery,
+marketing, analytics, and any third-party data sharing.
+
+This is the single largest gap in existing Indian consent flows. The
+typical pattern bundles everything under "I agree to the Privacy
+Policy" and treats clicking "Sign Up" as consent. Both fail the
+specificity test.
+
+### Informed
+
+The consent must follow a Section 5 notice in plain language. The
+notice must contain the categories of personal data, the purposes, the
+manner of exercising rights, and the manner of complaining to the
+Board. The draft Rules attach a notice template (Schedule A, Form 1).
+
+For mobile flows, layered notice is permitted: a short summary at the
+collection point with the full notice one click away. The summary must
+be substantive — "we use your data" is not enough — and the link to the
+full notice must be working and accessible.
+
+### Unconditional
+
+This is closely related to "free" but goes further. Consent cannot be
+contingent on the principal accepting any other terms. The pattern of
+"agree to consent, then we'll let you read the terms" is invalid.
+
+In practice, this means consent UI must come before commitment UI, and
+the relationship between the two must be one-way: refusing optional
+consent doesn't block service delivery.
+
+### Unambiguous, with clear affirmative action
+
+A pre-ticked checkbox is not unambiguous. Continued use of a service is
+not affirmative action. Click-through that doesn't distinguish consent
+from terms acceptance is not clear.
+
+The unambiguous standard requires a positive, distinguishable user
+action: a deliberate click on a consent control, separately from the
+"continue" button, with a record of the action.
+
+## Notice and consent: the relationship
+
+The DPDP framework separates notice (Section 5) from consent (Section
+6). The notice is what the data fiduciary tells the principal; the
+consent is what the principal gives back.
+<LegalCitation statute="Digital Personal Data Protection Act, 2023" section="5" text="Every Data Fiduciary shall, on or before requesting consent, give the Data Principal a notice in clear and plain language, accompanied by an English-language version if requested." />
+makes clear that the notice precedes the consent request.
+
+Operationally, this means:
+
+1. Show the notice (or its summary, with full notice accessible).
+2. Capture consent through a clear affirmative action.
+3. Log both — the version of the notice shown and the action taken.
+
+A common implementation gap: companies show the notice but don't
+maintain an audit log linking each principal's consent to the specific
+notice version shown to them. Without that log, refreshing the privacy
+policy invalidates the audit trail. The template logging schema
+captures: principal ID (or hash), notice version (semver), purpose
+identifiers, consent timestamp, IP address (hashed), user agent.
+
+## Consent Managers: a structural innovation
+
+Section 6(7) introduces Consent Managers — entities registered with the
+Data Protection Board that hold consents on behalf of data principals
+across multiple fiduciaries. The model is borrowed from the Account
+Aggregator framework that the RBI launched in 2021.
+
+The mechanics:
+
+- Data principals register with one or more Consent Managers.
+- The Consent Manager presents a unified dashboard of consents the
+  principal has given to data fiduciaries that have integrated with the
+  Manager.
+- The principal can review, modify, or withdraw consent through the
+  Manager.
+- Data fiduciaries connected to the Manager receive consent updates in
+  real time.
+
+Consent Managers will be most relevant in regulated sectors —
+financial services, healthcare, telecom — where multiple fiduciaries
+operate on the same principal and where consent management at scale is
+operationally complex. For most B2B SaaS engagements, the Consent
+Manager framework is overkill; direct fiduciary-principal consent
+remains the default.
+
+The draft DPDP Rules detail Consent Manager registration: minimum net
+worth, governance standards, technical interoperability, audit
+obligations. As of May 2026, the registration framework is not yet
+operational. Indian counsel should treat Consent Managers as a 12-24
+month roadmap item rather than an immediate compliance requirement.
+
+## Consent withdrawal: the mechanics
+
+<LegalCitation statute="Digital Personal Data Protection Act, 2023" section="6" text="The Data Principal shall have the right to withdraw consent at any time. The consequences of such withdrawal shall be borne by the Data Principal. The ease of withdrawing consent shall be comparable to the ease with which it was given." />
+is the most-litigated consent provision in privacy law globally and the
+DPDP version is unforgiving. Three operational requirements:
+
+1. **Mechanism parity**: if consent was given via a one-click in-app
+   action, withdrawal must also be one click. Hiding withdrawal behind
+   a "contact support" workflow is non-compliant.
+2. **Effect on processing**: data fiduciaries must cease processing
+   within a reasonable period after withdrawal. The draft Rules suggest
+   30 days as the maximum tolerable lag.
+3. **Effect on processors**: the data fiduciary must propagate the
+   withdrawal to all processors that received the data. Processor
+   contracts (under Section 8(5)) must include a withdrawal-propagation
+   obligation.
+
+The template withdrawal flow:
+
+- In-app "Manage Consents" panel listing each granular consent with a
+  toggle.
+- Email withdrawal at a published address (privacy@company.com),
+  acknowledged within 24 hours.
+- WhatsApp / SMS keyword-based withdrawal for marketing consents
+  (consistent with TRAI Telecom Commercial Communications Customer
+  Preference Regulations).
+
+## Pre-existing consents: the transition obligation
+
+For data already in the fiduciary's systems before DPDP enforcement,
+Section 5(2) requires the fiduciary to notify the principal of the
+processing as soon as reasonably practicable, with a reference to the
+manner of withdrawing consent.
+
+Most counsel are running a transition campaign:
+
+- **Day 0**: notify all existing customers via email about the DPDP
+  refresh, with the new privacy notice attached.
+- **Day 30**: send a reminder to recipients who haven't opened the first
+  email.
+- **Day 60**: send a final reminder with a clear "withdraw consent"
+  link.
+- **Day 90**: treat non-response as continued consent if the original
+  consent met DPDP-equivalent standards; otherwise, suspend processing
+  until consent refresh.
+
+This conservative approach minimises legal risk but accepts some
+customer churn. The aggressive approach — treating non-response as
+implied consent across the board — risks Section 6 challenges if the
+original consent wasn't DPDP-equivalent.
+
+## Children's consent: a higher bar
+
+<LegalCitation statute="Digital Personal Data Protection Act, 2023" section="9" text="A Data Fiduciary shall, before processing any personal data of a child or a person with disability who has a lawful guardian, obtain verifiable consent of the parent of such child or the lawful guardian." />
+imposes three obligations:
+
+1. **Verifiable parental consent** for any processing of a child's
+   personal data. The verification mechanism is to be prescribed.
+2. **No tracking, behavioural monitoring, or targeted advertising** at
+   children, regardless of consent. This is an absolute prohibition.
+3. **Age-gating** at the platform level for online services.
+
+For Indian SaaS targeting B2C use cases, age-gating is a product
+question first and a legal one second. The current best-practice
+approach is self-declaration at signup with secondary verification via
+parental email, OTP-based parental authentication, or DigiLocker
+integration. None of these are explicitly mandated yet — the Rules
+will prescribe.
+
+## Mapping consent to typical Indian flows
+
+Most Indian companies have one of four consent contexts. Each has
+distinct compliance challenges:
+
+| Flow                   | Common gaps                                | Highest-priority fix                        |
+| ---------------------- | ------------------------------------------ | ------------------------------------------- |
+| B2C signup             | Bundled ToS + privacy + marketing          | Separate granular consents                  |
+| B2B account creation   | No consent at all (treated as ToS)         | Add explicit consent for non-essential processing |
+| Marketing email opt-in | Pre-checked at checkout                    | Move to affirmative double opt-in           |
+| Mobile app permission  | OS permission ≠ DPDP consent              | Add in-app DPDP consent layer               |
+
+The B2B context surprises many counsel: even when the customer
+relationship is contractual, processing the customer's employees'
+personal data still triggers the consent obligation. The contract
+provides one lawful basis (legitimate processing under Section 7), but
+optional uses — marketing, analytics, profiling — still need consent.
+
+## A 30/60/90-day remediation plan
+
+For an Indian company starting from typical pre-DPDP consent flows:
+
+### Days 1-30: notice and audit
+
+- Audit existing consent flows for all five Section 6 tests.
+- Update the Privacy Notice to the Section 5 standard.
+- Stand up the consent audit log infrastructure.
+- Identify all third parties receiving personal data and confirm Section
+  8(5) processor contracts are in place.
+
+### Days 31-60: consent UX rebuild
+
+- Separate granular consents in signup flows.
+- Move marketing opt-in to affirmative double opt-in.
+- Implement in-app withdrawal mechanism.
+- Begin pre-existing consent refresh campaign.
+
+### Days 61-90: enforcement and monitoring
+
+- Test withdrawal mechanism end-to-end.
+- Confirm processor contracts propagate withdrawal.
+- Implement children's age-gating.
+- Stand up monitoring for consent metrics: take-up rate, withdrawal
+  rate, time-to-effect.
+
+Companies that work through this 90-day plan will be ahead of roughly
+80% of their peers when the Data Protection Board begins enforcement.
+
+## How Clauseium helps
+
+Reviewing every customer-facing flow and every privacy-relevant
+contract for DPDP compliance is itself a months-long project. Clauseium
+runs a DPDP compliance scan on contracts and privacy notices, flags the
+five Section 6 tests, identifies bundled consents, and produces a
+prioritised remediation list. For most counsel, that turns the audit
+phase from six weeks of clause-by-clause review into one week of
+exception triage.
+
+[Try Clauseium free →](/signup)
+
+## Final checklist
+
+Before signing off on a consent flow as DPDP-compliant, verify:
+
+1. Notice precedes consent and is in plain language.
+2. Each processing purpose has a separate, granular consent.
+3. Consent is not bundled with acceptance of unrelated terms.
+4. Refusing optional consent does not block service delivery.
+5. The consent action is affirmative (no pre-ticked boxes).
+6. The withdrawal mechanism is as easy as the consent mechanism.
+7. The audit log captures notice version, consent timestamp, and the
+   specific purposes consented to.
+8. Processor contracts include the withdrawal-propagation obligation.
+9. Children's data triggers the Section 9 verifiable parental consent
+   workflow.
+10. The pre-existing consent refresh campaign is scheduled or complete.
+
+Each of these items is a distinct project. Treating them as a single
+"DPDP consent fix" understates the operational lift and is the most
+common reason compliance programmes slip.
