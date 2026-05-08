@@ -14,7 +14,10 @@ export const dynamic = "force-static";
 export const dynamicParams = false;
 
 export function generateStaticParams() {
-  return CATEGORIES.map((category) => ({ category }));
+  // Exclude `comparisons` — that listing lives at /compare (canonical).
+  return CATEGORIES.filter((c) => c !== "comparisons").map((category) => ({
+    category,
+  }));
 }
 
 function isCategory(value: string): value is Category {

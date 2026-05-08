@@ -60,19 +60,26 @@ export function Hero() {
               lineHeight: 1.02,
             }}
           >
-            Review contracts in 6 minutes,
-            <br />
             <GradientText className="from-white via-brand-200 to-counsel-200">
-              not 6 hours.
+              India&apos;s AI Contract
             </GradientText>
+            <br />
+            Review Platform.
           </h1>
         </FadeUp>
 
+        <FadeUp delay={0.15}>
+          <h2 className="mx-auto mt-6 max-w-3xl font-display text-[clamp(1.15rem,1.4vw+0.5rem,1.55rem)] font-semibold leading-snug tracking-tight text-white/90">
+            Review contracts in 6 minutes, not 6 hours — grounded in the
+            Indian Contract Act, DPDP, and your own playbook.
+          </h2>
+        </FadeUp>
+
         <FadeUp delay={0.2}>
-          <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-ink-300 md:text-lg">
+          <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-ink-300 md:text-lg">
             Upload a vendor MSA. Get a redlined Word doc in 6 minutes — every
-            clause checked against the Indian Contract Act, DPDP, and your
-            playbook. Every risk flagged. Every citation verified.
+            clause checked, every risk flagged, every citation verified
+            against Indian Kanoon and India Code.
           </p>
         </FadeUp>
 

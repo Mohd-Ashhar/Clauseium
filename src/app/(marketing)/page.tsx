@@ -11,10 +11,28 @@ import { Pricing } from "@/components/marketing/pricing";
 import { FAQ } from "@/components/marketing/faq";
 import { FinalCTA } from "@/components/marketing/final-cta";
 import { InlineCTA } from "@/components/marketing/inline-cta";
+import { StructuredData } from "@/components/resources/structured-data";
+import {
+  HOMEPAGE_FAQS,
+  generateHomepageFAQSchema,
+  generateMarketingOrganizationSchema,
+  generateProductSchema,
+  generateSoftwareApplicationSchema,
+  generateWebSiteSchema,
+} from "@/lib/schema-marketing";
 
 export default function HomePage() {
+  const schemas = [
+    generateMarketingOrganizationSchema(),
+    generateWebSiteSchema(),
+    generateSoftwareApplicationSchema(),
+    generateProductSchema(),
+    generateHomepageFAQSchema(HOMEPAGE_FAQS),
+  ].filter(Boolean) as object[];
+
   return (
     <>
+      <StructuredData schemas={schemas} />
       <Hero />
       <LogoCloud />
       <DarkToLightTransition />

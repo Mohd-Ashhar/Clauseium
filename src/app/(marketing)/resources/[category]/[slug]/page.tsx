@@ -22,10 +22,13 @@ export const dynamicParams = false;
 
 export async function generateStaticParams() {
   const all = await getAllContent();
-  return all.map((item) => ({
-    category: item.frontmatter.category,
-    slug: item.frontmatter.slug,
-  }));
+  // Exclude `comparisons` — those render at /compare/[slug] (canonical).
+  return all
+    .filter((item) => item.frontmatter.category !== "comparisons")
+    .map((item) => ({
+      category: item.frontmatter.category,
+      slug: item.frontmatter.slug,
+    }));
 }
 
 function isCategory(value: string): value is Category {

@@ -94,6 +94,23 @@ export const frontmatterSchema = z.object({
     })
     .default({ type: "Article" }),
   ogImage: z.string().optional(),
+  comparison: z
+    .object({
+      competitor: z.object({
+        name: z.string(),
+        url: z.string().url().optional(),
+        tagline: z.string().optional(),
+      }),
+      featureMatrix: z.array(
+        z.object({
+          feature: z.string(),
+          clauseium: z.union([z.string(), z.boolean()]),
+          competitor: z.union([z.string(), z.boolean()]),
+        }),
+      ),
+      verdict: z.string().optional(),
+    })
+    .optional(),
 });
 
 export type Frontmatter = z.infer<typeof frontmatterSchema>;

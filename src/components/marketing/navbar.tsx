@@ -9,11 +9,10 @@ import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetTitle } from "@/com
 import { cn } from "@/lib/utils";
 
 const links = [
-  { label: "Product", href: "/#features" },
-  { label: "Pricing", href: "/#pricing" },
-  { label: "Customers", href: "/#testimonials" },
+  { label: "Features", href: "/features" },
+  { label: "Pricing", href: "/pricing" },
+  { label: "Compare", href: "/compare" },
   { label: "Resources", href: "/resources" },
-  { label: "Docs", href: "#" },
 ];
 
 export function Navbar({ forceLight = false }: { forceLight?: boolean }) {
@@ -21,6 +20,10 @@ export function Navbar({ forceLight = false }: { forceLight?: boolean }) {
   const lightByRoute =
     forceLight ||
     pathname?.startsWith("/resources") ||
+    pathname?.startsWith("/compare") ||
+    pathname?.startsWith("/features") ||
+    pathname?.startsWith("/pricing") ||
+    pathname?.startsWith("/security") ||
     false;
   const [scrolled, setScrolled] = useState(lightByRoute);
 

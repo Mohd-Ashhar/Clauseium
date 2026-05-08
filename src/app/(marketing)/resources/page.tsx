@@ -20,7 +20,9 @@ export const metadata: Metadata = {
 export default async function ResourcesHubPage() {
   const all = await getAllContent();
   const categoriesInUse = await getCategoriesInUse();
-  const featured = all.slice(0, 6);
+  const featured = all
+    .filter((item) => item.frontmatter.category !== "comparisons")
+    .slice(0, 6);
 
   return (
     <>
@@ -60,7 +62,7 @@ export default async function ResourcesHubPage() {
             Browse by category
           </h2>
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {CATEGORIES.map((cat) => {
+            {CATEGORIES.filter((c) => c !== "comparisons").map((cat) => {
               const isLive = categoriesInUse.includes(cat);
               return (
                 <Link

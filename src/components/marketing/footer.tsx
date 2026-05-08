@@ -22,12 +22,11 @@ interface FooterLink {
 }
 
 const product: FooterLink[] = [
-  { label: "Contract Review", href: "/#features" },
-  { label: "Clause Drafter", href: "/#features" },
-  { label: "DPDP Scanner", href: "/#features" },
-  { label: "Word Add-in", href: "#" },
-  { label: "API", href: "#" },
-  { label: "Pricing", href: "/#pricing" },
+  { label: "All Features", href: "/features" },
+  { label: "AI Contract Review", href: "/features/contract-review" },
+  { label: "DPDP Compliance", href: "/features/dpdp-compliance" },
+  { label: "Compare", href: "/compare" },
+  { label: "Pricing", href: "/pricing" },
 ];
 
 const resources: FooterLink[] = [
