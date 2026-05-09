@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 interface SidebarContextValue {
   collapsed: boolean;
@@ -14,12 +15,19 @@ const SidebarContext = createContext<SidebarContextValue | null>(null);
 export function SidebarProvider({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = usePathname();
 
   // Restore persisted preference on mount.
   useEffect(() => {
     const stored = typeof window !== "undefined" ? localStorage.getItem("clauseium.sidebar.collapsed") : null;
     if (stored === "1") setCollapsed(true);
   }, []);
+
+  // Close the mobile drawer on every route change so its backdrop never
+  // lingers after the user taps a nav link.
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
 
   const toggleCollapsed = useCallback(() => {
     setCollapsed((prev) => {
