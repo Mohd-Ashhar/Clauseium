@@ -35,7 +35,7 @@
     "next-mdx-remote": "^6.0.0",
     "openai": "^6.35.0",
     "p-retry": "^7.1.1",
-    "pdf-parse": "^2.4.5",
+    "pdf-parse": "^1.1.4",
     "postcss": "^8.5.13",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
