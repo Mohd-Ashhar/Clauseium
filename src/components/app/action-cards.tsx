@@ -1,21 +1,19 @@
 import Link from "next/link";
 import { AlertTriangle, ArrowRight, Shield } from "lucide-react";
-import { cn } from "@/lib/utils";
-import type { Contract } from "@/types/contract";
-import { topFlaggedClauses } from "@/lib/mock-data";
 
 interface AttentionStats {
   needsAttention: number;
   highRisk: number;
-  awaitingApproval: number;
 }
 
 export function AttentionCard({ stats }: { stats: AttentionStats }) {
-  const { needsAttention, highRisk, awaitingApproval } = stats;
-  const contextParts: string[] = [];
-  if (highRisk > 0) contextParts.push(`${highRisk} with high-risk clauses`);
-  if (awaitingApproval > 0) contextParts.push(`${awaitingApproval} awaiting approval`);
-  const context = contextParts.join(" · ") || "All caught up";
+  const { needsAttention, highRisk } = stats;
+  const context =
+    highRisk > 0
+      ? `${highRisk} ${highRisk === 1 ? "contract has" : "contracts have"} high-risk clauses`
+      : needsAttention > 0
+        ? "Awaiting your review"
+        : "All caught up";
 
   return (
     <div className="bg-ink-850 border border-ink-700 border-l-4 border-l-risk-med rounded-xl p-6 flex flex-col gap-3 md:col-span-3">
@@ -53,24 +51,9 @@ interface HighRiskStats {
   contractCount: number;
 }
 
-export function HighRiskCard({
-  stats,
-  contracts,
-}: {
-  stats: HighRiskStats;
-  contracts: Contract[];
-}) {
-  // Build top 3 most-frequent high-risk clause categories from across our high-risk contracts.
-  // For mock data, fall back to topFlaggedClauses since per-contract clause data isn't loaded.
-  void contracts;
-  const top = topFlaggedClauses.slice(0, 3);
-
+export function HighRiskCard({ stats }: { stats: HighRiskStats }) {
   return (
-    <div
-      className={cn(
-        "bg-ink-850 border border-ink-700 border-l-4 border-l-risk-high rounded-xl p-6 flex flex-col gap-3 md:col-span-2",
-      )}
-    >
+    <div className="bg-ink-850 border border-ink-700 border-l-4 border-l-risk-high rounded-xl p-6 flex flex-col gap-3 md:col-span-2">
       <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.08em] text-risk-high font-medium">
         <Shield className="h-3.5 w-3.5" />
         High-risk clauses
@@ -86,16 +69,6 @@ export function HighRiskCard({
       <p className="text-[13px] text-ink-300">
         across {stats.contractCount} {stats.contractCount === 1 ? "contract" : "contracts"}
       </p>
-
-      <ul className="space-y-1 mt-1">
-        {top.map((c) => (
-          <li key={c.category} className="flex items-center gap-2 text-[13px] text-ink-300">
-            <span className="h-1.5 w-1.5 rounded-full bg-risk-high shrink-0" />
-            <span className="flex-1 truncate">{c.label}</span>
-            <span className="text-ink-500 font-[family-name:var(--font-mono)]">{c.count}</span>
-          </li>
-        ))}
-      </ul>
     </div>
   );
 }

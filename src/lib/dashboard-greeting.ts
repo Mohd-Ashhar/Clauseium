@@ -1,4 +1,4 @@
-import type { Contract, User } from "@/types/contract";
+import type { User } from "@/types/contract";
 import { greeting as timeGreeting } from "./format";
 
 export interface DashboardGreeting {
@@ -7,17 +7,20 @@ export interface DashboardGreeting {
   state: "needs_attention" | "in_progress" | "caught_up";
 }
 
+export interface GreetingStats {
+  needsAttention: number;
+  inProgress: number;
+  highRisk: number;
+}
+
 export function getDashboardGreeting(
   user: User,
-  contracts: Contract[],
+  stats: GreetingStats,
   now: Date = new Date(),
 ): DashboardGreeting {
   const first = user.name.split(" ")[0];
   const title = `${timeGreeting(now)}, ${first}`;
-
-  const needsAttention = contracts.filter((c) => c.status === "needs_attention").length;
-  const highRisk = contracts.filter((c) => c.riskSummary.high > 0).length;
-  const inProgress = contracts.filter((c) => c.status === "in_progress").length;
+  const { needsAttention, inProgress, highRisk } = stats;
 
   if (needsAttention > 0) {
     const noun = needsAttention === 1 ? "contract" : "contracts";

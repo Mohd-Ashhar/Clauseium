@@ -1,5 +1,5 @@
 import type { ClauseAnalysis } from "@/types/contract";
-import type { ClauseState } from "@/components/review/review-context";
+import type { ClauseState } from "../types";
 
 export type ExportMode = "redlined" | "clean";
 

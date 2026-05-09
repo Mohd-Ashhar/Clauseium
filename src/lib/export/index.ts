@@ -1,5 +1,5 @@
 import type { Contract } from "@/types/contract";
-import type { ClauseState } from "@/components/review/review-context";
+import type { ClauseState } from "./types";
 import { buildFilename, mimeTypeFor } from "./filename";
 
 export type ExportFormat = "redlined" | "clean" | "summary" | "full";

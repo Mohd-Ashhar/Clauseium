@@ -1,6 +1,6 @@
 import { Document, Page, Text, View } from "@react-pdf/renderer";
 import type { ClauseAnalysis, Contract } from "@/types/contract";
-import type { ClauseState } from "@/components/review/review-context";
+import type { ClauseState } from "../types";
 import { contractTypeFullLabel, formatLongDate } from "@/lib/format";
 import { colors } from "../shared/branding";
 import { clauseStateLabel } from "../shared/decisions";

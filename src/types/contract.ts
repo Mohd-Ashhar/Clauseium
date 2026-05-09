@@ -118,29 +118,6 @@ export interface Contract {
   documentSections?: DocumentSection[];
 }
 
-export interface DashboardMetrics {
-  contractsInReview: { value: number; trend: number; trendDirection: "up" | "down" };
-  avgReviewTime: { value: number; unit: string; trend: number; trendDirection: "up" | "down" };
-  riskFlagsResolved: { value: number; period: string };
-  playbookAdherence: { value: number; unit: string };
-}
-
-export interface ActivityItem {
-  id: string;
-  user: { name: string; initials: string; color: string };
-  action: string;
-  target: string;
-  timestamp: Date;
-  type: "review" | "upload" | "approve" | "comment" | "assign";
-}
-
-export interface TopClauseFlag {
-  category: ClauseCategory;
-  label: string;
-  count: number;
-  trend: "up" | "down" | "stable";
-}
-
 export interface User {
   id: string;
   name: string;
