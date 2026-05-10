@@ -1,0 +1,276 @@
+---
+title: "Limitation of Liability Clauses Under Indian Law (2026 Drafting Guide)"
+description: "A drafting guide to limitation of liability clauses in Indian commercial contracts. Covers Section 73 + 74 of the Indian Contract Act, super-cap exceptions, DPDP carve-outs, and standard market positions."
+slug: "limitation-of-liability-india"
+category: "clauses"
+keywords:
+  - "limitation of liability India"
+  - "limitation of liability clause Indian Contract Act"
+  - "LoL clause India"
+  - "Section 73 Indian Contract Act"
+  - "Section 74 Indian Contract Act"
+  - "liability cap India commercial contracts"
+  - "super cap exception India"
+author:
+  name: "Anas Javed"
+  role: "Advocate, Bar Council of Uttar Pradesh"
+  linkedin: "https://www.linkedin.com/in/clauseium-advocate"
+  bio: "Practising advocate specialising in commercial contracts, technology law, and DPDP compliance for Indian SaaS and fintech companies."
+publishedAt: "2026-05-09"
+updatedAt: "2026-05-09"
+difficulty: "advanced"
+applicableLaws:
+  - name: "Indian Contract Act, 1872"
+    sections: ["§ 73", "§ 74", "§ 23"]
+  - name: "Specific Relief Act, 1963"
+    sections: []
+  - name: "Digital Personal Data Protection Act, 2023"
+    sections: ["§ 33"]
+  - name: "Consumer Protection Act, 2019"
+    sections: ["§ 2(34)"]
+relatedTemplates:
+  - "vendor-agreement-template-india"
+  - "saas-agreement-template-india"
+  - "nda-template-india"
+relatedArticles:
+  - "indemnification-clause-india"
+  - "dpdp-compliance-guide"
+cta:
+  type: "free_trial"
+  text: "Review your LoL clauses with Clauseium"
+  gated: false
+faq:
+  - question: "Are limitation of liability clauses enforceable in India?"
+    answer: "Yes, in commercial B2B contracts negotiated between parties of comparable bargaining power. Indian courts enforce limitation of liability clauses under Section 23 of the Indian Contract Act (which voids agreements opposed to public policy) and Section 73 (compensation for breach), reading the cap as a contractual allocation of risk. Limitation clauses are unenforceable in consumer contracts under the Consumer Protection Act 2019, in employment contracts where they undermine statutory protections, and where the breach amounts to gross negligence or fraud."
+  - question: "What is the standard liability cap in Indian B2B contracts?"
+    answer: "12 months of fees paid by the customer to the supplier in the immediately preceding contract year is the dominant market position. For longer-term enterprise contracts (3+ year terms), the cap is sometimes 24 months. The cap typically applies to the supplier's liability; the customer's liability is usually unlimited for fees due. This 12-month standard is consistent with Indian arbitration tribunal decisions over the past decade."
+  - question: "What are super-cap exceptions and what should they cover?"
+    answer: "Super-cap exceptions are categories of liability that escape the general 12-month cap. Standard Indian-market super-cap exceptions are: (i) IP infringement indemnification — uncapped, (ii) breach of confidentiality — capped at 24 months or uncapped, (iii) gross negligence and wilful misconduct — uncapped, (iv) fraud — uncapped, (v) DPDP Act regulator penalties — uncapped, and (vi) payment of accrued fees — uncapped. Some contracts add a super-cap for personal injury or property damage where physical-world risks exist."
+  - question: "Are exclusions of indirect/consequential damages enforceable in India?"
+    answer: "Yes, with limits. Indian courts enforce exclusions of indirect, incidental, consequential, special, or punitive damages under Section 23 freedom-of-contract principles, provided the exclusion is clear and the parties had comparable bargaining power. The exclusion does not work against gross negligence or wilful misconduct (those carve-outs are mandatory under Indian law) and may be read narrowly against the drafter under contra proferentem in ambiguous cases."
+  - question: "What's the difference between Sections 73 and 74 of the Indian Contract Act?"
+    answer: "Section 73 governs damages for breach of contract — the breaching party pays compensation for loss that naturally arose from the breach (the 'foreseeability' rule). Section 74 governs liquidated damages — pre-agreed sums named in the contract as compensation for specified breaches. Indian courts limit Section 74 awards to 'reasonable compensation' regardless of the named amount, applying the genuine pre-estimate test. Most LoL clauses interact with Section 73 (general damages cap) and indemnity clauses interact with Section 74 (pre-agreed liquidated damages)."
+  - question: "Do limitation of liability clauses survive termination?"
+    answer: "Yes — and they should be drafted to survive explicitly. Indian courts have held that survival of LoL clauses follows the contract's express survival provision. If the survival clause doesn't list 'limitation of liability,' there is room for argument that the cap doesn't apply post-termination. Standard drafting includes LoL in the survival clause alongside confidentiality, indemnification, governing law, and dispute resolution."
+schema:
+  type: "Article"
+---
+
+<div className="not-prose mb-10 rounded-2xl border border-brand-200 bg-brand-50 p-6 md:p-7">
+  <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.16em] text-brand-600">
+    TL;DR
+  </div>
+  <p className="mt-2 text-[15px] leading-relaxed text-paper-900/85">
+    Limitation of liability clauses in Indian commercial contracts are
+    enforceable under the Indian Contract Act, 1872, with the
+    market-standard cap at <strong>12 months of fees</strong> paid by the
+    customer in the preceding year. Super-cap exceptions sit outside that
+    cap: <strong>IP infringement (uncapped)</strong>,
+    <strong> confidentiality breach (24 months or uncapped)</strong>,
+    <strong> gross negligence and fraud (uncapped)</strong>, and
+    — newly important — <strong>DPDP Act regulator penalties under Section
+    33 (uncapped)</strong>. Exclusions of indirect and consequential damages
+    are enforceable. The clause must explicitly survive termination.
+  </p>
+</div>
+
+## Why limitation of liability is the most-negotiated clause in Indian B2B contracts
+
+Three clauses get re-negotiated in nearly every commercial deal: indemnification, limitation of liability, and the relationship between the two. The other clauses follow templates. These three are where the actual risk allocation happens.
+
+Limitation of liability is also the clause most likely to be drafted incorrectly in templates copied from US precedents. The Indian framework is similar in structure but different in detail. The Section 23 public-policy doctrine controls what cannot be excluded. Section 74 caps liquidated damages at "reasonable compensation" regardless of the contractually named amount. The DPDP Act, 2023 introduces regulatory penalty exposure that older templates don't address.
+
+This guide walks through the drafting framework for Indian B2B contracts, the standard market positions, and the carve-outs that matter most. It is written for in-house counsel reviewing or drafting commercial contracts under Indian law.
+
+For a related drafting question, see the [indemnification clause deep-dive](/resources/clauses/indemnification-clause-india) — limitation of liability and indemnification interact in ways that materially affect risk allocation.
+
+## The Indian framework: Sections 73, 74, and 23
+
+The Indian Contract Act, 1872 governs limitation of liability through three Sections.
+
+### Section 73 — compensation for breach
+
+> "When a contract has been broken, the party who suffers by such breach is entitled to receive, from the party who has broken the contract, compensation for any loss or damage caused to him thereby, which naturally arose in the usual course of things from such breach, or which the parties knew, when they made the contract, to be likely to result from the breach of it."
+
+Section 73 sets the default liability framework — the breaching party pays compensation for foreseeable loss. A limitation of liability clause modifies this default by capping the maximum compensation. The clause is enforceable as a contractual modification of Section 73.
+
+### Section 74 — liquidated damages
+
+Section 74 governs sums named in the contract as compensation for specified breaches. Indian courts limit Section 74 awards to "reasonable compensation" — even if the contractually named amount is higher, the court will not award more than what is genuinely a pre-estimate of loss. This matters for indemnity clauses (which often involve liquidated sums) more than for general LoL clauses.
+
+### Section 23 — what cannot be excluded
+
+> "The consideration or object of an agreement is lawful, unless... the Court regards it as immoral, or opposed to public policy."
+
+Indian courts read Section 23 to invalidate exclusions for:
+
+- **Gross negligence and wilful misconduct** — cannot be capped or excluded.
+- **Fraud** — cannot be capped or excluded.
+- **Death or personal injury caused by negligence** — cannot be capped or excluded (where applicable).
+- **Statutory penalties** — generally cannot be allocated to the non-breaching party.
+
+These mandatory carve-outs must appear in every Indian-law LoL clause. Drafting them as super-cap exceptions is standard practice.
+
+## The market-standard structure
+
+Indian B2B contracts use a four-tier liability framework. Each tier has different rules.
+
+### Tier 1: General cap
+
+Applies to most breach categories. Standard cap: **12 months of fees paid by the customer in the immediately preceding contract year**. Some longer-term enterprise contracts use 24 months.
+
+<ClauseExample title="Tier 1: General LoL cap" jurisdiction="India · 2026">
+
+Subject to Clause [13.3] (Super-Cap Exceptions) and Clause [13.4]
+(Excluded Damages), each Party's aggregate liability arising out of or in
+connection with this Agreement, whether in contract, tort (including
+negligence), breach of statutory duty, misrepresentation, or otherwise,
+shall not exceed an amount equal to the fees paid by the Customer to the
+Provider during the twelve (12) months immediately preceding the event
+giving rise to the claim.
+
+</ClauseExample>
+
+Three commercial points:
+
+- **Symmetry**: cap applies to both parties' liability, but customer's liability for accrued fees is usually unlimited (carved out separately).
+- **Aggregate vs per-event**: most contracts use aggregate annual cap; some use per-event cap with a 2× annual ceiling.
+- **Calculation period**: "12 months preceding the event giving rise to the claim" is precise; "12 months preceding the claim being made" is vaguer and slightly less customer-favourable.
+
+### Tier 2: Excluded damages
+
+Indirect, consequential, special, incidental, and punitive damages are excluded under both parties' liability — even within the general cap. This is enforceable in commercial contracts under Section 23.
+
+<ClauseExample title="Tier 2: Excluded damages" jurisdiction="India · 2026">
+
+Notwithstanding any other provision of this Agreement, in no event shall
+either Party be liable to the other for any indirect, incidental,
+consequential, special, exemplary, or punitive damages, or for any loss
+of profits, revenue, business, or goodwill, whether or not the
+possibility of such damages was foreseeable, except in respect of the
+Super-Cap Exceptions set out in Clause [13.3].
+
+</ClauseExample>
+
+Three drafting notes:
+
+- **Loss of profits**: this is the most-litigated exclusion. Customers push back because lost profits are exactly the harm they're trying to recover. Standard market compromise: lost profits excluded under the general cap, but allowed within the IP and confidentiality super-caps.
+- **Foreseeability override**: the "whether or not foreseeable" language is important. Without it, lost profits become recoverable as "naturally arising" under Section 73 if the loss was foreseeable.
+- **Super-cap interaction**: the exclusion must explicitly carve out super-cap categories, otherwise the IP indemnity loses much of its value.
+
+### Tier 3: Super-cap exceptions
+
+Categories of liability that escape the general 12-month cap. Standard Indian-market super-cap categories:
+
+| Category | Standard cap | Buyer-favourable position |
+| --- | --- | --- |
+| IP infringement indemnification | Uncapped | Uncapped |
+| Breach of confidentiality | 24 months of fees | Uncapped |
+| Gross negligence | Uncapped | Uncapped |
+| Wilful misconduct | Uncapped | Uncapped |
+| Fraud | Uncapped | Uncapped |
+| DPDP Act regulator penalties | Uncapped | Uncapped |
+| Payment of accrued fees | Uncapped | Uncapped |
+
+The super-cap structure is the most-negotiated part of the LoL clause. Suppliers push back on uncapped IP indemnity (especially in lower-margin SaaS); buyers insist because the regulatory and market exposure of an IP infringement claim is genuinely uncapped.
+
+A market-standard compromise: IP indemnity uncapped, but with the supplier's right to procure rights, modify, or refund — limiting the supplier's exposure to the claim itself rather than to consequential damages.
+
+For deeper context, see the [indemnification clause deep-dive](/resources/clauses/indemnification-clause-india), which covers the indemnity-side framework that interacts with this super-cap structure.
+
+### Tier 4: Mandatory carve-outs
+
+Some categories cannot be capped or excluded under Indian law regardless of contract drafting. These overlap with the super-cap categories but are mandatory rather than negotiated:
+
+- **Gross negligence** — Section 23 reads exclusions of liability for gross negligence as opposed to public policy.
+- **Wilful misconduct and fraud** — same Section 23 doctrine.
+- **Personal injury caused by negligence** — where applicable (most B2B SaaS contracts don't trigger this).
+- **DPDP Act penalties on the breaching party** — the party that breaches DPDP and is fined by the Data Protection Board cannot allocate that penalty to the other party. (However, the indemnification of the *other party* for losses arising from a DPDP breach is a different question and is typically uncapped by negotiation.)
+
+## DPDP Act 2023 and limitation of liability
+
+The DPDP Act, 2023 introduces a new dimension to LoL drafting. Under
+<LegalCitation statute="Digital Personal Data Protection Act, 2023" section="33" text="Section 33 sets penalties up to ₹250 crore per breach for failure to take reasonable security safeguards, ₹200 crore for failure to notify a personal data breach, and ₹150 crore for failure to fulfil obligations to children." />,
+the Data Protection Board can impose penalties up to ₹250 crore per
+breach. Two questions for LoL drafting:
+
+1. **Does the supplier indemnify the customer for DPDP penalties?**
+   Standard market position: yes, where the penalty arises from the
+   supplier's failure to meet its processor obligations under DPDP
+   Section 8(5). The indemnity is usually uncapped — it sits as a
+   super-cap exception.
+
+2. **Do the supplier's own DPDP fines count against the customer's
+   liability cap?** Standard market position: no — each party bears its
+   own regulatory penalties. The LoL clause should explicitly carve
+   this out.
+
+The combined effect: the supplier's exposure for DPDP processor failures is uncapped (super-cap exception), but the customer's exposure for its own DPDP fiduciary failures stays with the customer. Older templates predating DPDP often miss this and apply the general cap to all data-protection-related losses, which leaves the customer dangerously under-protected.
+
+## Common drafting mistakes
+
+Patterns we see frequently in Indian commercial contracts:
+
+### 1. LoL applies to indemnification
+
+Counterparties draft "Notwithstanding anything else in this Agreement, our total liability is capped at 12 months of fees" without carving out the indemnification clause. The LoL cap then defeats the indemnity. Always carve out the indemnification clause from the LoL cap explicitly.
+
+### 2. Excluded damages exclusion goes too far
+
+"Loss of profits" is excluded under the general cap, fine. But if the exclusion also applies to the IP indemnity super-cap, the IP indemnity becomes worthless — most IP infringement damages are profits-based. Always carve excluded damages back in for super-cap exceptions.
+
+### 3. No survival clause
+
+If the LoL clause doesn't appear in the survival clause, there's an argument it doesn't apply post-termination. Always include LoL in the survival clause alongside confidentiality, indemnification, governing law, and dispute resolution.
+
+### 4. Per-event cap without aggregate ceiling
+
+"Per-event cap of 12 months of fees" sounds standard until you realize one breach can spawn ten claims. Use aggregate annual cap, or per-event with a 2× annual ceiling.
+
+### 5. Symmetry without thought
+
+Mirror LoL is fine when the risk profile is symmetric. For supplier-led breach risks (IP, security, performance), the supplier's liability is typically more exposed than the customer's. Don't mirror what shouldn't be mirrored.
+
+## Liquidated damages and Section 74
+
+Where the LoL clause meets liquidated damages — for example, in a vendor agreement with named SLA credits or an NDA with a named confidentiality breach payment — Section 74 imposes the "reasonable compensation" test. Indian courts limit awards to genuine pre-estimates of loss, regardless of the named amount.
+
+Drafting implications:
+
+- Name the liquidated damages amount in a way that's defensibly a pre-estimate.
+- Avoid penalty-flavoured language ("the Receiving Party shall pay ₹50 lakh as a penalty for breach"). Use "shall pay ₹50 lakh as agreed liquidated damages, being a genuine pre-estimate of the loss the Disclosing Party would suffer."
+- Don't let liquidated damages defeat the LoL cap. The relationship between Section 74 liquidated damages and the LoL cap should be drafted explicitly.
+
+## A practical drafting checklist
+
+When drafting or reviewing an LoL clause in an Indian commercial contract, verify:
+
+1. The clause expressly invokes the contract framework — not a generic exclusionary statement.
+2. The general cap is calibrated to the contract's term and value (12 months for standard B2B; 24 months for longer enterprise contracts).
+3. The aggregate vs per-event cap structure is explicit.
+4. Indirect / consequential / punitive damages are excluded with a "whether or not foreseeable" override.
+5. Super-cap exceptions are listed exhaustively: IP, confidentiality, gross negligence, wilful misconduct, fraud, DPDP penalties, accrued fees.
+6. The super-cap exceptions explicitly carve out the excluded damages exclusion (otherwise the super-cap loses teeth).
+7. The mandatory carve-outs (gross negligence, wilful misconduct, fraud) are uncapped.
+8. DPDP-specific exposure is addressed under the new framework, not under generic data-protection language.
+9. The LoL clause appears in the survival clause.
+10. The relationship to the indemnification clause and any liquidated damages provisions is explicit.
+
+## How Clauseium reviews limitation of liability clauses
+
+Clauseium parses every commercial contract into its LoL structure and compares it to the standard market positions above. It flags:
+
+- General caps below 12 months or above 24 months as deviations.
+- Missing super-cap exceptions for IP, confidentiality, gross negligence, fraud, DPDP.
+- Excluded-damages clauses that swallow the super-cap exceptions.
+- LoL clauses absent from the survival clause.
+- Liquidated damages provisions that look like penalties under Section 74.
+- DPDP-specific exposure handled under generic data-protection language.
+
+For most counsel, that turns a clause-by-clause LoL audit into a 5-minute exception review.
+
+[Try Clauseium free →](/signup)
+
+## Final notes
+
+Limitation of liability clauses are the place where careful drafting genuinely changes outcomes in arbitration. The market-standard structure above has been validated by a decade of Indian arbitration practice. Most Indian counsel reading this will recognize the framework; a smaller number will notice their existing templates miss two or three of the items in the checklist. Those are the ones worth fixing first.
