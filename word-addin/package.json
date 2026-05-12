@@ -1,0 +1,43 @@
+{
+  "name": "clauseium-word-addin",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Word task pane add-in for Clauseium contract review.",
+  "scripts": {
+    "start": "office-addin-debugging start manifests/manifest.dev.xml --dev-server \"npm run dev\" --dev-server-port 3001",
+    "start:sideload-only": "office-addin-debugging start manifests/manifest.dev.xml",
+    "stop": "office-addin-debugging stop manifests/manifest.dev.xml",
+    "dev": "webpack serve --mode development",
+    "build": "webpack --mode production",
+    "validate": "office-addin-manifest validate manifests/manifest.dev.xml",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "lucide-react": "^1.14.0",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.2.4",
+    "@types/office-js": "^1.0.490",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "clsx": "^2.1.1",
+    "copy-webpack-plugin": "^12.0.2",
+    "css-loader": "^7.1.2",
+    "html-webpack-plugin": "^5.6.3",
+    "office-addin-debugging": "^6.0.5",
+    "office-addin-dev-certs": "^2.0.5",
+    "office-addin-manifest": "^2.0.5",
+    "postcss": "^8.5.13",
+    "postcss-loader": "^8.1.1",
+    "style-loader": "^4.0.0",
+    "tailwind-merge": "^3.5.0",
+    "tailwindcss": "^4.2.4",
+    "ts-loader": "^9.5.2",
+    "typescript": "^6.0.3",
+    "webpack": "^5.97.1",
+    "webpack-cli": "^6.0.1",
+    "webpack-dev-server": "^5.2.0"
+  }
+}

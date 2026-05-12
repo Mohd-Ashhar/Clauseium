@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getCurrentUser } from "@/lib/auth/get-current-user";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthedContext } from "@/lib/auth/get-authed-context";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -26,10 +25,11 @@ export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const user = await getCurrentUser();
-  if (!user) {
+  const ctx = await getAuthedContext(req);
+  if (!ctx) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+  const { supabase } = ctx;
 
   const { id } = await params;
   const url = new URL(req.url);
@@ -45,8 +45,6 @@ export async function GET(
   }
   const limit = queryParse.data.limit ?? DEFAULT_LIMIT;
   const offset = queryParse.data.offset ?? 0;
-
-  const supabase = await createClient();
 
   const [contractResult, clausesResult, countResult] = await Promise.all([
     supabase

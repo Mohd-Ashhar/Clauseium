@@ -20,7 +20,7 @@ export const getCurrentUser = cache(async (): Promise<User | null> => {
   return user ? mapSupabaseUser(user) : null;
 });
 
-function mapSupabaseUser(user: SupabaseUser): User {
+export function mapSupabaseUser(user: SupabaseUser): User {
   const email = user.email ?? "";
   const metadata = user.user_metadata ?? {};
   const rawName =

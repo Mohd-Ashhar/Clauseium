@@ -33,8 +33,20 @@ afterEach(() => {
   else process.env.ANTHROPIC_API_KEY = ORIG_KEY;
 });
 
-function llmText(json: object) {
-  return { content: [{ type: "text", text: JSON.stringify(json) }] };
+// Mock Anthropic responses. The analyzer uses tool_use now, so successful
+// responses must return a tool_use block with the structured input. Use
+// `llmText(...)` to simulate the "model returned prose instead of calling
+// the tool" failure mode.
+function llmTool(input: object) {
+  return {
+    content: [
+      { type: "tool_use", name: "submit_risk_analysis", input },
+    ],
+  };
+}
+
+function llmText(text: string) {
+  return { content: [{ type: "text", text }] };
 }
 
 describe("analyzeClauseRisks", () => {
@@ -50,21 +62,24 @@ describe("analyzeClauseRisks", () => {
     ]);
 
     expect(out).toHaveLength(1);
-    expect(out[0].riskLevel).toBe("high");
-    expect(out[0].method).toBe("rule");
-    expect(out[0].ruleIds).toContain("lol.uncapped");
-    expect(out[0].explanation).toMatch(/\[CITE: Indian Contract Act 1872 \| s\.73 \| 1872\]/);
+    expect(out[0]?.riskLevel).toBe("high");
+    expect(out[0]?.method).toBe("rule");
+    expect(out[0]?.ruleIds).toContain("lol.uncapped");
+    expect(out[0]?.explanation).toMatch(
+      /\[CITE: Indian Contract Act 1872 \| s\.73 \| 1872\]/,
+    );
     expect(createMock).not.toHaveBeenCalled();
   });
 
   it("DPDP category always escalates to LLM even when rules fire", async () => {
     createMock.mockResolvedValueOnce(
-      llmText({
+      llmTool({
         risk_level: "high",
         issue: "Breach notification missing",
         explanation:
           "Clause omits the 72-hour breach notification mandated by [CITE: Digital Personal Data Protection Act 2023 | s.8 | 2023].",
-        suggestion: "Add a 72-hour breach notice obligation to the Data Protection Board and affected Data Principals.",
+        suggestion:
+          "Add a 72-hour breach notice obligation to the Data Protection Board and affected Data Principals.",
         confidence: 0.9,
       }),
     );
@@ -80,9 +95,11 @@ describe("analyzeClauseRisks", () => {
     ]);
 
     expect(createMock).toHaveBeenCalledTimes(1);
-    expect(out[0].riskLevel).toBe("high");
-    expect(["rule_llm_agree", "llm"]).toContain(out[0].method);
-    expect(out[0].explanation).toMatch(/\[CITE: Digital Personal Data Protection Act 2023/);
+    expect(out[0]?.riskLevel).toBe("high");
+    expect(["rule_llm_agree", "llm"]).toContain(out[0]?.method);
+    expect(out[0]?.explanation).toMatch(
+      /\[CITE: Digital Personal Data Protection Act 2023/,
+    );
   });
 
   it("falls back to rule-only when LLM is unavailable (no API key)", async () => {
@@ -100,12 +117,13 @@ describe("analyzeClauseRisks", () => {
     ]);
 
     expect(createMock).not.toHaveBeenCalled();
-    expect(out[0].method).toBe("rule");
-    expect(out[0].riskLevel).toBe("high");
+    expect(out[0]?.method).toBe("rule");
+    expect(out[0]?.riskLevel).toBe("high");
   });
 
-  it("falls back to rule-only when LLM throws", async () => {
-    createMock.mockRejectedValueOnce(new Error("timeout"));
+  it("merges rule findings with soft fallback when LLM repeatedly throws", async () => {
+    // p-retry: initial + 2 retries = 3 attempts, all transient failures.
+    createMock.mockRejectedValue(new Error("upstream timeout"));
 
     const out = await analyzeClauseRisks([
       {
@@ -117,8 +135,32 @@ describe("analyzeClauseRisks", () => {
       },
     ]);
 
-    expect(out[0].method).toBe("rule");
-    expect(out[0].ruleIds.length).toBeGreaterThan(0);
+    // Rule findings still survive even though the LLM blew up.
+    expect(out[0]?.riskLevel).toBe("high");
+    expect(out[0]?.ruleIds.length).toBeGreaterThan(0);
+    // LLM_PARSE_FAILED marker lets the admin reanalyze endpoint find this row.
+    expect(out[0]?.ruleIds).toContain("LLM_PARSE_FAILED");
+  }, 10_000);
+
+  it("returns soft fallback + LLM_PARSE_FAILED when model emits prose instead of calling the tool", async () => {
+    // Tool use is forced server-side, but cover the defensive path anyway.
+    createMock.mockResolvedValue(
+      llmText("I cannot analyze this clause without more context."),
+    );
+
+    const out = await analyzeClauseRisks([
+      {
+        clauseId: "c-prose",
+        clauseText:
+          "Vendor shall process personal data as required to provide the services hereunder.",
+        category: "data_protection_dpdp",
+        classificationConfidence: 0.95,
+      },
+    ]);
+
+    expect(out[0]?.ruleIds).toContain("LLM_PARSE_FAILED");
+    // Rule-derived high finding still wins on severity merge.
+    expect(out[0]?.riskLevel).toBe("high");
   });
 
   it("short clauses get standard fallback without LLM call", async () => {
@@ -130,14 +172,39 @@ describe("analyzeClauseRisks", () => {
         classificationConfidence: 0.95,
       },
     ]);
-    expect(out[0].riskLevel).toBe("standard");
-    expect(out[0].method).toBe("rule");
+    expect(out[0]?.riskLevel).toBe("standard");
+    expect(out[0]?.method).toBe("rule");
+    expect(createMock).not.toHaveBeenCalled();
+  });
+
+  it("non-substantive clauses (template comments, page markers) are tagged NON_SUBSTANTIVE without LLM call", async () => {
+    const out = await analyzeClauseRisks([
+      {
+        clauseId: "c-template",
+        clauseText:
+          "** This is only Mercy Corps' standard template for master service agreement contract. Some terms might be added or removed based on the nature of the provided service and its value.",
+        category: "other",
+        classificationConfidence: 0.5,
+      },
+      {
+        clauseId: "c-page-marker",
+        clauseText:
+          "Lorem ipsum but very long PAGE 1 of 11 still substantive though",
+        category: "other",
+        classificationConfidence: 0.5,
+      },
+    ]);
+
+    expect(out[0]?.riskLevel).toBe("standard");
+    expect(out[0]?.ruleIds).toContain("NON_SUBSTANTIVE");
+    expect(out[0]?.issue).toBe("");
+    expect(out[0]?.explanation).toBe("");
     expect(createMock).not.toHaveBeenCalled();
   });
 
   it("respects maxLlmCalls cap", async () => {
     createMock.mockImplementation(async () =>
-      llmText({
+      llmTool({
         risk_level: "medium",
         issue: "needs review",
         explanation:
@@ -155,7 +222,10 @@ describe("analyzeClauseRisks", () => {
       classificationConfidence: 0.9,
     }));
 
-    const out = await analyzeClauseRisks(inputs, { maxLlmCalls: 2, concurrency: 1 });
+    const out = await analyzeClauseRisks(inputs, {
+      maxLlmCalls: 2,
+      concurrency: 1,
+    });
     expect(createMock).toHaveBeenCalledTimes(2);
     expect(out).toHaveLength(5);
     // The 3 skipped should still have rule-derived findings (DPDP rules fire).
@@ -165,10 +235,11 @@ describe("analyzeClauseRisks", () => {
 
   it("backfills [CITE: …] when LLM omits citations on a high-severity finding", async () => {
     createMock.mockResolvedValueOnce(
-      llmText({
+      llmTool({
         risk_level: "high",
         issue: "Breach notification missing",
-        explanation: "The clause does not specify a breach notification timeline.",
+        explanation:
+          "The clause does not specify a breach notification timeline.",
         suggestion: "Add a 72-hour notification.",
         confidence: 0.85,
       }),
@@ -184,7 +255,9 @@ describe("analyzeClauseRisks", () => {
       },
     ]);
 
-    expect(out[0].riskLevel).toBe("high");
-    expect(out[0].explanation).toMatch(/\[CITE: Digital Personal Data Protection Act 2023/);
+    expect(out[0]?.riskLevel).toBe("high");
+    expect(out[0]?.explanation).toMatch(
+      /\[CITE: Digital Personal Data Protection Act 2023/,
+    );
   });
 });

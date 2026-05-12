@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--
+  Clauseium Word Add-in - dev manifest.
+  Sideload by running the "start" script from word-addin/package.json, which
+  invokes: office-addin-debugging start manifests/manifest.dev.xml
+
+  GUID below is the immutable dev identity. DO NOT change it; doing so
+  forces every dev machine to re-sideload. Staging/prod manifests will use
+  different GUIDs so all three can be installed in Word simultaneously.
+
+  AppDomains MUST list every origin the task pane navigates to (Supabase
+  OAuth, the main Clauseium app, etc.). Missing entries silently break the
+  Dialog API navigation.
+
+  Note: XML comments cannot contain a double-hyphen sequence anywhere
+  inside them (per the XML spec). Avoid double-hyphens in this file.
+-->
+<OfficeApp
+  xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
+  xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
+  xsi:type="TaskPaneApp">
+
+  <Id>8a3d2c1b-1f0a-4b6e-9c8d-d7e6a8b1c2d3</Id>
+  <Version>0.1.0.0</Version>
+  <ProviderName>Clauseium</ProviderName>
+  <DefaultLocale>en-IN</DefaultLocale>
+  <DisplayName DefaultValue="Clauseium (dev)" />
+  <Description DefaultValue="AI contract review for Indian counsel — dev build." />
+  <IconUrl DefaultValue="https://localhost:3001/assets/icon-64.png" />
+  <HighResolutionIconUrl DefaultValue="https://localhost:3001/assets/icon-128.png" />
+  <SupportUrl DefaultValue="http://localhost:3000/support" />
+
+  <AppDomains>
+    <AppDomain>http://localhost:3000</AppDomain>
+    <AppDomain>https://localhost:3001</AppDomain>
+    <AppDomain>https://supabase.co</AppDomain>
+    <AppDomain>https://login.microsoftonline.com</AppDomain>
+    <AppDomain>https://accounts.google.com</AppDomain>
+  </AppDomains>
+
+  <Hosts>
+    <Host Name="Document" />
+  </Hosts>
+
+  <Requirements>
+    <Sets DefaultMinVersion="1.3">
+      <Set Name="WordApi" MinVersion="1.4" />
+    </Sets>
+  </Requirements>
+
+  <DefaultSettings>
+    <SourceLocation DefaultValue="https://localhost:3001/taskpane.html" />
+  </DefaultSettings>
+
+  <Permissions>ReadWriteDocument</Permissions>
+
+  <VersionOverrides xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides" xsi:type="VersionOverridesV1_0">
+    <Hosts>
+      <Host xsi:type="Document">
+        <DesktopFormFactor>
+          <GetStarted>
+            <Title resid="GetStarted.Title" />
+            <Description resid="GetStarted.Description" />
+            <LearnMoreUrl resid="GetStarted.LearnMoreUrl" />
+          </GetStarted>
+          <ExtensionPoint xsi:type="PrimaryCommandSurface">
+            <OfficeTab id="TabHome">
+              <Group id="Clauseium.Group">
+                <Label resid="Group.Label" />
+                <Icon>
+                  <bt:Image size="16" resid="Icon.16x16" />
+                  <bt:Image size="32" resid="Icon.32x32" />
+                  <bt:Image size="80" resid="Icon.80x80" />
+                </Icon>
+                <Control xsi:type="Button" id="Clauseium.OpenTaskpane">
+                  <Label resid="OpenTaskpane.Label" />
+                  <Supertip>
+                    <Title resid="OpenTaskpane.Title" />
+                    <Description resid="OpenTaskpane.Tooltip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16x16" />
+                    <bt:Image size="32" resid="Icon.32x32" />
+                    <bt:Image size="80" resid="Icon.80x80" />
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>Clauseium.Taskpane</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url" />
+                  </Action>
+                </Control>
+              </Group>
+            </OfficeTab>
+          </ExtensionPoint>
+        </DesktopFormFactor>
+      </Host>
+    </Hosts>
+
+    <Resources>
+      <bt:Images>
+        <bt:Image id="Icon.16x16" DefaultValue="https://localhost:3001/assets/icon-16.png" />
+        <bt:Image id="Icon.32x32" DefaultValue="https://localhost:3001/assets/icon-32.png" />
+        <bt:Image id="Icon.80x80" DefaultValue="https://localhost:3001/assets/icon-80.png" />
+      </bt:Images>
+      <bt:Urls>
+        <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="http://localhost:3000" />
+        <bt:Url id="Taskpane.Url" DefaultValue="https://localhost:3001/taskpane.html" />
+      </bt:Urls>
+      <bt:ShortStrings>
+        <bt:String id="GetStarted.Title" DefaultValue="Review with Clauseium" />
+        <bt:String id="Group.Label" DefaultValue="Clauseium" />
+        <bt:String id="OpenTaskpane.Label" DefaultValue="Review" />
+        <bt:String id="OpenTaskpane.Title" DefaultValue="Review with Clauseium" />
+      </bt:ShortStrings>
+      <bt:LongStrings>
+        <bt:String id="GetStarted.Description" DefaultValue="Open the Clauseium task pane to review the current document." />
+        <bt:String id="OpenTaskpane.Tooltip" DefaultValue="Open the Clauseium review pane to analyze the current document." />
+      </bt:LongStrings>
+    </Resources>
+  </VersionOverrides>
+</OfficeApp>

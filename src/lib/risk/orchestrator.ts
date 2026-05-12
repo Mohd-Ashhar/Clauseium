@@ -1,7 +1,9 @@
 import "server-only";
+import { isSubstantiveClause } from "@/lib/ingestion/substantive-check";
 import {
   analyzeByLlm,
   isRiskLlmAvailable,
+  LLM_PARSE_FAILED_MARKER,
   RiskLlmUnavailableError,
 } from "./llm-analyzer";
 import { getRagContext } from "./rag-context";
@@ -22,6 +24,12 @@ import type {
 import type { RiskLevel } from "@/types/contract";
 import type { LegalReference } from "@/lib/rag/types";
 import type { LlmRiskResponse } from "./schemas";
+
+// Marker pushed onto risk_rule_ids when the substantive check filters a
+// clause out. The analysis route uses this to render the clause WITHOUT
+// the dev-grade "no specific risk" placeholder — readers see a clean,
+// silent paragraph in the document viewer.
+export const NON_SUBSTANTIVE_MARKER = "NON_SUBSTANTIVE";
 
 const MIN_TEXT_LENGTH = 40;
 
@@ -49,6 +57,16 @@ export async function analyzeClauseRisks(
 
     if (text.trim().length < MIN_TEXT_LENGTH) {
       results[i] = standardFallback(input.clauseId, "rule");
+      continue;
+    }
+
+    // Filter template comments, page markers, attachment markers, bare
+    // titles, and very short / mostly-uppercase fragments BEFORE they
+    // reach the analyzer. These are the inputs that previously caused
+    // the LLM to return prose instead of JSON, surfacing the developer-
+    // grade "unparseable response" message to end users.
+    if (!isSubstantiveClause(text)) {
+      results[i] = nonSubstantiveResult(input.clauseId);
       continue;
     }
 
@@ -97,8 +115,9 @@ async function llmFallback(
   }
 
   try {
-    const { response } = await analyzeByLlm(
+    const { response, failedToParse } = await analyzeByLlm(
       {
+        clauseId: input.clauseId,
         category: input.category,
         clauseText: input.clauseText,
         ruleFindings,
@@ -106,7 +125,18 @@ async function llmFallback(
       },
       signal ? { signal } : undefined,
     );
-    return mergeRuleAndLlm(input.clauseId, ruleFindings, response, ragContext.length);
+    const merged = mergeRuleAndLlm(
+      input.clauseId,
+      ruleFindings,
+      response,
+      ragContext.length,
+    );
+    // When the analyzer hit the soft fallback (exhausted retries / parse
+    // failure), tag the row so the admin re-analyze endpoint can find it.
+    if (failedToParse) {
+      merged.ruleIds = [...merged.ruleIds, LLM_PARSE_FAILED_MARKER];
+    }
+    return merged;
   } catch (err) {
     if (err instanceof RiskLlmUnavailableError) {
       return ruleOnlyResult(input.clauseId, ruleFindings);
@@ -196,6 +226,21 @@ function standardFallback(clauseId: string, method: RiskMethod): RiskAnalysisRes
     confidence: 0.4,
     method,
     ruleIds: [],
+  };
+}
+
+// Empty issue/explanation/suggestion strings + NON_SUBSTANTIVE marker tells
+// the analysis route to render this clause without a risk callout at all.
+function nonSubstantiveResult(clauseId: string): RiskAnalysisResult {
+  return {
+    clauseId,
+    riskLevel: "standard",
+    issue: "",
+    explanation: "",
+    suggestion: "",
+    confidence: 1.0,
+    method: "rule",
+    ruleIds: [NON_SUBSTANTIVE_MARKER],
   };
 }
 

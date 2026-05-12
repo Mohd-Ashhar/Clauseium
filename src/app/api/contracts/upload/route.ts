@@ -1,7 +1,6 @@
 import { NextResponse, after } from "next/server";
-import { randomUUID } from "node:crypto";
-import { getCurrentUser } from "@/lib/auth/get-current-user";
-import { createClient } from "@/lib/supabase/server";
+import { createHash, randomUUID } from "node:crypto";
+import { getAuthedContext } from "@/lib/auth/get-authed-context";
 import { uploadFormSchema } from "@/lib/ingestion/schemas";
 import { SUPPORTED_MIME_TYPES, type SupportedMimeType } from "@/types/ingestion";
 
@@ -9,10 +8,11 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
-  const user = await getCurrentUser();
-  if (!user) {
+  const ctx = await getAuthedContext(req);
+  if (!ctx) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+  const { user, supabase } = ctx;
 
   let formData: FormData;
   try {
@@ -51,12 +51,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "unsupported_mime" }, { status: 400 });
   }
 
-  const supabase = await createClient();
   const contractId = randomUUID();
   const safeName = sanitizeFilename(file.name);
   const storagePath = `${user.id}/${contractId}/${safeName}`;
 
   const fileBuffer = Buffer.from(await file.arrayBuffer());
+  const contentSha256 = createHash("sha256").update(fileBuffer).digest("hex");
 
   const { error: storageError } = await supabase.storage
     .from("contracts")
@@ -81,6 +81,7 @@ export async function POST(req: Request) {
     mime_type: mimeType,
     file_size_bytes: file.size,
     storage_path: storagePath,
+    content_sha256: contentSha256,
     status: "queued",
   });
 

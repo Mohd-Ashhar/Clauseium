@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
-import { getCurrentUser } from "@/lib/auth/get-current-user";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthedContext } from "@/lib/auth/get-authed-context";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { analyzeClauseRisks, persistRiskAnalyses } from "@/lib/risk";
 import { verifyAndPersistCitations } from "@/lib/citations/persist";
@@ -36,14 +35,13 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const user = await getCurrentUser();
-  if (!user) {
+  const ctx = await getAuthedContext(req);
+  if (!ctx) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+  const { supabase: userClient } = ctx;
 
   const { id } = await params;
-
-  const userClient = await createClient();
   const { data: contract, error: contractErr } = await userClient
     .from("contracts")
     .select("id")

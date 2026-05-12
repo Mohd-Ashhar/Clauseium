@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth/get-current-user";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthedContext } from "@/lib/auth/get-authed-context";
 import {
   ALL_LABELS,
   isClassificationLabel,
@@ -15,7 +14,7 @@ export const maxDuration = 60;
 const CONTRACT_FIELDS = "id, status, processed_at";
 
 const CLAUSE_FIELDS =
-  "id, section_title, section_position, clause_number, position, clause_text, " +
+  "id, section_title, section_position, clause_number, position, clause_text, search_anchor, " +
   "risk_level, risk_issue, risk_explanation, risk_suggestion, risk_confidence, risk_method, risk_rule_ids, risk_analyzed_at, " +
   "trust_score, citations";
 
@@ -29,6 +28,7 @@ interface ClauseRow {
   clause_number: string | null;
   position: number | null;
   clause_text: string;
+  search_anchor: string | null;
   risk_level: RiskLevel | null;
   risk_issue: string | null;
   risk_explanation: string | null;
@@ -57,6 +57,7 @@ interface AnalysisClause {
   clause_number: string | null;
   position: number | null;
   clause_text: string;
+  search_anchor: string | null;
   classification: {
     category: ClassificationLabel;
     confidence: number | null;
@@ -94,16 +95,16 @@ function emptyByCategory(): Record<ClassificationLabel, number> {
 }
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const user = await getCurrentUser();
-  if (!user) {
+  const ctx = await getAuthedContext(req);
+  if (!ctx) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+  const { supabase } = ctx;
 
   const { id } = await params;
-  const supabase = await createClient();
 
   const [contractResult, clausesResult, classificationsResult] =
     await Promise.all([
@@ -179,7 +180,14 @@ export async function GET(
       cls && isClassificationLabel(cls.category) ? cls.category : null;
     if (category) byCategory[category] += 1;
 
-    if (row.risk_level) {
+    // Non-substantive paragraphs (template comments, page markers, bare
+    // headings) are tagged at analyze time and rendered as risk: null so
+    // they don't surface a "Standard · …" callout in any UI surface.
+    const isNonSubstantive =
+      Array.isArray(row.risk_rule_ids) &&
+      row.risk_rule_ids.includes("NON_SUBSTANTIVE");
+
+    if (row.risk_level && !isNonSubstantive) {
       byRisk[row.risk_level] += 1;
     } else {
       byRisk.unknown += 1;
@@ -200,6 +208,7 @@ export async function GET(
       clause_number: row.clause_number,
       position: row.position,
       clause_text: row.clause_text,
+      search_anchor: row.search_anchor,
       classification: cls
         ? {
             category: category ?? "other",
@@ -209,18 +218,19 @@ export async function GET(
             reasoning: cls.reasoning,
           }
         : null,
-      risk: row.risk_level
-        ? {
-            level: row.risk_level,
-            issue: row.risk_issue,
-            explanation: row.risk_explanation,
-            suggestion: row.risk_suggestion,
-            confidence: row.risk_confidence,
-            method: row.risk_method,
-            rule_ids: row.risk_rule_ids,
-            analyzed_at: row.risk_analyzed_at,
-          }
-        : null,
+      risk:
+        row.risk_level && !isNonSubstantive
+          ? {
+              level: row.risk_level,
+              issue: row.risk_issue,
+              explanation: row.risk_explanation,
+              suggestion: row.risk_suggestion,
+              confidence: row.risk_confidence,
+              method: row.risk_method,
+              rule_ids: row.risk_rule_ids,
+              analyzed_at: row.risk_analyzed_at,
+            }
+          : null,
       citations: row.citations,
       trust_score: row.trust_score,
     };

@@ -16,18 +16,18 @@ Copyright Act 1957, MSMED Act 2006, Indian Stamp Act 1899.
 Detect: one-sided clauses, missing protections, DPDP violations, uncapped liability,
 and bad jurisdiction (foreign forum without arbitration carve-out).
 
-Inline EVERY statutory or case reference using exactly this token format:
-[CITE: <act-or-case-name> | <section-or-citation> | <year>]
+Inline EVERY statutory or case reference in the explanation field using exactly
+this token format: [CITE: <act-or-case-name> | <section-or-citation> | <year>]
 Year omitted only for cases. Use the verified statute snippets when relevant.
+You MUST include at least one [CITE: …] in the explanation when risk_level is
+"high" or "medium".
 
 Be deterministic. Prefer the shortest accurate answer. Reject speculation.
 
-Output STRICT JSON only — no preamble, no code fences, no trailing text:
-{"risk_level":"high|medium|low|standard|missing",
- "issue":"<=140 chars one-line problem statement",
- "explanation":"<=500 chars; MUST contain at least one [CITE: …] when risk_level is high or medium",
- "suggestion":"<=350 chars actionable redline",
- "confidence":0..1}`;
+Call the submit_risk_analysis tool exactly once with your structured analysis.
+Keep field lengths within the limits described in the tool schema. Even for
+clauses that read as low/standard/missing, fill the issue and explanation
+fields with a brief sentence — do not leave them empty.`;
 
 export interface BuildUserPromptArgs {
   category: ClassificationLabel;

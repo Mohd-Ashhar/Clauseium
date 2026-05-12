@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Clauseium</title>
+    <!--
+      CSP for the task pane iframe. Required entries:
+        - script-src https://appsforoffice.microsoft.com  (Office.js CDN)
+        - connect-src http://localhost:3000               (Clauseium API in dev)
+        - connect-src https://*.supabase.co              (auth refresh)
+        - frame-src  http://localhost:3000               (Dialog navigates here)
+      Adjust connect-src/frame-src for production hosts before deploying.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="
+        default-src 'self';
+        script-src 'self' https://appsforoffice.microsoft.com;
+        style-src 'self' 'unsafe-inline';
+        connect-src 'self' http://localhost:3000 https://localhost:3000 https://*.supabase.co;
+        frame-src http://localhost:3000 https://localhost:3000 https://*.supabase.co https://login.microsoftonline.com https://accounts.google.com;
+        img-src 'self' data: https:;
+      "
+    />
+    <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+  </head>
+  <body class="bg-ink-950 text-ink-100">
+    <div id="root"></div>
+  </body>
+</html>

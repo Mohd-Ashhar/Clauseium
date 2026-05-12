@@ -6,6 +6,10 @@ const PROTECTED_PREFIX = "/dashboard";
 const AUTH_PAGES = new Set(["/login", "/signup", "/forgot-password"]);
 
 export async function updateSession(request: NextRequest) {
+  if (request.headers.get("authorization")) {
+    return NextResponse.next({ request });
+  }
+
   const { url, anonKey } = getSupabaseEnv();
   let response = NextResponse.next({ request });
 

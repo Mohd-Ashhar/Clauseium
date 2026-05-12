@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getCurrentUser } from "@/lib/auth/get-current-user";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthedContext } from "@/lib/auth/get-authed-context";
 
 export const runtime = "nodejs";
 
@@ -31,16 +30,16 @@ interface ActionRow {
 // contract. Filters via an inner-join on clauses.contract_id; RLS confines
 // the result to rows the user owns.
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const user = await getCurrentUser();
-  if (!user) {
+  const ctx = await getAuthedContext(req);
+  if (!ctx) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+  const { user, supabase } = ctx;
 
   const { id: contractId } = await params;
-  const supabase = await createClient();
 
   // Confirm the contract belongs to the caller before doing the join lookup.
   // RLS on contracts also enforces this; this is a fast pre-check that gives
@@ -108,10 +107,11 @@ export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const user = await getCurrentUser();
-  if (!user) {
+  const ctx = await getAuthedContext(req);
+  if (!ctx) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+  const { user, supabase } = ctx;
 
   const { id: contractId } = await params;
 
@@ -132,8 +132,6 @@ export async function PUT(
       { status: 400 },
     );
   }
-
-  const supabase = await createClient();
 
   // Confirm clause belongs to the contract (and contract to the user).
   const { data: clause, error: clauseErr } = await supabase
@@ -181,10 +179,11 @@ export async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const user = await getCurrentUser();
-  if (!user) {
+  const ctx = await getAuthedContext(req);
+  if (!ctx) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+  const { user, supabase } = ctx;
 
   const { id: contractId } = await params;
 
@@ -204,8 +203,6 @@ export async function DELETE(
       { status: 400 },
     );
   }
-
-  const supabase = await createClient();
 
   // Same contract-bound clause check as the upsert path.
   const { data: clause, error: clauseErr } = await supabase

@@ -1,6 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { StructuredDocument } from "@/types/ingestion";
+import { computeSearchAnchor } from "./search-anchor";
 
 // Persist the parsed structure: write structured_json to the contracts row
 // and replace the clauses table for this contract. Status is NOT flipped to
@@ -34,6 +35,7 @@ export async function persistContract(
       clause_number: extractClauseNumber(clause.text),
       clause_text: clause.text,
       position: clause.position,
+      search_anchor: computeSearchAnchor(clause.text),
     })),
   );
 
