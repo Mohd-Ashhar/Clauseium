@@ -1,10 +1,13 @@
 // Bearer-authenticated fetch wrapper for calling the Clauseium API from
 // inside the Word task pane.
 //
-// Two exports:
-//   - apiFetch(path, init, accessToken)  : fetch wrapper that injects
-//     Authorization: Bearer and surfaces typed errors.
-//   - refreshAccessToken(refreshToken)   : hits Supabase's REST token
+// Three exports:
+//   - apiFetch(path, init, accessToken)     : throws ApiError on non-2xx
+//     (except 404). Right for JSON request/response endpoints.
+//   - apiFetchRaw(path, init, accessToken)  : never throws on HTTP status —
+//     caller inspects response.status itself. Used by the streaming chat
+//     endpoint where we want fine-grained code mapping (401/409/429/503).
+//   - refreshAccessToken(refreshToken)      : hits Supabase's REST token
 //     endpoint directly. Used by the auth context to roll an expiring
 //     access token without round-tripping the dialog.
 //
@@ -66,6 +69,25 @@ export async function apiFetch(
   }
 
   return response;
+}
+
+// Like apiFetch but does NOT throw on non-2xx — returns the Response so the
+// caller can branch on response.status. Used by streaming endpoints like
+// /api/contracts/[id]/chat where we want to distinguish 401 / 409 / 429 /
+// 503 in the UI without exception plumbing through the SSE reader loop.
+export async function apiFetchRaw(
+  path: string,
+  init: RequestInit,
+  accessToken: string,
+): Promise<Response> {
+  const headers = new Headers(init.headers);
+  headers.set("Authorization", `Bearer ${accessToken}`);
+
+  return fetch(`${APP_ORIGIN}${path}`, {
+    ...init,
+    headers,
+    credentials: "omit",
+  });
 }
 
 export async function refreshAccessToken(

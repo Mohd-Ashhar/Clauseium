@@ -3,19 +3,30 @@
 // All values here are PUBLIC — they ship in the client bundle. The Supabase
 // anon key is the JWT signing key for short-lived public sessions and is
 // safe to expose (the same value is in NEXT_PUBLIC_SUPABASE_ANON_KEY on the
-// main app). For per-environment values, swap this file via webpack alias
-// or a build-time DefinePlugin pass — kept as a static module here so the
-// dev scaffold doesn't need extra build wiring.
+// main app).
+//
+// Values are read from process.env at build time via webpack's DefinePlugin
+// (see webpack.config.js). Dev fallbacks below let the task pane render
+// from a fresh checkout without env vars set, but production builds MUST
+// supply non-empty SUPABASE_URL + SUPABASE_ANON_KEY.
 
-export const APP_ORIGIN = "http://localhost:3000";
-export const ADDIN_ORIGIN = "https://localhost:3001";
+export const APP_ORIGIN: string =
+  process.env.APP_ORIGIN ?? "http://localhost:3000";
 
-// Supabase project. Both values are also exposed to the main app via
-// NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY — copy them
-// from .env.local into here for local development.
-export const SUPABASE_URL = "https://orqvybuohvqofeocifit.supabase.co";
-export const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ycXZ5YnVvaHZxb2Zlb2NpZml0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc2NTgyMTEsImV4cCI6MjA5MzIzNDIxMX0.msx5YrQ-_vQG8jT0w2YO4-HxRfCinPqSxks1AbTud2s";
+export const ADDIN_ORIGIN: string =
+  process.env.ADDIN_ORIGIN ?? "https://localhost:3001";
+
+export const SUPABASE_URL: string = process.env.SUPABASE_URL ?? "";
+
+export const SUPABASE_ANON_KEY: string = process.env.SUPABASE_ANON_KEY ?? "";
 
 // Storage key for the auth tokens in localStorage. Versioned so we can
 // invalidate stale token shapes during upgrades.
 export const TOKEN_STORAGE_KEY = "clauseium.addin.tokens.v1";
+
+// Surfaced by the auth context's sign-in flow when the Supabase env vars
+// haven't been injected at build time — keeps the failure mode self-
+// explanatory instead of the cryptic 401 we'd otherwise hit.
+export function isSupabaseConfigured(): boolean {
+  return SUPABASE_URL.length > 0 && SUPABASE_ANON_KEY.length > 0;
+}

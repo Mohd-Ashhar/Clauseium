@@ -2,3 +2,14 @@ node_modules/
 dist/
 .cache/
 *.log
+
+# Generated manifests (see manifests/manifest.template.xml + scripts/build-manifest.mjs).
+# Template stays committed; concrete env manifests are produced by `npm run manifest:*`
+# on demand and shouldn't drift in git.
+manifests/manifest.dev.xml
+manifests/manifest.staging.xml
+manifests/manifest.prod.xml
+
+# Note: word-addin/assets/icon-*.png ARE committed — they're the brand
+# placeholder icons emitted by scripts/generate-icons.mjs. Real artwork
+# can replace them in-place; the generator skips existing files.

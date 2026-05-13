@@ -23,6 +23,13 @@ export interface OfficeReadyInfo {
 
 let cached: Promise<OfficeReadyInfo> | null = null;
 
+// How long to wait for Office.onReady before assuming we're NOT in an
+// Office host. Office Desktop usually fires onReady within a few hundred
+// ms; outside Office (Safari, Pages), the callback may never fire. The
+// timeout lets the non-Office-host explainer surface instead of leaving
+// users staring at the loading skeleton forever.
+const OFFICE_READY_TIMEOUT_MS = 1500;
+
 export function officeReady(): Promise<OfficeReadyInfo> {
   if (cached) return cached;
 
@@ -35,8 +42,20 @@ export function officeReady(): Promise<OfficeReadyInfo> {
       return;
     }
 
+    let settled = false;
+    const finish = (info: OfficeReadyInfo) => {
+      if (settled) return;
+      settled = true;
+      resolve(info);
+    };
+
+    const timer = window.setTimeout(() => {
+      finish({ host: null, platform: null, isOfficeHost: false });
+    }, OFFICE_READY_TIMEOUT_MS);
+
     Office.onReady((info) => {
-      resolve({
+      window.clearTimeout(timer);
+      finish({
         host: info.host ?? null,
         platform: info.platform ?? null,
         isOfficeHost: info.host != null,

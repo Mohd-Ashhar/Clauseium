@@ -1,39 +1,69 @@
-import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { officeReady } from "@addin/office/ready";
+import { officeReady, type OfficeReadyInfo } from "@addin/office/ready";
 import { AuthProvider, useAuth } from "@addin/state/auth-context";
 import { LegalFooter } from "./components/LegalFooter";
+import { LoadingSkeleton } from "./components/LoadingSkeleton";
+import { NotInWordExplainer } from "./components/NotInWordExplainer";
+import { ErrorBoundary } from "./routes/Error";
 import { SignedOut } from "./routes/SignedOut";
 import { Workspace } from "./routes/Workspace";
 
+// Top-level app shell:
+//   ErrorBoundary       — catches any render-time crash anywhere below.
+//     AuthProvider      — provides tokens + sign in/out to the tree.
+//       Shell           — branches on Office readiness:
+//         loading       → LoadingSkeleton
+//         non-Word host → NotInWordExplainer (Safari, Pages, Excel, ...)
+//         Word host     → SignedOut | Workspace (depending on auth state)
+//
+// The ErrorBoundary sits OUTSIDE AuthProvider so a crash in the auth context
+// itself (rare but possible if localStorage gets corrupted) is still caught.
+
 export function App() {
   return (
-    <AuthProvider>
-      <Shell />
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <Shell />
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 
 function Shell() {
   const { isSignedIn } = useAuth();
-  const [officeStatus, setOfficeStatus] = useState<"loading" | "ready">(
-    "loading",
-  );
+  const [officeInfo, setOfficeInfo] = useState<OfficeReadyInfo | null>(null);
 
   useEffect(() => {
     let active = true;
-    void officeReady().then(() => {
-      if (active) setOfficeStatus("ready");
+    void officeReady().then((info) => {
+      if (active) setOfficeInfo(info);
     });
     return () => {
       active = false;
     };
   }, []);
 
-  if (officeStatus === "loading") {
+  if (officeInfo === null) {
+    return <LoadingSkeleton />;
+  }
+
+  // Visiting the taskpane URL outside Word — Safari for visual smoke
+  // testing, macOS Pages opening the .docx, or accidental Excel sideload —
+  // gets the explainer instead of the sign-in screen they can never
+  // complete.
+  if (!officeInfo.isOfficeHost) {
     return (
-      <div className="flex h-screen items-center justify-center text-ink-400">
-        <Loader2 className="h-5 w-5 animate-spin" />
+      <div className="flex flex-col h-screen">
+        <div className="flex-1 min-h-0 flex flex-col">
+          <NotInWordExplainer
+            // HostType / PlatformType are string enums; cast through String()
+            // so the component contract stays plain `string | null` and
+            // doesn't drag the Office enum types into the component.
+            host={officeInfo.host ? String(officeInfo.host) : null}
+            platform={officeInfo.platform ? String(officeInfo.platform) : null}
+          />
+        </div>
+        <LegalFooter />
       </div>
     );
   }

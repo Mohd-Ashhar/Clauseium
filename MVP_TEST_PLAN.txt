@@ -1,0 +1,807 @@
+================================================================================
+ CLAUSEIUM MVP — MANUAL TEST PLAN
+ Companion to MVP_FEATURES.md. Walk top-to-bottom; some tests depend on
+ earlier ones (e.g. you need to be signed in for clause-card tests).
+ Mark each box [X] when verified, [F] if it fails. Capture failure
+ details in the FAIL NOTES at the bottom.
+================================================================================
+
+LEGEND
+  [ ]  pending
+  [X]  pass
+  [F]  fail (record what you saw in FAIL NOTES section at bottom)
+  *    test requires real Microsoft Word desktop (Office add-ins can NOT
+       run in macOS Pages or any other word processor)
+
+
+================================================================================
+ SECTION 0  ·  PRE-FLIGHT
+================================================================================
+
+[ ] 0.1  Node + npm versions
+        Run:    node -v && npm -v
+        Expect: node >= 20, npm >= 10
+
+[ ] 0.2  Repo deps installed
+        Run:    npm install   (from /Users/mohdashhar/Desktop/Clauseium)
+        Expect: completes; node_modules populated at root AND in
+                word-addin/node_modules (workspace hoisting may consolidate).
+
+[ ] 0.3  .env.local present and populated
+        Run:    test -f .env.local && grep -cE \
+                  "^(NEXT_PUBLIC_SUPABASE_URL|NEXT_PUBLIC_SUPABASE_ANON_KEY|SUPABASE_SERVICE_ROLE_KEY|INTERNAL_PROCESSING_SECRET|ANTHROPIC_API_KEY|ADDIN_ORIGIN)=" .env.local
+        Expect: 6  (all six env vars present, non-empty)
+
+[ ] 0.4  Supabase migration 0008 applied
+        SQL editor:
+            select column_name from information_schema.columns
+            where table_schema='public' and table_name='contracts'
+              and column_name='content_sha256';
+            select column_name from information_schema.columns
+            where table_schema='public' and table_name='clauses'
+              and column_name='search_anchor';
+        Expect: both queries return a row.
+
+[ ] 0.5  Trusted localhost cert installed
+        Run:    npx office-addin-dev-certs verify
+        Expect: prints "You already have trusted access to https://localhost".
+                If not: run `npx office-addin-dev-certs install`.
+
+[ ] 0.6  Microsoft Word installed (NOT Apple Pages)
+        Open Finder > any .docx > Get Info > "Open with"
+        Expect: Microsoft Word listed and set as default.
+        Note:   * Tests that depend on real Word will not work in Pages.
+
+
+================================================================================
+ SECTION 1  ·  TYPECHECK + UNIT TESTS
+================================================================================
+
+[ ] 1.1  Main repo TypeScript
+        Run:    npx tsc --noEmit
+        Expect: no errors. (A pre-existing baseUrl deprecation warning is
+                acceptable.)
+
+[ ] 1.2  Add-in TypeScript
+        Run:    npx tsc --noEmit -p word-addin/tsconfig.json
+        Expect: no output (clean).
+
+[ ] 1.3  Vitest full suite
+        Run:    npx vitest run
+        Expect: 127 passed | 4 skipped (the 4 skipped are network-dependent).
+
+[ ] 1.4  Substantive-check unit tests pass
+        Already covered by 1.3 — confirm via:
+            npx vitest run src/lib/ingestion/substantive-check.test.ts
+        Expect: 11 passed.
+
+[ ] 1.5  Orchestrator unit tests pass
+        Already covered by 1.3 — confirm via:
+            npx vitest run src/lib/risk/orchestrator.test.ts
+        Expect: 9 passed.
+
+
+================================================================================
+ SECTION 2  ·  DEV SERVERS START
+================================================================================
+
+[ ] 2.1  Next.js dev server up on :3000
+        Run:    npm run dev    (terminal 1)
+        Expect: "Ready in <Xs>" printed; curl -sS -o /dev/null -w "%{http_code}\n"
+                http://localhost:3000/ returns 200.
+
+[ ] 2.2  Add-in dev server up on :3001 + sideload
+        Run:    npm run start --workspace word-addin   (terminal 2)
+        Expect: "prestart" regenerates icons (skips if present) + dev
+                manifest. Webpack compiles successfully. office-addin-
+                debugging sideloads and opens Word (or macOS Pages — see
+                test 4.x for the explainer fallback).
+
+[ ] 2.3  Both endpoints reachable
+        Run:    curl -sS -o /dev/null -w "main %{http_code}\n" http://localhost:3000/
+                curl -sSk -o /dev/null -w "addin %{http_code}\n" https://localhost:3001/taskpane.html
+        Expect: main 200, addin 200
+
+
+================================================================================
+ SECTION 3  ·  BACKEND API — AUTH GATING
+================================================================================
+
+[ ] 3.1  /api/contracts/by-hash without auth → 401
+        Run:    curl -sS -o /tmp/r1.json -w "%{http_code}\n" \
+                  http://localhost:3000/api/contracts/by-hash/$(printf '%064d' 0)
+        Expect: HTTP 401; body {"error":"unauthorized"}
+
+[ ] 3.2  /api/contracts/upload without auth → 401
+        Run:    curl -sS -o /tmp/r2.json -w "%{http_code}\n" \
+                  -X POST http://localhost:3000/api/contracts/upload
+        Expect: HTTP 401
+
+[ ] 3.3  /api/contracts/by-hash with malformed sha → still 401 (auth runs first)
+        Run:    curl -sS -o /tmp/r3.json -w "%{http_code}\n" \
+                  http://localhost:3000/api/contracts/by-hash/not-hex
+        Expect: HTTP 401 (we don't leak schema validation to anonymous callers).
+
+[ ] 3.4  /api/admin/reanalyze-unparseable without secret → 401
+        Run:    curl -sS -X POST -w "%{http_code}\n" \
+                  http://localhost:3000/api/admin/reanalyze-unparseable
+        Expect: HTTP 401; body {"error":"unauthorized"}
+
+[ ] 3.5  /api/admin/reanalyze-unparseable with wrong secret → 401
+        Run:    curl -sS -X POST -w "%{http_code}\n" \
+                  -H "x-internal-secret: nope" \
+                  http://localhost:3000/api/admin/reanalyze-unparseable
+        Expect: HTTP 401
+
+[ ] 3.6  /api/admin/reanalyze-unparseable with correct secret → 200 (or runs)
+        Run:    curl -X POST \
+                  -H "x-internal-secret: $(grep -E '^INTERNAL_PROCESSING_SECRET=' .env.local | cut -d= -f2-)" \
+                  http://localhost:3000/api/admin/reanalyze-unparseable
+        Expect: JSON body
+                  { runId, scanned, retried, succeeded, still_failing,
+                    contracts_touched }
+                If `scanned == 0`, no broken rows in DB — that's good.
+                If `still_failing > 0`, re-run the same command.
+
+
+================================================================================
+ SECTION 4  ·  ADD-IN ENTRY POINTS
+================================================================================
+
+[ ] 4.1  taskpane.html served correctly
+        Run:    curl -sSk https://localhost:3001/taskpane.html | head -5
+        Expect: HTML with <!doctype html> + meta CSP + script tag referring to
+                appsforoffice.microsoft.com.
+
+[ ] 4.2  Root path falls back to taskpane.html
+        Run:    curl -sSk -o /dev/null -w "%{http_code}\n" https://localhost:3001/
+        Expect: HTTP 200
+
+[ ] 4.3  Icon PNGs served from /assets/
+        Run:    for s in 16 32 64 80 128; do
+                  curl -sSk -o /dev/null -w "icon-$s.png: %{http_code}\n" \
+                    https://localhost:3001/assets/icon-$s.png
+                done
+        Expect: all five return HTTP 200.
+
+[ ] 4.4  Generated manifest copied into dist
+        Run:    curl -sSk -o /tmp/m.xml -w "%{http_code}\n" \
+                  https://localhost:3001/manifest.xml
+                head -20 /tmp/m.xml
+        Expect: HTTP 200; XML with <Id>8a3d2c1b-1f0a-4b6e-9c8d-d7e6a8b1c2d3</Id>
+                (dev GUID) and SourceLocation pointing at
+                https://localhost:3001/taskpane.html.
+
+[ ] 4.5  Direct browser load (Safari/Chrome) shows NotInWordExplainer  *non-Word*
+        In a regular browser, open:  https://localhost:3001/taskpane.html
+        Expect: After ~1.5 seconds (officeReady timeout) you see:
+                  - "§ Clauseium" mark
+                  - "Open this in Microsoft Word."
+                  - explainer body + "Open Clauseium in browser" link
+                  - "Detected host: not an Office app" line at the bottom
+                  - legal-information footer at the bottom
+        Pass criteria: NOT the sign-in screen.
+
+
+================================================================================
+ SECTION 5  ·  ADD-IN AUTH FLOW                                          *Word*
+================================================================================
+
+[ ] 5.1  Ribbon button appears in Word                                     *Word*
+        In Microsoft Word, on a saved .docx, look at the Home tab ribbon.
+        Expect: a "Clauseium" group with a "Review" button. The button shows
+                the brand-purple § icon (NOT Office's generic placeholder).
+
+[ ] 5.2  Click Review opens the task pane                                  *Word*
+        Click the Review button.
+        Expect: task pane slides in from the right. Shows:
+                  - § Clauseium logo at top
+                  - "Sign in to your Word add-in" heading
+                  - "Continue with Google" button (with Google logo)
+                  - "Continue with Microsoft" button (Microsoft 4-square logo)
+                  - DPDP 30-day retention note
+                  - "Clauseium provides legal information, not legal advice"
+                    footer (always-visible)
+
+[ ] 5.3  Loading skeleton briefly visible during Office.onReady            *Word*
+        Close + reopen the task pane.
+        Expect: very briefly (<1s) see the § Clauseium mark + 3 pulsing
+                skeleton bars before the sign-in screen renders. With
+                System Preferences > Accessibility > Display >
+                "Reduce motion" ON, the bars don't pulse.
+
+[ ] 5.4  Continue with Google opens Office Dialog                          *Word*
+        Click "Continue with Google".
+        Expect: a dialog window pops up (Word Desktop: native window; Word
+                Online: same-origin iframe). It navigates to:
+                  http://localhost:3000/addin-auth?provider=google
+                The page shows "§ Clauseium" + the Google sign-in button.
+
+[ ] 5.5  Complete Google sign-in                                           *Word*
+        Click "Continue with Google" inside the dialog. Complete OAuth.
+        Expect: dialog redirects through accounts.google.com → Supabase
+                callback → your /addin-auth/callback. You briefly see
+                "Signed in" then the dialog auto-closes.
+
+[ ] 5.6  Task pane flips to Workspace                                      *Word*
+        After the dialog closes.
+        Expect: task pane transitions from SignedOut to Workspace. If this
+                is the first sign-in on this contract, you should see the
+                ConsentDialog overlay.
+
+[ ] 5.7  DPDP consent on first upload                                      *Word*
+        ConsentDialog visible.
+        Expect:
+          - "One-time consent" pill at top
+          - "Upload this document to Clauseium for review?" heading
+          - 30-day retention disclosure
+          - Filename + size of the open .docx shown
+          - Bullet list with 3 reassurances (machine-local tokens, ZDR,
+            legal info disclaimer)
+          - Continue + Cancel buttons
+
+[ ] 5.8  Decline consent → error state                                     *Word*
+        Click Cancel on ConsentDialog.
+        Expect: state machine moves to error. Shows "Consent required"
+                with Sign out button only (no retry — declined consent
+                is a deliberate user choice).
+
+[ ] 5.9  Accept consent → upload starts                                    *Word*
+        Click Continue.
+        Expect: progress card cycles through:
+                  reading → checking_hash → uploading → queued → processing
+                  → fetching_analysis → ready
+                Total time: 30s–2min depending on doc size + LLM latency.
+
+
+================================================================================
+ SECTION 6  ·  DOCUMENT FLOW                                             *Word*
+================================================================================
+
+[ ] 6.1  Workspace renders real clause cards once "ready"                  *Word*
+        After Section 5 completes successfully.
+        Expect:
+          - SummaryHeader shows filename + escalation count (e.g. "3 High ·
+            5 Medium · 12 OK")
+          - FilterTabs (All / High / Med / Standard / Missing) with counts
+          - Scrollable list of ClauseCards
+          - Each card has §section/clause #, title, risk badge, summary,
+            confidence bars
+          - ChatDrawer collapsed at bottom (36 px header bar)
+          - Legal-info footer
+
+[ ] 6.2  Filter tabs work                                                  *Word*
+        Click "High". Then "Missing". Then "All".
+        Expect: list filters in place. Counts on the tabs match what's
+                visible. "All" shows everything sorted by risk severity
+                (High first, then Missing, Medium, Low, Standard).
+
+[ ] 6.3  Expand a clause card                                              *Word*
+        Click any High clause card.
+        Expect: card expands smoothly (CSS height transition). Reveals:
+                  - "Why this matters" section
+                  - Suggested redline in inset box (if available)
+                  - Legal basis (citation pills) — verified ones are green
+                  - Rules: matched rule IDs in monospace
+                  - Action buttons: Accept redline (green), Reject, Ask AI
+                Chevron icon flips from down to up.
+
+[ ] 6.4  Click clause card → Word scrolls to that clause                   *Word*
+        Click any clause card with `search_anchor` set.
+        Expect: Word's document viewport scrolls to that clause. Cursor
+                lands at the first character. If your previous selection
+                was elsewhere, you'll lose it (expected trade-off).
+
+[ ] 6.5  Citation pill click opens external URL                            *Word*
+        On a clause with a verified citation (green pill), click the pill.
+        Expect: external browser opens to indiacode.nic.in or similar.
+
+[ ] 6.6  By-hash short-circuit on re-open                                  *Word*
+        Close the .docx in Word. Reopen the same file.
+        Click Review → sign in (or just reopen the pane).
+        Expect: progress card cycles
+                  reading → checking_hash → fetching_analysis → ready
+                in < 2 seconds total. NO upload, NO consent prompt.
+
+[ ] 6.7  Error: unsaved document                                           *Word*
+        In Word, create a new blank document (Untitled). DON'T save it.
+        Click Review.
+        Expect: error card: "Save the document first" + Try again button.
+
+[ ] 6.8  Error: file too large                                             *Word*
+        Open a .docx > 25 MB.
+        Expect: error card: "Document is XX.X MB. Clauseium accepts up to
+                25 MB." + Try again button.
+
+
+================================================================================
+ SECTION 7  ·  APPLY REDLINE (TRACKED CHANGES)                           *Word*
+================================================================================
+
+[ ] 7.1  First Accept triggers TrackChangesPrompt                          *Word*
+        Expand a High clause with a suggested redline. Click "Accept redline".
+        Expect: overlay modal "Apply redline as a tracked change?" with:
+                  - "One-time choice" pill
+                  - Brief explanation
+                  - "We'll remember your choice on this machine" note
+                  - 3 buttons:
+                      [Apply as tracked change] (primary, brand)
+                      [Copy to clipboard instead]
+                      [Cancel]
+
+[ ] 7.2  Apply as tracked change                                           *Word*
+        Click "Apply as tracked change".
+        Expect:
+          - Word's Track Changes mode silently switches to TrackAll
+          - The clause text in the Word document body is REPLACED with the
+            suggestion as a single tracked-change revision:
+              · Old text shown with strikethrough
+              · New text shown inserted (typically red)
+          - Open the Review tab in Word — the revision is visible there
+            and can be accepted/rejected from Word's UI
+          - In the task pane: card border turns green; the body shows
+            "Redline applied as a tracked change in the document."
+          - Toast at bottom of task pane: "Redline applied as a tracked
+            change in §X."
+          - Decision persisted to /api/contracts/:id/clause-actions
+            (verify with Network tab: PUT request, 200)
+
+[ ] 7.3  Second Accept does not re-prompt                                  *Word*
+        Click Accept on a DIFFERENT high-risk clause.
+        Expect: NO prompt this time. Goes straight to apply. Consent was
+                persisted in localStorage:
+                  clauseium.addin.track-changes-consent.v1 = "accepted"
+
+[ ] 7.4  Clipboard-only path                                               *Word*
+        In Office DevTools console for the task pane:
+            localStorage.removeItem("clauseium.addin.track-changes-consent.v1")
+        Click Accept on a clause. TrackChangesPrompt appears again.
+        Click "Copy to clipboard instead".
+        Expect:
+          - Word document body NOT modified
+          - Suggestion IS in clipboard (test by pasting in any text field)
+          - Card border still turns green (action persisted server-side as
+            accepted)
+          - Toast: "Redline copied to clipboard — paste it where you want it"
+
+[ ] 7.5  Cancel does not change state                                      *Word*
+        Clear consent again:
+            localStorage.removeItem("clauseium.addin.track-changes-consent.v1")
+        Click Accept on a third clause. Click Cancel on the prompt.
+        Expect: no document change, no action persisted, card stays in
+                pending state. Consent flag stays unset (the prompt will
+                reappear next time).
+
+[ ] 7.6  Couldn't-locate-clause error                                      *Word*
+        Manually type a word in the middle of a clause text in the Word
+        body (so the first 150 chars no longer match the analyzed text).
+        Click Accept on that same clause card.
+        Expect: toast "Couldn't locate this clause in the document. It
+                may have been edited." No document mutation; no
+                clause-action persisted (still pending).
+
+[ ] 7.7  No redline available                                              *Word*
+        On a Standard/Low clause with no suggested redline (the Accept
+        button shouldn't even render). If you find a clause with no
+        suggestion but Accept does appear and you click it:
+        Expect: toast "No suggested redline for this clause."
+
+
+================================================================================
+ SECTION 8  ·  REJECT + DECISION PERSISTENCE                             *Word*
+================================================================================
+
+[ ] 8.1  Reject persists                                                   *Word*
+        Click Reject on any clause.
+        Expect: Word document NOT modified. Card opacity drops; expanded
+                body shows "Suggestion rejected — original clause text
+                retained." Toast: "Rejected suggestion for §X."
+
+[ ] 8.2  Decisions survive sign-out + sign-in                              *Word*
+        Note which clauses you've Accepted and Rejected.
+        Click the sign-out icon (top-right of SummaryHeader).
+        You return to SignedOut.
+        Sign back in with Google.
+        Wait for Workspace to load (by-hash short-circuit should be fast).
+        Expect: Accepted clauses show green border + "accepted" body.
+                Rejected clauses show low-opacity + "rejected" body.
+
+[ ] 8.3  Optimistic update revert on failure
+        Open Office DevTools > Network. Filter to "/clause-actions".
+        Stop the Next.js dev server (kill terminal 1).
+        Click Reject on a fresh clause.
+        Expect: card briefly shows rejected state (optimistic), then
+                reverts to pending. Toast: "Couldn't save your decision.
+                Please try again."
+        Restart `npm run dev`.
+
+
+================================================================================
+ SECTION 9  ·  ASK AI CHAT DRAWER                                        *Word*
+================================================================================
+
+[ ] 9.1  Click Ask AI on a clause                                          *Word*
+        Expand a High clause. Click the "Ask AI" button (right-most in
+        the action row, brand color, message-square icon).
+        Expect:
+          - ChatDrawer expands to 320 px tall
+          - A user message appears with text like:
+              "Tell me about §14 — Uncapped indemnity exposes supplier..."
+          - An assistant placeholder appears with 3 pulsing dots
+            ("thinking")
+          - Streaming starts: text appears token-by-token, with a blinking
+            caret at the end
+
+[ ] 9.2  Refs render                                                       *Word*
+        Wait for the response to complete (caret disappears).
+        Expect:
+          - Up to 6 ref chips appear in a strip BELOW the assistant
+            message
+          - Each chip shows source-type icon (Book for statute, Scale for
+            case), the citation text, and an external-link arrow if a URL
+            is attached
+          - The streamed text contains [REF_1], [REF_2] tokens that are
+            rendered as small inline pills (brand color when clickable)
+          - Clicking a ref pill opens the source URL in the system browser
+
+[ ] 9.3  Multi-turn follow-up                                              *Word*
+        In the chat input box, type:
+            "Is there an Indian precedent supporting the 12-month cap?"
+        Press Enter (Shift+Enter inserts newline).
+        Expect: new user message + new assistant placeholder. Response
+                streams. Server has access to the full message history
+                (both messages sent in the messages[] array per request).
+
+[ ] 9.4  Clear chat                                                        *Word*
+        Click the X icon in the drawer header (only visible when there
+        are messages).
+        Expect: messages reset, drawer goes back to ChatEmptyState (three
+                suggested questions).
+
+[ ] 9.5  Suggested question one-click                                      *Word*
+        From ChatEmptyState, click "What are the top three risks in this
+        contract?"
+        Expect: auto-sends the suggestion as a user message, streams
+                response.
+
+[ ] 9.6  Collapse / expand the drawer                                      *Word*
+        Click the drawer header chevron.
+        Expect: drawer collapses to 36 px. Workspace clause list expands
+                upward to use the freed space. Click again to expand.
+
+[ ] 9.7  Contract switch resets chat                                       *Word*
+        With chat history populated, close the .docx and open a different
+        saved .docx with a different content hash.
+        Trigger re-analysis (Review button → flow runs).
+        Expect: once new analysis is ready, ChatDrawer is empty (RESET
+                fired on contractId change). History does NOT cross
+                contracts.
+
+[ ] 9.8  Sign out while streaming                                          *Word*
+        Click Ask AI. While the response is streaming, click sign-out.
+        Expect: stream aborts cleanly (no error spinner left hanging).
+                Workspace flips to SignedOut. Next sign-in lands in a
+                fresh Workspace.
+
+[ ] 9.9  Long input warning                                                *Word*
+        Type 7000+ chars into the chat input.
+        Expect: small "<count> / 8000" indicator appears below the input
+                box. At >8000 chars the textarea border turns red and the
+                Send button stays disabled (8000 is the server's max).
+
+[ ] 9.10 Network failure mid-stream                                        *Word*
+        Click Ask AI. While streaming, kill the Next.js dev server.
+        Expect: the in-flight assistant message shows an error badge
+                ("Stream interrupted. Try again."). Existing messages
+                stay visible. Restart dev server and retry — should work.
+
+
+================================================================================
+ SECTION 10  ·  ERROR BOUNDARY                                           *Word*
+================================================================================
+
+[ ] 10.1  Render-time crash caught                                          *Word*
+        TEMPORARY edit: add `throw new Error("boom")` somewhere inside
+        Workspace.tsx or ClauseCard.tsx. Save → hot reload.
+        Expect: instead of a blank pane, the ErrorBoundary fallback
+                renders:
+                  - AlertOctagon icon (red)
+                  - "Something went wrong." heading
+                  - "Clauseium hit an unexpected error..." body
+                  - [Reload] button (brand color)
+                  - [Sign out] button (subtle)
+                  - "Show technical details" collapsible accordion
+
+[ ] 10.2  Console logs the crash                                            *Word*
+        Open Office DevTools > Console.
+        Expect: a line like "[addin] crash Error: boom" with the component
+                stack on the next line.
+
+[ ] 10.3  Reload preserves sign-in                                          *Word*
+        Click [Reload].
+        Expect: page reloads. After Office.onReady, you land back in
+                Workspace (NOT SignedOut). LocalStorage tokens survived
+                the reload.
+
+[ ] 10.4  Sign out clears all storage                                       *Word*
+        Re-trigger the crash. Click [Sign out].
+        Expect: localStorage keys cleared:
+                  clauseium.addin.tokens.v1
+                  clauseium.addin.consent.v1
+                  clauseium.addin.track-changes-consent.v1
+                Page reloads → SignedOut screen.
+
+        REVERT the temporary throw before moving on.
+
+
+================================================================================
+ SECTION 11  ·  ICON GENERATION
+================================================================================
+
+[ ] 11.1  Generator is idempotent
+        Run:    node word-addin/scripts/generate-icons.mjs
+        Expect: "[icons] 5/5 icons already present, skipped."
+
+[ ] 11.2  Regenerate from scratch
+        Run:    rm word-addin/assets/icon-*.png
+                node word-addin/scripts/generate-icons.mjs
+        Expect: "[icons] wrote 5 icons to word-addin/assets/ (0 already
+                present)."
+
+[ ] 11.3  Valid PNG output
+        Run:    file word-addin/assets/icon-*.png
+        Expect: each line ends with
+                  "PNG image data, NxN, 8-bit/color RGB, non-interlaced"
+                where N matches the filename size.
+
+[ ] 11.4  Real artwork not overwritten
+        Drop your own real `icon-64.png` into word-addin/assets/
+        (anything valid PNG).
+        Run:    node word-addin/scripts/generate-icons.mjs
+        Expect: that file's contents are NOT replaced (script only writes
+                when target is missing). 4 files present + 1 user file.
+
+
+================================================================================
+ SECTION 12  ·  MANIFEST BUILD
+================================================================================
+
+[ ] 12.1  Dev manifest from template
+        Run:    rm -f word-addin/manifests/manifest.dev.xml
+                node word-addin/scripts/build-manifest.mjs --env=dev
+        Expect: "[build-manifest] wrote manifests/manifest.dev.xml
+                (guid=8a3d2c1b-1f0a-4b6e-9c8d-d7e6a8b1c2d3,
+                addin=https://localhost:3001, app=http://localhost:3000)"
+
+[ ] 12.2  Generated manifest has no placeholder leftovers
+        Run:    grep -E "\{\{[A-Z_]+\}\}" word-addin/manifests/manifest.dev.xml
+        Expect: no output. (All {{KEY}} placeholders resolved.)
+
+[ ] 12.3  Staging manifest with env override
+        Run:    ADDIN_ORIGIN_STAGING=https://addin-staging.acme.com \
+                APP_ORIGIN_STAGING=https://staging.acme.com \
+                node word-addin/scripts/build-manifest.mjs --env=staging
+        Expect: "[build-manifest] wrote manifests/manifest.staging.xml
+                (guid=...d4, addin=https://addin-staging.acme.com,
+                app=https://staging.acme.com)"
+
+[ ] 12.4  Prod manifest with env override
+        Run:    ADDIN_ORIGIN=https://addin.acme.com APP_ORIGIN=https://acme.com \
+                node word-addin/scripts/build-manifest.mjs --env=prod
+        Expect: "[build-manifest] wrote manifests/manifest.prod.xml
+                (guid=...d5, addin=https://addin.acme.com, app=https://acme.com)"
+
+[ ] 12.5  All 3 GUIDs are distinct
+        Run:    grep "<Id>" word-addin/manifests/manifest.{dev,staging,prod}.xml
+        Expect: 3 different GUIDs.
+
+[ ] 12.6  Unknown env exits non-zero with help
+        Run:    node word-addin/scripts/build-manifest.mjs --env=nope
+        Expect: exit code 2; message "unknown env "nope". valid: dev |
+                staging | prod"
+
+[ ] 12.7  Generated manifests are git-ignored
+        Run:    git check-ignore word-addin/manifests/manifest.{dev,staging,prod}.xml
+        Expect: all three printed (i.e. all are ignored). The template is
+                NOT ignored:
+                  git check-ignore word-addin/manifests/manifest.template.xml
+                  → exit 1 (file is tracked)
+
+
+================================================================================
+ SECTION 13  ·  WEBPACK BUILD + ENV INJECTION
+================================================================================
+
+[ ] 13.1  Production build succeeds
+        Run:    npm run build --workspace word-addin
+        Expect: prebuild regenerates icons + prod manifest. Webpack
+                emits bundle into word-addin/dist/ without errors.
+
+[ ] 13.2  Bundle contains injected env values (NOT placeholders)
+        Run:    grep -c "YOUR-PROJECT-REF" word-addin/dist/taskpane.*.js
+        Expect: 0. The placeholder shouldn't be in the bundle.
+        Run:    grep -E "supabase.co" word-addin/dist/taskpane.*.js | head -c 200
+        Expect: your real Supabase project URL shows up (from .env.local).
+
+[ ] 13.3  Bundle does NOT contain SUPABASE_SERVICE_ROLE_KEY
+        Run:    SRK=$(grep -E "^SUPABASE_SERVICE_ROLE_KEY=" .env.local | cut -d= -f2-)
+                grep -c "$SRK" word-addin/dist/taskpane.*.js
+        Expect: 0. (Service-role key is server-only; must NEVER ship in
+                the add-in bundle.)
+
+
+================================================================================
+ SECTION 14  ·  RISK ANALYZER QUALITY
+================================================================================
+
+[ ] 14.1  Direct-call smoke test
+        Run:    set -a; source .env.local; set +a
+                npx tsx --require ./scripts/server-only-shim.cjs \
+                  scripts/debug-analyzer.ts
+        Expect: 5 clauses, all "failedToParse: false", latencies 2.5–5 s
+                each. Each returns a real risk_level (high/medium/low/
+                standard/missing) and a real issue string.
+
+[ ] 14.2  DB has no legacy broken rows
+        Supabase SQL editor:
+            select count(*) filter (where risk_issue ilike '%unparseable response%') as legacy,
+                   count(*) filter (where risk_rule_ids @> array['LLM_PARSE_FAILED']) as new_failed
+            from public.clauses;
+        Expect: legacy = 0; new_failed small (ideally 0). If new_failed > 0,
+                run the admin re-analyze endpoint (test 3.6).
+
+[ ] 14.3  Non-substantive filter is working
+        Supabase SQL editor:
+            select count(*) from public.clauses
+            where risk_rule_ids @> array['NON_SUBSTANTIVE'];
+        Expect: > 0 (these are the preambles / page markers / heading
+                fragments correctly filtered out before the LLM).
+
+[ ] 14.4  Health snapshot
+        SQL editor:
+            select
+              count(*) filter (where risk_level = 'high')   as high_risk,
+              count(*) filter (where risk_level = 'medium') as medium_risk,
+              count(*) filter (where risk_level = 'low')    as low_risk,
+              count(*) filter (where risk_level = 'standard') as standard,
+              count(*) filter (where risk_level = 'missing') as missing,
+              count(*) as total
+            from public.clauses;
+        Expect: a mix of all levels, NOT 100% standard.
+                Sensible distribution would be roughly:
+                  high      ~10–15% of total
+                  medium    ~30–40%
+                  low       ~15–20%
+                  standard  ~15–25%
+                  missing   ~3–5%
+                If 100% of clauses are "standard" with the "Manual review
+                recommended" issue, something is broken — check
+                Anthropic API key + credit balance + dev server logs.
+
+[ ] 14.5  No forbidden phrase in chat responses
+        SQL editor (sample recent risk_explanation values):
+            select risk_explanation
+            from public.clauses
+            where risk_explanation is not null
+            order by risk_analyzed_at desc nulls last
+            limit 20;
+        Expect: NO occurrence of "legal advice" (case insensitive). We
+                say "legal analysis" or "legal information".
+
+
+================================================================================
+ SECTION 15  ·  COMPLIANCE & UI CONTRACTS
+================================================================================
+
+[ ] 15.1  Legal-information footer always visible                          *Word*
+        On every screen (SignedOut, Workspace at any state, ChatDrawer
+        expanded, ErrorBoundary fallback, NotInWordExplainer), look at
+        the bottom of the task pane.
+        Expect: "Clauseium provides legal information, not legal advice."
+                always shown.
+
+[ ] 15.2  Phrase "legal advice" never appears in UI                        *Word*
+        Search the task pane content via DevTools or eyeball for any
+        occurrence of "legal advice" (with the word "legal" preceding
+        the word "advice").
+        Expect: zero occurrences anywhere except the footer disclaimer
+                where it's negated.
+
+[ ] 15.3  Auth requests use Bearer, not cookies                            *Word*
+        Open Office DevTools > Network. Filter by /api/.
+        Sign in, send a chat message, accept a redline — anything that
+        hits the backend.
+        Expect: every /api/ request shows:
+                  Request Headers:
+                    Authorization: Bearer eyJh...  (JWT)
+                  Set-Cookie not present in any response
+                  No cookies sent from the add-in origin
+
+[ ] 15.4  Tokens stored in localStorage (NOT roamingSettings)              *Word*
+        Office DevTools > Application > Local Storage > origin
+        https://localhost:3001
+        Expect: keys present:
+                  clauseium.addin.tokens.v1          (auth JWTs)
+                  clauseium.addin.consent.v1         (DPDP consent flag)
+                  clauseium.addin.track-changes-consent.v1
+        Also DevTools > Application > Indexed DB: empty (we don't use it).
+
+[ ] 15.5  No EventSource usage
+        Run:    grep -rE "new EventSource" src/ word-addin/src/
+        Expect: no matches. All streaming uses fetch + ReadableStream.
+
+[ ] 15.6  Add-in CSP allows Office.js + main app + Supabase + OAuth
+        Open https://localhost:3001/taskpane.html in DevTools, look at
+        document headers (meta CSP).
+        Expect: script-src includes 'self' and
+                https://appsforoffice.microsoft.com; connect-src includes
+                localhost:3000 and *.supabase.co; frame-src includes
+                login.microsoftonline.com and accounts.google.com.
+
+
+================================================================================
+ SECTION 16  ·  REGRESSION CHECKS (post-edit guard rails)
+================================================================================
+
+Run these whenever you change ANY file:
+
+[ ] 16.1  Add-in TypeScript clean
+        npx tsc --noEmit -p word-addin/tsconfig.json
+        Expect: no output.
+
+[ ] 16.2  Main repo TypeScript clean (modulo baseUrl deprecation)
+        npx tsc --noEmit
+        Expect: only TS5101 baseUrl deprecation warning (pre-existing).
+
+[ ] 16.3  Vitest passes
+        npx vitest run
+        Expect: 127 passed, 4 skipped.
+
+[ ] 16.4  Webpack production build succeeds
+        npm run build --workspace word-addin
+        Expect: dist/taskpane.*.js + manifest.xml + assets/*.png emitted.
+
+[ ] 16.5  All 3 manifest variants regenerate cleanly
+        for env in dev staging prod; do
+          ADDIN_ORIGIN=https://addin.example.com APP_ORIGIN=https://example.com \
+            ADDIN_ORIGIN_STAGING=https://addin-staging.example.com \
+            APP_ORIGIN_STAGING=https://staging.example.com \
+          node word-addin/scripts/build-manifest.mjs --env=$env || break
+        done
+        Expect: 3 lines starting with "[build-manifest] wrote".
+
+[ ] 16.6  Substantive-check unit tests pass
+        npx vitest run src/lib/ingestion/substantive-check.test.ts
+        Expect: 11 passed.
+
+[ ] 16.7  Orchestrator unit tests pass
+        npx vitest run src/lib/risk/orchestrator.test.ts
+        Expect: 9 passed.
+
+
+================================================================================
+ FAIL NOTES
+================================================================================
+
+For each [F] above, capture:
+
+Test ID:      __________________________________________________
+Date:         __________________________________________________
+Word build:   __________________________________________________
+OS:           __________________________________________________
+What I did:   __________________________________________________
+              __________________________________________________
+What I saw:   __________________________________________________
+              __________________________________________________
+Console:      __________________________________________________
+              __________________________________________________
+Network:      __________________________________________________
+              __________________________________________________
+Server log:   __________________________________________________
+              __________________________________________________
+Reproducible? __________________________________________________
+
+
+================================================================================
+ END OF TEST PLAN
+================================================================================

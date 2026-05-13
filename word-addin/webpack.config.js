@@ -6,11 +6,37 @@
 // Dev server runs over HTTPS on :3001 with the office-addin-dev-certs cert
 // so Word (Desktop + Online) can load it. Office requires HTTPS even for
 // localhost; without the dev cert Office silently refuses to load the iframe.
+//
+// Env injection:
+//   We load the workspace's root .env.local (where the Next.js app's
+//   SUPABASE_URL / SUPABASE_ANON_KEY already live) and bake the four
+//   add-in-public env vars into the bundle via webpack.DefinePlugin so
+//   `process.env.X` reads in src/config.ts become string literals.
 
 const path = require("path");
+const webpack = require("webpack");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 const devCerts = require("office-addin-dev-certs");
+
+// Load env from the repo-root .env.local. Failing-quietly is fine; the
+// fallbacks in src/config.ts cover dev. The Next.js app uses the same
+// file, so add-in dev shares the same Supabase project automatically.
+require("dotenv").config({ path: path.resolve(__dirname, "..", ".env.local") });
+
+// Pick up the few values the add-in needs. The Next.js app exposes its
+// Supabase config under NEXT_PUBLIC_*; alias them so add-in code can read
+// the un-prefixed names.
+const APP_ORIGIN =
+  process.env.APP_ORIGIN ?? "http://localhost:3000";
+const ADDIN_ORIGIN =
+  process.env.ADDIN_ORIGIN ?? "https://localhost:3001";
+const SUPABASE_URL =
+  process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+const SUPABASE_ANON_KEY =
+  process.env.SUPABASE_ANON_KEY ??
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
+  "";
 
 module.exports = async (env, argv) => {
   const isDev = argv.mode !== "production";
@@ -57,12 +83,24 @@ module.exports = async (env, argv) => {
       }),
       new CopyWebpackPlugin({
         patterns: [
-          // Copy the dev manifest into dist/ so dev/prod can be served identically
+          // Generated dev manifest at root of dist/ for sideloading.
           {
             from: "manifests/manifest.dev.xml",
             to: "manifest.xml",
+            noErrorOnMissing: true,
           },
+          // Icon PNGs the manifest references at https://<origin>/assets/icon-*.png.
+          { from: "assets", to: "assets" },
         ],
+      }),
+      // Inject the four public values from process.env into the bundle.
+      // JSON.stringify so each lands as a quoted string literal — webpack's
+      // DefinePlugin performs textual substitution.
+      new webpack.DefinePlugin({
+        "process.env.APP_ORIGIN": JSON.stringify(APP_ORIGIN),
+        "process.env.ADDIN_ORIGIN": JSON.stringify(ADDIN_ORIGIN),
+        "process.env.SUPABASE_URL": JSON.stringify(SUPABASE_URL),
+        "process.env.SUPABASE_ANON_KEY": JSON.stringify(SUPABASE_ANON_KEY),
       }),
     ],
     devServer: isDev

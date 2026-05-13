@@ -9,6 +9,7 @@ import {
 } from "@addin/state/track-changes-consent";
 import { useClauseActions } from "@addin/state/use-clause-actions";
 import { RISK_RANK } from "@addin/lib/constants";
+import { ChatDrawer } from "../components/ChatDrawer";
 import { ClauseCard } from "../components/ClauseCard";
 import { ConsentDialog } from "../components/ConsentDialog";
 import { EmptyState } from "../components/EmptyState";
@@ -27,12 +28,17 @@ import type { AnalysisClause } from "@addin/types/contract";
 //   - Accept redline → (one-time consent prompt) → applyRedline + persist
 //   - Reject → persist clause action
 //   - Existing decisions hydrate from /api/contracts/:id/clause-actions
-//
-// Ask-AI chat drawer is still Chunk C.
+//   - Ask AI on a clause → drawer auto-expands and auto-sends a question
+//     scoped to that clause's section (clause_id).
 
 interface PendingRedline {
   clause: AnalysisClause;
   suggestion: string;
+}
+
+interface ChatHint {
+  clauseId: string;
+  defaultPrompt: string;
 }
 
 interface ToastState {
@@ -42,6 +48,12 @@ interface ToastState {
 }
 
 const TOAST_TIMEOUT_MS = 3500;
+
+function buildPromptForClause(clause: AnalysisClause): string {
+  const pos = clause.position != null ? `§${clause.position}` : "this clause";
+  const issue = clause.risk?.issue?.trim();
+  return issue ? `Tell me about ${pos} — ${issue}` : `Tell me about ${pos}.`;
+}
 
 export function Workspace() {
   const { signOut, getAccessToken } = useAuth();
@@ -56,8 +68,18 @@ export function Workspace() {
   const [pendingRedline, setPendingRedline] = useState<PendingRedline | null>(
     null,
   );
+  const [chatHint, setChatHint] = useState<ChatHint | null>(null);
   const [toasts, setToasts] = useState<ToastState[]>([]);
   const toastIdRef = useRef(0);
+
+  const handleAskAi = useCallback((clause: AnalysisClause) => {
+    setChatHint({
+      clauseId: clause.id,
+      defaultPrompt: buildPromptForClause(clause),
+    });
+  }, []);
+
+  const handleConsumeHint = useCallback(() => setChatHint(null), []);
 
   // Kick off the flow on first mount.
   useEffect(() => {
@@ -259,9 +281,7 @@ export function Workspace() {
                     onToggle={() => handleToggle(clause)}
                     onAcceptRedline={() => handleAcceptRedline(clause)}
                     onReject={() => handleReject(clause)}
-                    onAskAi={() => {
-                      // Wired up in Chunk C (ChatDrawer).
-                    }}
+                    onAskAi={() => handleAskAi(clause)}
                   />
                 </li>
               );
@@ -269,6 +289,17 @@ export function Workspace() {
           </ul>
         )}
       </main>
+
+      <ChatDrawer
+        // Non-null at this branch: state.kind === "ready" implies the store
+        // has set contractId in HASH_HIT / UPLOADED / FETCHING_ANALYSIS, and
+        // analysis being truthy further guarantees we passed READY. TS can't
+        // narrow through the local `contractId` const above, so we assert.
+        contractId={state.contractId!}
+        clauseHint={chatHint}
+        onConsumeHint={handleConsumeHint}
+        getAccessToken={getAccessToken}
+      />
 
       {pendingRedline && (
         <TrackChangesPrompt

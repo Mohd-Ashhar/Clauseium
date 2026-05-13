@@ -101,3 +101,36 @@ export interface AuthTokens {
 }
 
 export type ClauseActionState = "pending" | "accepted" | "modified" | "rejected";
+
+// ---------------------------------------------------------------------------
+// Chat (POST /api/contracts/:id/chat)
+//
+// Server source: /src/lib/ai/chat.ts buildRefBundle + the SSE writer at
+// /src/app/api/contracts/[id]/chat/route.ts. Frame format from
+// /src/lib/ai/sse.ts is `event: <name>\ndata: <single-line JSON>\n\n`.
+
+export interface RefBundle {
+  ref_id: string; // "REF_1", "REF_2", ...
+  source_id: string;
+  citation: string; // "Indian Contract Act, 1872, s. 73" or "Case Name, Citation"
+  url: string | null;
+  source: "statute" | "case";
+  snippet: string; // first ~320 chars of the chunk
+}
+
+export interface ChatTokenUsage {
+  input_tokens: number;
+  output_tokens: number;
+}
+
+// Typed events emitted by streamChat() to its onEvent callback.
+export type ChatStreamEvent =
+  | { type: "refs"; refs: RefBundle[] }
+  | { type: "delta"; text: string }
+  | { type: "done"; usage: ChatTokenUsage | null }
+  | { type: "error"; code: string; message: string };
+
+export interface ChatMessageInput {
+  role: "user" | "assistant";
+  content: string;
+}
