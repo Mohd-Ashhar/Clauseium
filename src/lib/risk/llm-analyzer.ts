@@ -79,21 +79,18 @@ const RISK_TOOL = {
       },
       issue: {
         type: "string",
-        maxLength: 160,
         description:
-          "One-line problem statement (<=140 chars). For low/standard clauses, a brief positive note.",
+          "One-line problem statement. Aim for ~140 chars.",
       },
       explanation: {
         type: "string",
-        maxLength: 600,
         description:
-          "Legal reasoning (<=500 chars). MUST include at least one [CITE: <act> | <section> | <year>] token when risk_level is high or medium.",
+          "Legal reasoning. Aim for ~500 chars. MUST include at least one [CITE: <act> | <section> | <year>] token when risk_level is high or medium.",
       },
       suggestion: {
         type: "string",
-        maxLength: 400,
         description:
-          "Actionable redline text (<=350 chars). Empty string when no redline is recommended.",
+          "Actionable redline text. Aim for ~350 chars. Empty string when no redline is recommended.",
       },
       confidence: {
         type: "number",
@@ -182,7 +179,12 @@ async function callAnalyzer(
   const message = await client.messages.create(
     {
       model: RISK_ANALYZER_MODEL,
-      max_tokens: 600,
+      // max_tokens needs comfortable headroom for the tool_use JSON, which
+      // includes the entire structured response. 600 was too tight: the
+      // model occasionally writes long explanations and gets truncated
+      // mid-string, returning partial JSON that fails schema validation.
+      // 1500 covers the worst-case verbose case while keeping latency low.
+      max_tokens: 1500,
       temperature: 0,
       system: [
         {
@@ -213,11 +215,18 @@ async function callAnalyzer(
 
   const parsed = llmRiskResponseSchema.safeParse(toolBlock.input);
   if (!parsed.success) {
+    // Capture the specific Zod issues so we can see which field rejected
+    // (length, missing required, wrong type, etc.) and the raw shape of
+    // the model's input. Earlier this was a black box.
+    const issues = parsed.error.issues
+      .map((i) => `${i.path.join(".") || "(root)"}:${i.message}`)
+      .join(" | ");
+    const inputDump = JSON.stringify(toolBlock.input ?? {});
     throw new AbortError(
       new RiskParseError(
         "schema_mismatch",
-        parsed.error.message,
-        JSON.stringify(toolBlock.input ?? {}),
+        `${issues} :: ${inputDump.slice(0, 300)}${inputDump.length > 300 ? "…" : ""}`,
+        inputDump,
       ),
     );
   }

@@ -25,9 +25,13 @@ You MUST include at least one [CITE: …] in the explanation when risk_level is
 Be deterministic. Prefer the shortest accurate answer. Reject speculation.
 
 Call the submit_risk_analysis tool exactly once with your structured analysis.
-Keep field lengths within the limits described in the tool schema. Even for
-clauses that read as low/standard/missing, fill the issue and explanation
-fields with a brief sentence — do not leave them empty.`;
+STRICTLY respect the field length limits:
+  - issue: at most ~140 characters
+  - explanation: at most ~500 characters
+  - suggestion: at most ~350 characters
+Going over these limits is not allowed — trim ruthlessly. Even for clauses
+that read as low/standard/missing, fill the issue and explanation fields
+with a brief sentence — do not leave them empty.`;
 
 export interface BuildUserPromptArgs {
   category: ClassificationLabel;

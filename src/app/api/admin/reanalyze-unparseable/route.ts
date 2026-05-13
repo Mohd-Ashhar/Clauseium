@@ -28,7 +28,10 @@ import {
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
-const LEGACY_ISSUE_LIKE = "%unparseable response%";
+// PostgREST uses `*` as the ilike wildcard (NOT SQL's `%`). Earlier we had
+// the SQL-style `%unparseable response%` here which matched literally as a
+// string with percent signs and silently caught zero rows.
+const LEGACY_ISSUE_LIKE = "*unparseable response*";
 
 interface BrokenClauseRow {
   id: string;
@@ -128,7 +131,11 @@ export async function POST(req: Request) {
     });
 
     try {
-      const results = await analyzeClauseRisks(riskInputs);
+      // Drop concurrency from default 4 to 2 to stay under Haiku 4.5's
+      // 50k-input-tokens-per-minute cap during bulk backfills. A solo doc
+      // upload still uses default concurrency in /analyze-risk; only the
+      // admin endpoint is rate-aware.
+      const results = await analyzeClauseRisks(riskInputs, { concurrency: 2 });
       await persistRiskAnalyses(service, contractId, results);
       retried += results.length;
       // Count as "succeeded" any result that DIDN'T fall through to the
