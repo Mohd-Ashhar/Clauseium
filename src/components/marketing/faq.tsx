@@ -37,7 +37,7 @@ const items = [
 
 export function FAQ() {
   return (
-    <section id="faq" className="bg-paper-50 py-24 md:py-28">
+    <section id="faq" className="bg-paper-50 py-20 md:py-28">
       <div className="mx-auto max-w-3xl px-6">
         <FadeUp>
           <p className="text-center font-mono text-[11px] uppercase tracking-[0.18em] text-brand-600">

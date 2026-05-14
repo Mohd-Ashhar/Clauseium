@@ -44,8 +44,8 @@ function Highlight({
 export function HeroProductPreview() {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 60, rotateX: 12 }}
-      whileInView={{ opacity: 1, y: 0, rotateX: 6 }}
+      initial={{ opacity: 0, y: 60 }}
+      whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.2 }}
       transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
       style={{ perspective: "1500px", transformStyle: "preserve-3d" }}
@@ -62,8 +62,7 @@ export function HeroProductPreview() {
       />
 
       <div
-        className="overflow-hidden rounded-2xl border border-ink-700 bg-ink-850 shadow-[0_20px_80px_rgba(124,92,255,0.18),0_0_0_1px_rgba(255,255,255,0.04)_inset]"
-        style={{ transform: "rotateX(6deg)" }}
+        className="overflow-hidden rounded-2xl border border-ink-700 bg-ink-850 shadow-[0_20px_80px_rgba(124,92,255,0.18),0_0_0_1px_rgba(255,255,255,0.04)_inset] md:transform-[rotateX(6deg)]"
       >
         {/* Browser chrome */}
         <div className="flex items-center gap-3 border-b border-ink-700 bg-ink-900 px-4 py-3">
@@ -85,9 +84,9 @@ export function HeroProductPreview() {
 
         {/* Workspace topbar */}
         <div className="flex items-center justify-between border-b border-ink-700 bg-ink-900/40 px-5 py-3">
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
             <span className="font-mono text-[11px] text-ink-500">CONTRACT</span>
-            <span className="text-[13px] font-medium text-ink-100">
+            <span className="truncate text-[13px] font-medium text-ink-100">
               Vendor MSA — TechCo ↔ Clauseium Pvt Ltd
             </span>
             <Badge tone="outline" className="hidden md:inline-flex">

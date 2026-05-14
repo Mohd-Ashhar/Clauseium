@@ -109,7 +109,7 @@ export function Hero() {
         </FadeUp>
       </div>
 
-      <FadeUp delay={0.5} className="mx-auto mt-14 max-w-6xl px-4 md:mt-20 md:px-6">
+      <FadeUp delay={0.5} className="mx-auto mt-14 max-w-6xl px-6 md:mt-20">
         <HeroProductPreview />
       </FadeUp>
 

@@ -20,7 +20,7 @@ export function FeaturesBento() {
   return (
     <section
       id="features"
-      className="relative bg-paper-50 py-24 md:py-32"
+      className="relative bg-paper-50 py-20 md:py-32"
       style={{
         backgroundImage:
           "radial-gradient(circle, rgba(10,11,13,0.035) 1px, transparent 1px)",
@@ -51,7 +51,7 @@ export function FeaturesBento() {
             title="Catch what outside counsel misses"
             body="Upload any contract. Clauseium identifies every clause, flags risks against the Indian Contract Act, DPDP, and FEMA, and drafts redlines grounded in your playbook."
             visual={<HeroClausesVisual />}
-            visualClassName="min-h-[280px]"
+            visualClassName="md:min-h-[280px]"
           />
           {/* Tall card */}
           <BentoCard
@@ -208,30 +208,61 @@ function HeroClausesVisual() {
   ];
 
   return (
-    <div className="relative w-full">
-      {items.map((it, i) => (
-        <div
-          key={it.id}
-          className={cn(
-            "absolute right-0 w-[280px] rounded-xl border border-ink-700 border-l-[4px] bg-ink-850 p-4 shadow-[0_8px_32px_rgba(124,92,255,0.12)] backdrop-blur",
-            it.borderColor,
-            it.tilt,
-          )}
-          style={{ top: `${i * 72}px`, zIndex: 10 - i }}
-        >
-          <div className="flex items-center justify-between">
-            <span className="font-mono text-[10px] text-ink-500">{it.id}</span>
-            <Badge tone={it.risk}>{it.label}</Badge>
+    <div className="w-full">
+      {/* Mobile: clean vertical stack — no rotation, no overflow */}
+      <div className="flex flex-col gap-3 md:hidden">
+        {items.map((it) => (
+          <div
+            key={it.id}
+            className={cn(
+              "w-full rounded-xl border border-ink-700 border-l-[4px] bg-ink-850 p-4 shadow-[0_4px_16px_rgba(124,92,255,0.10)]",
+              it.borderColor,
+            )}
+          >
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-[10px] text-ink-500">
+                {it.id}
+              </span>
+              <Badge tone={it.risk}>{it.label}</Badge>
+            </div>
+            <div className="mt-1.5 text-[13.5px] font-semibold text-white">
+              {it.title}
+            </div>
+            <p className="mt-1 text-[12px] leading-relaxed text-ink-300">
+              {it.summary}
+            </p>
           </div>
-          <div className="mt-1.5 text-[13.5px] font-semibold text-white">
-            {it.title}
+        ))}
+      </div>
+
+      {/* md+: dramatic fan layout (original behaviour) */}
+      <div className="relative hidden md:block">
+        {items.map((it, i) => (
+          <div
+            key={it.id}
+            className={cn(
+              "absolute right-0 w-[280px] rounded-xl border border-ink-700 border-l-[4px] bg-ink-850 p-4 shadow-[0_8px_32px_rgba(124,92,255,0.12)] backdrop-blur",
+              it.borderColor,
+              it.tilt,
+            )}
+            style={{ top: `${i * 72}px`, zIndex: 10 - i }}
+          >
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-[10px] text-ink-500">
+                {it.id}
+              </span>
+              <Badge tone={it.risk}>{it.label}</Badge>
+            </div>
+            <div className="mt-1.5 text-[13.5px] font-semibold text-white">
+              {it.title}
+            </div>
+            <p className="mt-1 text-[12px] leading-relaxed text-ink-300">
+              {it.summary}
+            </p>
           </div>
-          <p className="mt-1 text-[12px] leading-relaxed text-ink-300">
-            {it.summary}
-          </p>
-        </div>
-      ))}
-      <div className="h-[240px]" />
+        ))}
+        <div className="h-[240px]" />
+      </div>
     </div>
   );
 }

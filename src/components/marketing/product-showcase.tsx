@@ -53,7 +53,7 @@ export function ProductShowcase() {
   return (
     <section
       id="showcase"
-      className="bg-paper-50 py-24 md:py-32"
+      className="bg-paper-50 py-20 md:py-32"
     >
       <div className="mx-auto max-w-[1240px] px-6">
         <FadeUp>
@@ -129,11 +129,11 @@ function ShowcaseMockup() {
       >
         {/* Top bar */}
         <div className="flex items-center justify-between border-b border-ink-700 bg-ink-850 px-4 py-3">
-          <div className="flex items-center gap-2.5">
+          <div className="flex min-w-0 flex-1 items-center gap-2.5">
             <span className="font-mono text-[10px] uppercase tracking-wider text-ink-500">
               Contract
             </span>
-            <span className="text-[12.5px] font-medium text-ink-100">
+            <span className="truncate text-[12.5px] font-medium text-ink-100">
               MSA — TechCo / Clauseium
             </span>
             <Badge tone="outline">v3</Badge>
@@ -209,39 +209,6 @@ function ShowcaseMockup() {
         </div>
       </div>
 
-      {/* Floating annotations */}
-      <Annotation
-        className="left-[-12px] top-[110px] hidden lg:flex"
-        text="AI-scored risk level"
-      />
-      <Annotation
-        className="right-[-16px] top-[210px] hidden lg:flex"
-        text="One-click accept / reject"
-      />
-      <Annotation
-        className="bottom-[40px] left-[20px] hidden lg:flex"
-        text="Verified legal citation"
-      />
-    </div>
-  );
-}
-
-function Annotation({
-  className,
-  text,
-}: {
-  className?: string;
-  text: string;
-}) {
-  return (
-    <div
-      className={cn(
-        "absolute z-10 inline-flex items-center gap-2 rounded-full border border-brand-500/20 bg-brand-500/10 px-3 py-1 font-mono text-[10px] text-brand-600 shadow-[0_4px_20px_rgba(124,92,255,0.15)] backdrop-blur",
-        className,
-      )}
-    >
-      <span className="h-1.5 w-1.5 rounded-full bg-brand-500" />
-      {text}
     </div>
   );
 }

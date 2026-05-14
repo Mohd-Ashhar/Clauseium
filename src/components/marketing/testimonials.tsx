@@ -71,7 +71,7 @@ export function Testimonials() {
   return (
     <section
       id="testimonials"
-      className="bg-paper-50 py-24 md:py-28"
+      className="bg-paper-50 py-20 md:py-28"
     >
       <div className="mx-auto max-w-[1240px] px-6">
         <FadeUp>

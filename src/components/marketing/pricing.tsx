@@ -77,7 +77,7 @@ export function Pricing() {
   const [cycle, setCycle] = useState<Cycle>("annual");
 
   return (
-    <section id="pricing" className="bg-paper-50 py-24 md:py-28">
+    <section id="pricing" className="bg-paper-50 py-20 md:py-28">
       <div className="mx-auto max-w-[1240px] px-6">
         <FadeUp>
           <p className="text-center font-mono text-[11px] uppercase tracking-[0.18em] text-brand-600">
@@ -90,9 +90,11 @@ export function Pricing() {
           <div className="mt-8 flex justify-center">
             <div className="inline-flex items-center gap-1 rounded-full border border-paper-200 bg-white p-1">
               <button
+                type="button"
                 onClick={() => setCycle("monthly")}
+                aria-pressed={cycle === "monthly"}
                 className={cn(
-                  "rounded-full px-4 py-1.5 text-[13px] font-medium transition-all",
+                  "rounded-full px-4 py-2 text-[13px] font-medium transition-all",
                   cycle === "monthly"
                     ? "bg-paper-900 text-white"
                     : "text-paper-900/60 hover:text-paper-900",
@@ -101,9 +103,11 @@ export function Pricing() {
                 Monthly
               </button>
               <button
+                type="button"
                 onClick={() => setCycle("annual")}
+                aria-pressed={cycle === "annual"}
                 className={cn(
-                  "inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[13px] font-medium transition-all",
+                  "inline-flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-medium transition-all",
                   cycle === "annual"
                     ? "bg-paper-900 text-white"
                     : "text-paper-900/60 hover:text-paper-900",
@@ -125,7 +129,7 @@ export function Pricing() {
           </div>
         </FadeUp>
 
-        <div className="mx-auto mt-14 grid max-w-5xl grid-cols-1 gap-6 md:grid-cols-3">
+        <div className="mx-auto mt-14 grid max-w-5xl grid-cols-1 gap-8 md:grid-cols-3 md:gap-6">
           {tiers.map((t, i) => (
             <FadeUp key={t.name} delay={i * 0.07}>
               <PricingCard tier={t} cycle={cycle} />
