@@ -3,6 +3,7 @@ import type { MDXComponents } from "mdx/types";
 import { LegalCitation } from "@/components/resources/legal-citation";
 import { ClauseExample } from "@/components/resources/clause-example";
 import { DpdpEvent, DpdpTimeline } from "@/components/resources/dpdp-timeline";
+import { KeyTakeaways, Takeaway } from "@/components/resources/key-takeaways";
 import { TemplateDownloadCTA } from "@/components/resources/template-download-cta";
 
 export const mdxComponents: MDXComponents = {
@@ -111,4 +112,6 @@ export const mdxComponents: MDXComponents = {
   DpdpTimeline,
   DpdpEvent,
   TemplateDownloadCTA,
+  KeyTakeaways,
+  Takeaway,
 };

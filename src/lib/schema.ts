@@ -118,3 +118,136 @@ export function generateAllSchemas(item: ContentItem) {
     generatePersonSchema(item),
   ].filter(Boolean) as object[];
 }
+
+// --- AEO / Phase 3 schema generators -----------------------------------
+
+export interface HowToStep {
+  name: string;
+  text: string;
+  url?: string;
+}
+
+export function generateHowToSchema(input: {
+  name: string;
+  description: string;
+  steps: HowToStep[];
+  totalTime?: string;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    name: input.name,
+    description: input.description,
+    ...(input.totalTime ? { totalTime: input.totalTime } : {}),
+    inLanguage: "en-IN",
+    step: input.steps.map((s, i) => ({
+      "@type": "HowToStep",
+      position: i + 1,
+      name: s.name,
+      text: s.text,
+      ...(s.url ? { url: s.url } : {}),
+    })),
+  };
+}
+
+/**
+ * Returns the `speakable` sub-object suitable for inclusion on Article,
+ * FAQPage, or pillar schemas. Selectors target the on-page elements that
+ * voice assistants and AI Overviews should preferentially extract.
+ */
+export function generateSpeakableSchema(cssSelectors: string[]) {
+  return {
+    "@type": "SpeakableSpecification",
+    cssSelector: cssSelectors,
+  };
+}
+
+export interface ClaimReviewItem {
+  claim: string;
+  statute: string;
+  section?: string;
+  citedText?: string;
+}
+
+export function generateClaimReviewSchema(claims: ClaimReviewItem[]) {
+  if (!claims.length) return null;
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    itemListElement: claims.map((c, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      item: {
+        "@type": "Claim",
+        appearance: c.claim,
+        firstAppearance: c.section
+          ? `${c.statute} § ${c.section}`
+          : c.statute,
+        ...(c.citedText ? { description: c.citedText } : {}),
+      },
+    })),
+  };
+}
+
+// --- Pillar-page schema generators -------------------------------------
+
+export interface PillarSchemaInput {
+  slug: string;
+  title: string;
+  description: string;
+  publishedAt: string;
+  updatedAt?: string;
+  keywords: string[];
+}
+
+export function generatePillarArticleSchema(p: PillarSchemaInput) {
+  const url = `${SITE}/${p.slug}`;
+  return {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: p.title,
+    description: p.description,
+    datePublished: p.publishedAt,
+    dateModified: p.updatedAt ?? p.publishedAt,
+    publisher: ORG,
+    image: [`${SITE}/opengraph-image`],
+    mainEntityOfPage: { "@type": "WebPage", "@id": url },
+    keywords: p.keywords.join(", "),
+    inLanguage: "en-IN",
+    speakable: generateSpeakableSchema([
+      ".key-takeaways",
+      "#faq",
+    ]),
+  };
+}
+
+export function generatePillarFaqSchema(
+  faq: { question: string; answer: string }[],
+) {
+  if (!faq.length) return null;
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faq.map((f) => ({
+      "@type": "Question",
+      name: f.question,
+      acceptedAnswer: { "@type": "Answer", text: f.answer },
+    })),
+  };
+}
+
+export function generatePillarBreadcrumbSchema(slug: string, title: string) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: SITE },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: title,
+        item: `${SITE}/${slug}`,
+      },
+    ],
+  };
+}

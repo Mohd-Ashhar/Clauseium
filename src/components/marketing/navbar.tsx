@@ -24,6 +24,9 @@ export function Navbar({ forceLight = false }: { forceLight?: boolean }) {
     pathname?.startsWith("/features") ||
     pathname?.startsWith("/pricing") ||
     pathname?.startsWith("/security") ||
+    pathname === "/ai-contract-review-india" ||
+    pathname === "/dpdp-compliance-india" ||
+    pathname === "/contract-templates-india" ||
     false;
   const [scrolled, setScrolled] = useState(lightByRoute);
 

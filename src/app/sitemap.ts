@@ -6,6 +6,7 @@ import {
   getContentByCategory,
 } from "@/lib/content";
 import { FEATURE_PAGES } from "@/lib/features";
+import { getAllPillars } from "@/lib/pillars";
 
 const SITE_URL = "https://clauseium.com";
 
@@ -14,6 +15,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const all = await getAllContent();
   const liveCategories = await getCategoriesInUse();
   const comparisons = await getContentByCategory("comparisons");
+  const pillars = await getAllPillars();
 
   // Resource articles. Exclude `comparisons` — those have a canonical at /compare/*
   // and we don't want duplicate URLs.
@@ -58,6 +60,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.95,
   }));
 
+  // Pillar pages — highest priority, equal to homepage.
+  const pillarUrls: MetadataRoute.Sitemap = pillars.map((p) => {
+    const lm = p.frontmatter.updatedAt ?? p.frontmatter.publishedAt;
+    return {
+      url: `${SITE_URL}/${p.frontmatter.slug}`,
+      lastModified: new Date(lm),
+      changeFrequency: "weekly",
+      priority: 1.0,
+    };
+  });
+
   return [
     {
       url: `${SITE_URL}/`,
@@ -89,6 +102,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly",
       priority: 0.9,
     },
+    ...pillarUrls,
     ...featureUrls,
     ...compareUrls,
     ...categoryUrls,

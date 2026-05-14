@@ -30,12 +30,12 @@ const product: FooterLink[] = [
 ];
 
 const resources: FooterLink[] = [
-  { label: "All Resources", href: "/resources" },
-  { label: "Contract Templates", href: "/resources/templates" },
-  { label: "DPDP Compliance", href: "/resources/dpdp" },
+  { label: "AI Contract Review India", href: "/ai-contract-review-india" },
+  { label: "DPDP Compliance India", href: "/dpdp-compliance-india" },
+  { label: "Indian Contract Templates", href: "/contract-templates-india" },
   { label: "Clause Library", href: "/resources/clauses" },
-  { label: "Indian Law Guides", href: "/resources/guides" },
   { label: "Glossary", href: "/resources/glossary" },
+  { label: "All Resources", href: "/resources" },
 ];
 
 const company: FooterLink[] = [
