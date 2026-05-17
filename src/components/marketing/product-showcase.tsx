@@ -209,6 +209,39 @@ function ShowcaseMockup() {
         </div>
       </div>
 
+      {/* Floating annotations — peek vertically out of the mockup's top/bottom borders */}
+      <Annotation
+        className="left-8 top-0 hidden -translate-y-1/2 lg:inline-flex"
+        text="AI-scored risk level"
+      />
+      <Annotation
+        className="right-8 top-0 hidden -translate-y-1/2 lg:inline-flex"
+        text="One-click accept / reject"
+      />
+      <Annotation
+        className="bottom-0 left-1/2 hidden -translate-x-1/2 translate-y-1/2 lg:inline-flex"
+        text="Verified legal citation"
+      />
+    </div>
+  );
+}
+
+function Annotation({
+  className,
+  text,
+}: {
+  className?: string;
+  text: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "absolute z-10 items-center gap-2 rounded-full border border-brand-500/20 bg-brand-500/10 px-3 py-1 font-mono text-[10px] text-brand-600 shadow-[0_4px_20px_rgba(124,92,255,0.15)] backdrop-blur",
+        className,
+      )}
+    >
+      <span className="h-1.5 w-1.5 rounded-full bg-brand-500" />
+      {text}
     </div>
   );
 }
