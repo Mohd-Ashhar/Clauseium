@@ -6,7 +6,11 @@ import type {
   ClassificationLabel,
   ClassificationMethod,
 } from "@/lib/classification";
-import type { LegalCitation, RiskLevel } from "@/types/contract";
+import type {
+  DocumentAnalysisView,
+  LegalCitation,
+  RiskLevel,
+} from "@/types/contract";
 import type { RiskMethod } from "@/lib/risk";
 import {
   StatusBanner,
@@ -26,6 +30,7 @@ interface ContractRow {
   status: JobStatus;
   error_message: string | null;
   structured_json: StructuredDocument | null;
+  document_analysis: DocumentAnalysisView | null;
   uploaded_at: string;
   processed_at: string | null;
 }
@@ -54,6 +59,19 @@ export default async function UploadResultPage({
     .maybeSingle<ContractRow>();
 
   if (error || !data) notFound();
+
+  // Best-effort fetch of the whole-document analysis. Kept in a separate query
+  // (not the main select) so a database that has not yet run migration 0009
+  // still renders — the column-missing error degrades to "no analysis".
+  let documentAnalysis: DocumentAnalysisView | null = null;
+  {
+    const { data: docRow } = await supabase
+      .from("contracts")
+      .select("document_analysis")
+      .eq("id", id)
+      .maybeSingle<{ document_analysis: DocumentAnalysisView | null }>();
+    documentAnalysis = docRow?.document_analysis ?? null;
+  }
 
   if (data.status !== "ready" || !data.structured_json) {
     return (
@@ -236,6 +254,11 @@ export default async function UploadResultPage({
       structured={data.structured_json}
       clauses={clauses}
       summary={summary}
+      documentAnalysis={documentAnalysis}
+      // A 'ready' contract that still carries an error_message had a degraded
+      // analysis stage — surface it as a non-blocking warning.
+      partial={Boolean(data.error_message)}
+      analysisNotes={data.error_message ? [data.error_message] : []}
     />
   );
 }

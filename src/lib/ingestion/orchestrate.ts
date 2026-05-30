@@ -15,7 +15,11 @@ import {
 import { verifyAndPersistCitations } from "@/lib/citations/persist";
 import {
   analyzeClauseRisks,
+  analyzeDocument,
+  isRiskLlmAvailable,
+  persistDocumentAnalysis,
   persistRiskAnalyses,
+  type DocAnalyzerClause,
   type RiskAnalysisResult,
 } from "@/lib/risk";
 
@@ -57,14 +61,41 @@ export async function processContract(contract: ContractRecord): Promise<void> {
     const normalized = normalize({ text, pageTexts });
     const structured = detectStructure(normalized);
 
+    // Observability: we previously had no signal that the parser had
+    // collapsed a 60-page contract into 1 clause. A single line per
+    // contract here is enough for an operator to spot the failure mode
+    // without spelunking through the DB.
+    const clauseCount = structured.sections.reduce(
+      (n, s) => n + s.clauses.length,
+      0,
+    );
+    const sectionTitles = structured.sections
+      .slice(0, 6)
+      .map((s) => `${s.title}(${s.clauses.length})`)
+      .join(", ");
+    console.warn(
+      `[ingestion] contract=${contract.id} mime=${contract.mime_type} chars=${normalized.length} sections=${structured.sections.length} clauses=${clauseCount} firstSections=[${sectionTitles}]`,
+    );
+
     const validated = structuredDocumentSchema.parse(structured);
     await persistContract(client, contract.id, validated, pageCount);
+
+    // Track per-stage health so we can tell a genuinely clean review apart
+    // from one that only finalized 'ready' because a downstream failure was
+    // swallowed. This drives the analysis_summary the UI uses to show a
+    // "partial analysis" warning instead of a misleading "0 high risk".
+    const llmAvailable = isRiskLlmAvailable();
+    let classificationOk = true;
+    let riskOk = false;
+    let citationsOk = false;
+    let documentOk = false;
 
     try {
       const { data: rows, error: rowsError } = await client
         .from("clauses")
-        .select("id, clause_text")
-        .eq("contract_id", contract.id);
+        .select("id, clause_text, section_title, position")
+        .eq("contract_id", contract.id)
+        .order("position", { ascending: true });
       if (rowsError) throw rowsError;
       if (rows && rows.length > 0) {
         const clauseInputs = rows.map((r) => ({
@@ -88,6 +119,7 @@ export async function processContract(contract: ContractRecord): Promise<void> {
           const riskResults = await analyzeClauseRisks(riskInputs);
           await persistRiskAnalyses(client, contract.id, riskResults);
           riskByClauseId = new Map(riskResults.map((r) => [r.clauseId, r]));
+          riskOk = true;
         } catch (riskErr) {
           console.error(
             `[risk] non-fatal failure for contract ${contract.id}:`,
@@ -99,25 +131,77 @@ export async function processContract(contract: ContractRecord): Promise<void> {
           await verifyAndPersistCitations(client, clauseInputs, results, {
             riskByClauseId,
           });
+          citationsOk = true;
         } catch (citErr) {
           console.error(
             `[citations] non-fatal failure for contract ${contract.id}:`,
             citErr instanceof Error ? citErr.message : citErr,
           );
         }
+
+        // Whole-document pass: missing protections, cross-clause conflicts,
+        // one-sided terms, executive summary. This is the Phase-1 capability a
+        // clause-by-clause view structurally cannot provide. Non-fatal and
+        // additive — failure never blocks finalization.
+        try {
+          const docClauses: DocAnalyzerClause[] = rows.map((r) => ({
+            id: r.id as string,
+            position: (r.position as number) ?? 0,
+            sectionTitle: (r.section_title as string | null) ?? null,
+            text: r.clause_text as string,
+          }));
+          const docAnalysis = await analyzeDocument({
+            contractTitle: contract.title,
+            clauses: docClauses,
+          });
+          documentOk = await persistDocumentAnalysis(
+            client,
+            contract.id,
+            docAnalysis,
+          );
+        } catch (docErr) {
+          console.error(
+            `[risk] document analysis non-fatal failure for contract ${contract.id}:`,
+            docErr instanceof Error ? docErr.message : docErr,
+          );
+        }
       }
     } catch (clfErr) {
+      classificationOk = false;
       console.error(
         `[classification] non-fatal failure for contract ${contract.id}:`,
         clfErr instanceof Error ? clfErr.message : clfErr,
       );
     }
 
+    // A contract is "partial" when segmentation produced nothing, the risk
+    // stage failed entirely, classification failed, or the LLM analyzer was
+    // unavailable (rule-only, degraded). We still finalize 'ready' so the
+    // parsed document is viewable, but we RECORD the degradation rather than
+    // silently presenting a green review.
+    const noClauses = clauseCount === 0;
+    const degraded = noClauses || !classificationOk || !riskOk || !llmAvailable;
+    const notes: string[] = [];
+    if (noClauses)
+      notes.push("No clauses were detected — parsing/segmentation may have failed.");
+    if (!classificationOk) notes.push("Clause classification failed.");
+    if (!riskOk && !noClauses)
+      notes.push("Risk analysis failed — risks may be missing.");
+    if (!citationsOk && riskOk) notes.push("Citation verification failed.");
+    if (!documentOk && riskOk && llmAvailable)
+      notes.push(
+        "Whole-document analysis unavailable (missing-clause & cross-clause checks may be incomplete).",
+      );
+    if (!llmAvailable)
+      notes.push("AI analyzer unavailable — rule-only (degraded) review.");
+
     // Flip to ready only after every downstream stage has had a chance to
-    // write its per-clause columns. Until this point the contract has been
-    // sitting in 'processing'. Downstream failures are caught and logged
-    // above so they never prevent finalization.
-    await finalizeContractReady(client, contract.id);
+    // write its per-clause columns. Downstream failures are now recorded on the
+    // error_message column (surfaced as a non-blocking "partial" banner)
+    // instead of being silently hidden behind a green review.
+    await finalizeContractReady(client, contract.id, {
+      errorMessage: degraded ? notes.join(" ") : null,
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     await client

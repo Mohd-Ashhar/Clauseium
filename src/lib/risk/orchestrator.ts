@@ -12,9 +12,7 @@ import {
   aggregateRuleIds,
   pickPrimary,
   runRules,
-  shouldEscalateToLlm,
 } from "./rule-engine";
-import { shouldAlwaysRunLlm } from "./categories";
 import type {
   AnalyzeRiskInput,
   RiskAnalysisResult,
@@ -76,14 +74,14 @@ export async function analyzeClauseRisks(
       category: input.category,
     });
 
-    const mustEscalate =
-      shouldAlwaysRunLlm(input.category) || shouldEscalateToLlm(findings);
-
-    if (!mustEscalate) {
-      results[i] = ruleOnlyResult(input.clauseId, findings);
-      continue;
-    }
-
+    // Every substantive clause gets a model pass. Rule findings are passed to
+    // the analyzer as priors and merged with its output. Previously the LLM
+    // was gated behind rule hits / a tiny always-run set, which was a major
+    // recall leak: clauses with no matching rule (warranties, confidentiality,
+    // auto-renewal, insurance, and everything in the 'other' bucket) were
+    // silently marked "standard / no risks". The rule-only path now only
+    // applies when the LLM is unavailable or the per-contract LLM budget is
+    // exhausted (handled in Pass 2).
     llmQueue.push({ idx: i, input, ruleFindings: findings });
   }
 
@@ -122,6 +120,7 @@ async function llmFallback(
         clauseText: input.clauseText,
         ruleFindings,
         ragContext,
+        classificationConfidence: input.classificationConfidence,
       },
       signal ? { signal } : undefined,
     );

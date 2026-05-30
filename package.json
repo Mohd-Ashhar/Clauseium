@@ -12,7 +12,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "ingest:legal": "tsx --require ./scripts/server-only-shim.cjs scripts/ingest-legal-corpus.ts",
-    "backfill:citation-urls": "tsx --require ./scripts/server-only-shim.cjs scripts/backfill-citation-urls.ts"
+    "backfill:citation-urls": "tsx --require ./scripts/server-only-shim.cjs scripts/backfill-citation-urls.ts",
+    "eval:accuracy": "vitest run tests/eval/accuracy.test.ts",
+    "eval:report": "tsx --require ./scripts/server-only-shim.cjs scripts/eval-accuracy.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",

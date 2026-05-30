@@ -6,7 +6,50 @@ import { llmRiskResponseSchema, type LlmRiskResponse } from "./schemas";
 import { RISK_SYSTEM_PROMPT, buildRiskUserPrompt } from "./prompts";
 import type { RuleFinding } from "./types";
 
-export const RISK_ANALYZER_MODEL = "claude-haiku-4-5-20251001";
+// Tiered models. Sonnet is the balanced workhorse for clause-level legal
+// reasoning (a large step up from the previous Haiku default); Opus is
+// reserved for the highest-stakes categories where a missed risk is most
+// costly. Both are overridable via env so deploys can tune cost/quality
+// without a code change.
+export const RISK_MODEL_DEFAULT =
+  process.env.RISK_MODEL_DEFAULT ?? "claude-sonnet-4-6";
+export const RISK_MODEL_ESCALATION =
+  process.env.RISK_MODEL_ESCALATION ?? "claude-opus-4-8";
+
+// Categories where a missed or mis-graded risk has the highest commercial
+// impact — these escalate to the stronger model.
+const HIGH_STAKES_CATEGORIES: ReadonlySet<ClassificationLabel> = new Set([
+  "limitation_of_liability",
+  "indemnification",
+  "ip_assignment",
+  "data_protection_dpdp",
+  "termination",
+]);
+
+// Below this classification confidence we don't trust the category (and thus
+// which rule pack ran), so we escalate to the stronger model to reason about
+// the clause from scratch rather than risk a shallow miss on a mislabeled clause.
+const LOW_CLASSIFICATION_CONFIDENCE = 0.55;
+
+export function pickRiskModel(
+  category: ClassificationLabel,
+  ruleFindings: readonly RuleFinding[],
+  classificationConfidence?: number,
+): string {
+  if (HIGH_STAKES_CATEGORIES.has(category)) return RISK_MODEL_ESCALATION;
+  if (ruleFindings.some((f) => f.level === "high")) return RISK_MODEL_ESCALATION;
+  if (
+    typeof classificationConfidence === "number" &&
+    classificationConfidence < LOW_CLASSIFICATION_CONFIDENCE
+  ) {
+    return RISK_MODEL_ESCALATION;
+  }
+  return RISK_MODEL_DEFAULT;
+}
+
+// Retained for back-compat (tests / logging); the active model is chosen
+// per-clause by pickRiskModel.
+export const RISK_ANALYZER_MODEL = RISK_MODEL_DEFAULT;
 
 // Marker pushed onto `risk_rule_ids` when we exhaust retries and fall back
 // to the "Manual review recommended" payload. The admin re-analyze endpoint
@@ -27,6 +70,8 @@ export interface LlmAnalyzeInput {
   clauseText: string;
   ruleFindings: readonly RuleFinding[];
   ragContext: readonly LegalReference[];
+  // Drives model selection: low confidence escalates to the stronger model.
+  classificationConfidence?: number;
 }
 
 export interface LlmAnalyzeResult {
@@ -80,17 +125,17 @@ const RISK_TOOL = {
       issue: {
         type: "string",
         description:
-          "One-line problem statement. Aim for ~140 chars.",
+          "One-line problem statement (<= ~300 chars).",
       },
       explanation: {
         type: "string",
         description:
-          "Legal reasoning. Aim for ~500 chars. MUST include at least one [CITE: <act> | <section> | <year>] token when risk_level is high or medium.",
+          "Thorough legal reasoning a reviewer can act on (up to ~1800 chars): what the risk is, why it matters under Indian law, and the commercial exposure. MUST include at least one [CITE: <act> | <section> | <year>] token when risk_level is high or medium.",
       },
       suggestion: {
         type: "string",
         description:
-          "Actionable redline text. Aim for ~350 chars. Empty string when no redline is recommended.",
+          "Concrete redline / replacement language the reviewer can paste (up to ~1000 chars). Empty string only when genuinely no change is recommended.",
       },
       confidence: {
         type: "number",
@@ -133,13 +178,18 @@ export async function analyzeByLlm(
 
   const client = await getClient(apiKey);
   const userText = buildRiskUserPrompt(input);
+  const model = pickRiskModel(
+    input.category,
+    input.ruleFindings,
+    input.classificationConfidence,
+  );
 
   try {
     // p-retry only retries transient failures (network / 5xx / rate limit).
     // Parse errors are wrapped in AbortError inside callAnalyzer so p-retry
     // unwraps and surfaces the RiskParseError immediately without retrying.
     const response = await pRetry(
-      async () => callAnalyzer(client, userText, opts.signal),
+      async () => callAnalyzer(client, userText, model, opts.signal),
       {
         retries: 2,
         factor: 2,
@@ -148,7 +198,7 @@ export async function analyzeByLlm(
         ...(opts.signal ? { signal: opts.signal } : {}),
       },
     );
-    return { response, model: RISK_ANALYZER_MODEL };
+    return { response, model };
   } catch (err) {
     if (err instanceof RiskParseError) {
       console.warn(
@@ -163,7 +213,7 @@ export async function analyzeByLlm(
     }
     return {
       response: FALLBACK_RESPONSE,
-      model: RISK_ANALYZER_MODEL,
+      model,
       failedToParse: true,
     };
   }
@@ -172,19 +222,20 @@ export async function analyzeByLlm(
 async function callAnalyzer(
   client: AnthropicMessagesAPI,
   userText: string,
+  model: string,
   signal?: AbortSignal,
 ): Promise<LlmRiskResponse> {
   // Network / 5xx / rate-limit errors fall through to p-retry. Parse
   // errors are wrapped in AbortError below so p-retry short-circuits.
   const message = await client.messages.create(
     {
-      model: RISK_ANALYZER_MODEL,
-      // max_tokens needs comfortable headroom for the tool_use JSON, which
-      // includes the entire structured response. 600 was too tight: the
-      // model occasionally writes long explanations and gets truncated
-      // mid-string, returning partial JSON that fails schema validation.
-      // 1500 covers the worst-case verbose case while keeping latency low.
-      max_tokens: 1500,
+      model,
+      // Generous headroom for the tool_use JSON. We deliberately removed the
+      // tight ~140/500/350-char output caps so the analyzer can produce a
+      // proper, reviewer-grade explanation and redline; 4096 comfortably
+      // covers the schema ceilings (issue 400 / explanation 2000 /
+      // suggestion 1200) plus tool-call overhead.
+      max_tokens: 4096,
       temperature: 0,
       system: [
         {

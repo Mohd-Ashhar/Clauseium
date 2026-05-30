@@ -11,7 +11,7 @@ import type { RiskLevel } from "@/lib/risk";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-const CONTRACT_FIELDS = "id, status, processed_at";
+const CONTRACT_FIELDS = "id, status, processed_at, error_message";
 
 const CLAUSE_FIELDS =
   "id, section_title, section_position, clause_number, position, clause_text, search_anchor, " +
@@ -155,7 +155,21 @@ export async function GET(
     id: string;
     status: string;
     processed_at: string | null;
+    error_message: string | null;
   };
+
+  // Best-effort whole-document analysis fetch. Separate query so a database
+  // without migration 0009 still returns the rest of the analysis.
+  let documentAnalysis: unknown = null;
+  {
+    const { data: docRow } = await supabase
+      .from("contracts")
+      .select("document_analysis")
+      .eq("id", id)
+      .maybeSingle<{ document_analysis: unknown }>();
+    documentAnalysis = docRow?.document_analysis ?? null;
+  }
+
   const clauseRows = (clausesResult.data ?? []) as unknown as ClauseRow[];
   const classificationRows = (classificationsResult.data ??
     []) as unknown as ClassificationRow[];
@@ -241,6 +255,13 @@ export async function GET(
       contract_id: contract.id,
       status: contract.status,
       processed_at: contract.processed_at,
+      // A 'ready' contract that still carries an error_message had a degraded
+      // analysis stage; surface it so clients can warn instead of showing a
+      // misleading clean result.
+      partial: contract.status === "ready" && Boolean(contract.error_message),
+      partial_reason:
+        contract.status === "ready" ? contract.error_message : null,
+      document_analysis: documentAnalysis,
       summary: {
         total_clauses: clauses.length,
         by_risk: byRisk,

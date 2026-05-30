@@ -32,6 +32,14 @@ interface PageData {
 // of the next text item changes. `item.hasEOL` alone is unreliable (most PDFs
 // emit it false for every item), which collapses the entire page into one
 // long line and breaks downstream clause detection.
+//
+// IMPORTANT: PDF text-extraction yields many small word-fragment items per
+// line ("This", "Software", "as", "a", "Service" — each its own item). The
+// spacing between them is implicit via x-coordinates, not characters. We
+// MUST insert a space between consecutive same-line items, otherwise the
+// page reads as "ThisSoftwareasaService…" and every downstream regex breaks.
+// The whitespace guards avoid double-spaces around punctuation or items
+// that already carry leading/trailing whitespace.
 async function renderPage(
   pageData: PageData,
   collected: string[],
@@ -45,7 +53,12 @@ async function renderPage(
   for (const item of content.items) {
     const y = item.transform[5];
     if (lastY === null || y === lastY) {
-      pageText += item.str;
+      const needsSpace =
+        pageText.length > 0 &&
+        !/\s$/.test(pageText) &&
+        item.str.length > 0 &&
+        !/^\s/.test(item.str);
+      pageText += (needsSpace ? " " : "") + item.str;
     } else {
       pageText += "\n" + item.str;
     }

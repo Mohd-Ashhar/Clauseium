@@ -73,4 +73,26 @@ describe("substantive-check", () => {
       "Each party will process personal data in accordance with the Digital Personal Data Protection Act, 2023, including but not limited to obligations as a Data Fiduciary under § 8 and § 11.";
     expect(isSubstantiveClause(text)).toBe(true);
   });
+
+  // Regression: ALL-CAPS limitation-of-liability / disclaimer clauses are
+  // conventional in real contracts and are among the highest-risk provisions.
+  // The old uppercase filter dropped them outright; a long all-caps clause
+  // must now survive to the analyzer.
+  it("keeps a long ALL-CAPS limitation-of-liability clause", () => {
+    const text =
+      "IN NO EVENT SHALL EITHER PARTY BE LIABLE TO THE OTHER FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL OR PUNITIVE DAMAGES ARISING OUT OF OR RELATING TO THIS AGREEMENT, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.";
+    expect(isSubstantiveClause(text)).toBe(true);
+    expect(classifySubstance(text)).toBeNull();
+  });
+
+  // Regression: short-but-critical clauses (governing law, notice periods)
+  // used to be dropped by the 80-char floor. They must survive now.
+  it("keeps a short governing-law clause (>= 40 chars)", () => {
+    const text = "This Agreement is governed by the laws of India.";
+    expect(isSubstantiveClause(text)).toBe(true);
+  });
+
+  it("still drops a short ALL-CAPS heading", () => {
+    expect(isSubstantiveClause("GOVERNING LAW AND JURISDICTION")).toBe(false);
+  });
 });

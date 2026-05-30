@@ -21,10 +21,20 @@ const TABLE_OF_CONTENTS_RX = /^\s*table\s+of\s+contents?\s*$/i;
 const SIGNATURE_BLOCK_RX = /^\s*(in\s+witness\s+whereof|signed\s+by|signature\s+of\s+the\s+parties)\b/i;
 
 // Tunable thresholds. Anything below these is almost always a heading or
-// fragment, not a clause.
-const MIN_CHARS = 80;
-const MIN_WORDS = 8;
+// fragment, not a clause. These were previously far too aggressive
+// (80 chars / 8 words) and silently dropped genuine short-but-critical
+// provisions (governing law, notice periods, "time is of the essence"),
+// which then surfaced to the user as "no risk". Aligned to the orchestrator's
+// own MIN_TEXT_LENGTH=40 floor and tuned for recall.
+const MIN_CHARS = 40;
+const MIN_WORDS = 5;
 const UPPERCASE_RATIO_CEILING = 0.7;
+// Above this length, a high uppercase ratio is almost certainly a real
+// ALL-CAPS clause (limitation-of-liability / warranty disclaimers are
+// conventionally all-caps), NOT a section heading. We must NOT drop these —
+// they are among the highest-risk clauses in any contract. Short all-caps
+// fragments (headings, defined-term labels) are still filtered.
+const UPPERCASE_MAX_HEADING_LEN = 180;
 
 export interface NonSubstantiveReason {
   code:
@@ -65,7 +75,10 @@ export function classifySubstance(
   if (wordCount < MIN_WORDS) {
     return { code: "too_few_words", detail: `${wordCount} words` };
   }
-  if (uppercaseRatio(text) > UPPERCASE_RATIO_CEILING) {
+  if (
+    text.length < UPPERCASE_MAX_HEADING_LEN &&
+    uppercaseRatio(text) > UPPERCASE_RATIO_CEILING
+  ) {
     return { code: "mostly_uppercase" };
   }
 

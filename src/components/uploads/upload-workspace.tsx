@@ -30,6 +30,7 @@ import type {
   ClauseAnalysis,
   ClauseCategory,
   Contract,
+  DocumentAnalysisView,
   LegalCitation,
   RiskLevel,
 } from "@/types/contract";
@@ -122,7 +123,9 @@ const CATEGORY_TO_CONTRACT: Record<ClassificationLabel, ClauseCategory> = {
   data_protection_dpdp: "data_protection_dpdp",
   payment_terms: "payment_terms",
   ip_assignment: "ip_assignment",
-  other: "confidentiality",
+  // Preserve "other" honestly instead of mislabeling it as confidentiality in
+  // exports — these are genuinely uncategorized clauses.
+  other: "other",
 };
 
 export interface ClauseWorkspaceItem {
@@ -172,6 +175,14 @@ export interface UploadWorkspaceProps {
   structured: StructuredDocument;
   clauses: ClauseWorkspaceItem[];
   summary: WorkspaceSummary;
+  // Whole-document analysis (missing protections, cross-clause issues,
+  // one-sided terms, executive summary). Null when not yet available.
+  documentAnalysis?: DocumentAnalysisView | null;
+  // True when one or more analysis stages failed/degraded during processing.
+  // Drives a non-blocking warning so a degraded review is never mistaken for a
+  // clean "0 high risk" result.
+  partial?: boolean;
+  analysisNotes?: string[];
 }
 
 function buildContractForExport(args: {
@@ -273,6 +284,9 @@ export function UploadWorkspace({
   structured,
   clauses,
   summary,
+  documentAnalysis = null,
+  partial = false,
+  analysisNotes = [],
 }: UploadWorkspaceProps) {
   const [filter, setFilter] = useState<FilterLevel>("all");
   const [activeClauseId, setActiveClauseId] = useState<string | null>(null);
@@ -441,6 +455,8 @@ export function UploadWorkspace({
         isExporting={isExporting}
       />
 
+      {partial && <PartialAnalysisBanner notes={analysisNotes} />}
+
       <div className="hidden lg:flex flex-1 min-h-0">
         <Group orientation="horizontal" className="flex-1 flex">
           <Panel defaultSize={55} minSize={35} maxSize={70} className="min-w-0">
@@ -459,6 +475,7 @@ export function UploadWorkspace({
               contractId={contractId}
               summary={summary}
               clauses={visible}
+              documentAnalysis={documentAnalysis}
               filter={filter}
               setFilter={setFilter}
               activeClauseId={activeClauseId}
@@ -487,6 +504,7 @@ export function UploadWorkspace({
           contractId={contractId}
           summary={summary}
           clauses={visible}
+          documentAnalysis={documentAnalysis}
           filter={filter}
           setFilter={setFilter}
           activeClauseId={activeClauseId}
@@ -761,6 +779,7 @@ function RightColumn({
   contractId,
   summary,
   clauses,
+  documentAnalysis,
   filter,
   setFilter,
   activeClauseId,
@@ -829,6 +848,7 @@ function RightColumn({
           contractId={contractId}
           summary={summary}
           clauses={clauses}
+          documentAnalysis={documentAnalysis}
           filter={filter}
           setFilter={setFilter}
           activeClauseId={activeClauseId}
@@ -881,6 +901,7 @@ interface AnalysisPaneProps {
   contractId: string;
   summary: WorkspaceSummary;
   clauses: ClauseWorkspaceItem[];
+  documentAnalysis?: DocumentAnalysisView | null;
   filter: FilterLevel;
   setFilter: (f: FilterLevel) => void;
   activeClauseId: string | null;
@@ -899,6 +920,7 @@ function AnalysisPane({
   contractId,
   summary,
   clauses,
+  documentAnalysis,
   filter,
   setFilter,
   activeClauseId,
@@ -927,6 +949,10 @@ function AnalysisPane({
           acceptAllStandard={acceptAllStandard}
           toast={toast}
         />
+
+        {documentAnalysis && (
+          <DocumentReviewCard analysis={documentAnalysis} />
+        )}
 
         <div className="mt-4">
           {clauses.length === 0 ? (
@@ -997,6 +1023,200 @@ function FilterRow({
           </button>
         );
       })}
+    </div>
+  );
+}
+
+const POSTURE_META: Record<
+  DocumentAnalysisView["overallPosture"],
+  { label: string; tone: string }
+> = {
+  favourable: { label: "Favourable", tone: "bg-risk-low/15 text-risk-low" },
+  balanced: { label: "Balanced", tone: "bg-risk-info/15 text-risk-info" },
+  unfavourable: { label: "Unfavourable", tone: "bg-risk-med/15 text-risk-med" },
+  high_risk: { label: "High risk", tone: "bg-risk-high/15 text-risk-high" },
+};
+
+// Whole-document analysis surface (Phase 1): executive summary, detected type,
+// missing protections, cross-clause issues, one-sided terms. This is the
+// document-level intelligence a clause-by-clause list cannot show.
+function DocumentReviewCard({ analysis }: { analysis: DocumentAnalysisView }) {
+  const [open, setOpen] = useState(true);
+  const posture = POSTURE_META[analysis.overallPosture];
+  const missing = analysis.missingProtections ?? [];
+  const cross = analysis.crossClauseIssues ?? [];
+  const oneSided = analysis.oneSidedTerms ?? [];
+  const totalFindings = missing.length + cross.length + oneSided.length;
+
+  return (
+    <div className="mt-4 bg-brand-500/5 border border-brand-500/20 rounded-xl overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left"
+      >
+        <div className="flex items-center gap-2.5 min-w-0">
+          <Gavel className="h-4 w-4 text-brand-400 shrink-0" />
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-[13px] font-semibold text-ink-100">
+                Document Review
+              </span>
+              <span
+                className={cn(
+                  "inline-flex items-center px-2 py-0.5 rounded-full text-[10.5px] font-medium",
+                  posture.tone,
+                )}
+              >
+                {posture.label}
+              </span>
+            </div>
+            <p className="text-[11.5px] text-ink-500 mt-0.5 truncate">
+              {analysis.contractTypeLabel} · {totalFindings} document-level
+              finding{totalFindings === 1 ? "" : "s"}
+            </p>
+          </div>
+        </div>
+        <ChevronDown
+          className={cn(
+            "h-4 w-4 text-ink-500 transition-transform shrink-0",
+            open && "rotate-180",
+          )}
+        />
+      </button>
+
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+            className="overflow-hidden"
+          >
+            <div className="px-5 pb-5 space-y-4">
+              {analysis.executiveSummary && (
+                <p className="text-[13px] leading-relaxed text-ink-300">
+                  {analysis.executiveSummary}
+                </p>
+              )}
+
+              {missing.length > 0 && (
+                <DocFindingGroup
+                  title={`Missing protections (${missing.length})`}
+                  items={missing.map((m) => ({
+                    level: m.riskLevel,
+                    heading: m.label,
+                    body: m.rationale,
+                    extraLabel: m.suggestedClause ? "Suggested clause" : null,
+                    extra: m.suggestedClause || null,
+                  }))}
+                />
+              )}
+
+              {cross.length > 0 && (
+                <DocFindingGroup
+                  title={`Cross-clause issues (${cross.length})`}
+                  items={cross.map((c) => ({
+                    level: c.riskLevel,
+                    heading:
+                      c.title +
+                      (c.clausePositions.length
+                        ? ` (§${c.clausePositions.join(", §")})`
+                        : ""),
+                    body: c.explanation,
+                    extraLabel: c.recommendation ? "Recommendation" : null,
+                    extra: c.recommendation || null,
+                  }))}
+                />
+              )}
+
+              {oneSided.length > 0 && (
+                <DocFindingGroup
+                  title={`One-sided terms (${oneSided.length})`}
+                  items={oneSided.map((o) => ({
+                    level: o.riskLevel,
+                    heading:
+                      o.title +
+                      (o.clausePosition != null ? ` (§${o.clausePosition})` : ""),
+                    body: o.explanation,
+                    extraLabel: o.recommendation ? "Recommendation" : null,
+                    extra: o.recommendation || null,
+                  }))}
+                />
+              )}
+
+              {totalFindings === 0 && (
+                <p className="text-[12.5px] text-ink-400">
+                  No document-level issues detected — standard protections appear
+                  present and no cross-clause conflicts were found.
+                </p>
+              )}
+
+              {analysis.degraded && (
+                <p className="text-[11px] text-ink-500 italic">
+                  Checklist-based analysis only (AI document pass unavailable).
+                </p>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function DocFindingGroup({
+  title,
+  items,
+}: {
+  title: string;
+  items: Array<{
+    level: RiskLevel;
+    heading: string;
+    body: string;
+    extraLabel: string | null;
+    extra: string | null;
+  }>;
+}) {
+  return (
+    <div>
+      <div className="text-[10px] uppercase tracking-[0.1em] text-ink-500 mb-2 font-medium">
+        {title}
+      </div>
+      <div className="space-y-2">
+        {items.map((it, i) => (
+          <div
+            key={i}
+            className={cn(
+              "rounded-lg bg-ink-850/60 border border-ink-700/60 px-3 py-2.5",
+              ACCENT_BORDER[it.level],
+            )}
+          >
+            <div className="flex items-start justify-between gap-2">
+              <span className="text-[12.5px] font-medium text-ink-100">
+                {it.heading}
+              </span>
+              <RiskBadge level={it.level} />
+            </div>
+            <p className="text-[12.5px] text-ink-300 mt-1 leading-relaxed">
+              {stripCiteTokens(it.body) || it.body}
+            </p>
+            {it.extra && (
+              <div className="mt-2 rounded bg-ink-950/60 border border-ink-700/60 px-2.5 py-1.5">
+                {it.extraLabel && (
+                  <div className="text-[9.5px] uppercase tracking-wider text-ink-500 mb-0.5">
+                    {it.extraLabel}
+                  </div>
+                )}
+                <p className="text-[12px] text-ink-200 leading-relaxed">
+                  {stripCiteTokens(it.extra) || it.extra}
+                </p>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -1528,6 +1748,28 @@ function ToastContainer({ toasts }: { toasts: ToastItem[] }) {
           </motion.div>
         ))}
       </AnimatePresence>
+    </div>
+  );
+}
+
+// Non-blocking warning rendered above the panes when the contract finalized
+// 'ready' but one or more analysis stages degraded/failed. Prevents a partial
+// review from being read as a clean "0 high risk" result.
+function PartialAnalysisBanner({ notes }: { notes: string[] }) {
+  return (
+    <div className="shrink-0 bg-risk-med/10 border-b border-risk-med/30 px-4 py-2.5 flex items-start gap-2.5">
+      <AlertTriangle className="h-4 w-4 text-risk-med mt-0.5 shrink-0" />
+      <div className="min-w-0">
+        <p className="text-[13px] font-medium text-risk-med">
+          Partial analysis — results may be incomplete
+        </p>
+        {notes.length > 0 && (
+          <p className="text-[12px] text-ink-300 mt-0.5 leading-relaxed">
+            {notes.join(" ")} Re-run the analysis or review this contract
+            manually before relying on it.
+          </p>
+        )}
+      </div>
     </div>
   );
 }

@@ -37,7 +37,10 @@ export type ClauseCategory =
   | "non_solicitation"
   | "force_majeure"
   | "representations_warranties"
-  | "insurance";
+  | "insurance"
+  // Uncategorized clauses. Without this, the workspace was forced to mislabel
+  // every "other" clause as "confidentiality" in exports.
+  | "other";
 
 export type CitationStatus = "verified" | "partially_verified" | "unverified";
 
@@ -67,6 +70,46 @@ export interface ClauseAnalysis {
   marketPosition: "above" | "at" | "below";
   trustScore?: number;
   issue?: string;
+}
+
+// Whole-document analysis (Phase 1). Mirrors the persisted jsonb written by
+// src/lib/risk/document-analyzer.ts. Kept here (not imported from the
+// server-only analyzer) so client components can consume it.
+export interface DocMissingProtection {
+  key: string;
+  label: string;
+  riskLevel: RiskLevel;
+  rationale: string;
+  suggestedClause: string;
+}
+
+export interface DocCrossClauseIssue {
+  title: string;
+  riskLevel: RiskLevel;
+  clausePositions: number[];
+  explanation: string;
+  recommendation: string;
+}
+
+export interface DocOneSidedTerm {
+  title: string;
+  riskLevel: RiskLevel;
+  clausePosition: number | null;
+  explanation: string;
+  recommendation: string;
+}
+
+export interface DocumentAnalysisView {
+  contractType: string;
+  contractTypeLabel: string;
+  contractTypeConfidence: number;
+  executiveSummary: string;
+  overallPosture: "favourable" | "balanced" | "unfavourable" | "high_risk";
+  missingProtections: DocMissingProtection[];
+  crossClauseIssues: DocCrossClauseIssue[];
+  oneSidedTerms: DocOneSidedTerm[];
+  model: string;
+  degraded: boolean;
 }
 
 export interface RiskSummary {

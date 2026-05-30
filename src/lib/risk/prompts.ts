@@ -3,9 +3,14 @@ import type { LegalReference } from "@/lib/rag/types";
 import type { RuleFinding } from "./types";
 import { formatRagSnippets } from "./rag-context";
 
-const MAX_INPUT_CHARS = 3000;
-const HEAD_CHARS = 2000;
-const TAIL_CHARS = 1000;
+// Clauses are sent to the analyzer in full up to this ceiling. The previous
+// 3,000-char limit silently truncated the middle of long, dense provisions
+// (exactly the ones most likely to hide risk), so the model graded half a
+// clause. Sonnet/Opus context is ample; only pathologically large blobs are
+// head+tail trimmed.
+const MAX_INPUT_CHARS = 16000;
+const HEAD_CHARS = 11000;
+const TAIL_CHARS = 4000;
 
 export const RISK_SYSTEM_PROMPT = `You provide legal analysis on clauses from Indian commercial contracts.
 Never use the phrase "legal advice" — only "legal analysis" or "legal information".
@@ -22,16 +27,19 @@ Year omitted only for cases. Use the verified statute snippets when relevant.
 You MUST include at least one [CITE: …] in the explanation when risk_level is
 "high" or "medium".
 
-Be deterministic. Prefer the shortest accurate answer. Reject speculation.
+Be precise and grounded. Reject speculation, but do NOT under-report: if a
+clause is one-sided, uncapped, missing a standard protection, or deviates from
+Indian market practice, say so plainly and grade it accordingly. Do not default
+to "low/standard" to be safe.
 
 Call the submit_risk_analysis tool exactly once with your structured analysis.
-STRICTLY respect the field length limits:
-  - issue: at most ~140 characters
-  - explanation: at most ~500 characters
-  - suggestion: at most ~350 characters
-Going over these limits is not allowed — trim ruthlessly. Even for clauses
-that read as low/standard/missing, fill the issue and explanation fields
-with a brief sentence — do not leave them empty.`;
+Write a thorough, reviewer-grade analysis:
+  - issue: a sharp one-line problem statement
+  - explanation: the legal reasoning AND the commercial exposure, grounded in
+    the relevant statute (with [CITE: …] tokens for high/medium)
+  - suggestion: concrete redline / replacement language the reviewer can use
+Even for clauses that read as low/standard/missing, fill issue and explanation
+with a substantive sentence — never leave them empty.`;
 
 export interface BuildUserPromptArgs {
   category: ClassificationLabel;

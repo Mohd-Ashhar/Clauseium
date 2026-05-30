@@ -9,6 +9,12 @@ const LETTERED_CLAUSE_REGEX = /^\s*\(([a-z]{1,3}|[ivx]{1,5})\)\s+(\S.*)$/i;
 const PREAMBLE_REGEX = /^\s*(WHEREAS|NOW,?\s*THEREFORE|IN\s+WITNESS\s+WHEREOF|RECITALS?)\b/i;
 const SIGNATURE_BLOCK_REGEX =
   /^\s*(SIGNED|EXECUTED\s+(AS|BY)|For\s+and\s+on\s+behalf\s+of|Authorised\s+Signator(y|ies)|_{5,}|Name\s*:\s*$|Designation\s*:\s*$|Date\s*:\s*$)/i;
+// Schedules, annexures, exhibits and appendices routinely sit AFTER the
+// signature block yet carry the most negotiated commercial terms (pricing,
+// SLAs, SOWs, data-processing terms). We use this to RESUME parsing once a
+// signature block has been seen, instead of discarding the rest of the file.
+const SCHEDULE_RESUME_REGEX =
+  /^\s*(SCHEDULE|ANNEXURE|ANNEX|EXHIBIT|APPENDIX|ADDENDUM)\b/i;
 
 const MIN_CLAUSE_LENGTH = 20;
 
@@ -28,6 +34,7 @@ export function detectStructure(text: string): StructuredDocument {
   let current: PendingSection | null = null;
   let buffer: PendingClause | null = null;
   let prevBlank = true;
+  let inSignatureZone = false;
 
   const ensureSection = (title: string): PendingSection => {
     const sec: PendingSection = { title, clauses: [] };
@@ -47,8 +54,25 @@ export function detectStructure(text: string): StructuredDocument {
   for (const rawLine of lines) {
     const line = rawLine.trimEnd();
 
+    // Once inside a signature block, skip the boilerplate (party names,
+    // dates, signature lines) BUT keep scanning: resume the moment a
+    // schedule/annexure/exhibit or a new top-level section begins, so
+    // post-signature commercial terms are no longer silently dropped (the
+    // old behaviour was a hard `break` that discarded the entire tail).
+    if (inSignatureZone) {
+      if (SCHEDULE_RESUME_REGEX.test(line) || SECTION_HEADER_REGEX.test(line)) {
+        inSignatureZone = false;
+        prevBlank = true;
+        // fall through to normal handling for this header line
+      } else {
+        continue;
+      }
+    }
+
     if (SIGNATURE_BLOCK_REGEX.test(line)) {
-      break;
+      flushBuffer();
+      inSignatureZone = true;
+      continue;
     }
 
     if (line.trim().length === 0) {
@@ -143,10 +167,44 @@ export function detectStructure(text: string): StructuredDocument {
   }
 
   if (cleaned.length === 0) {
-    cleaned.push({
-      title: "Body",
-      clauses: [{ id: randomUUID(), text: text.trim().slice(0, 4000), position: 0 }],
-    });
+    // Fallback path: the regex-based detector found no section/clause
+    // boundaries. This happens on heavily-formatted templates (BPO forms
+    // with text inside tables/textboxes) and on documents where upstream
+    // parsing lost paragraph breaks. Emitting a single 4000-char mega-clause
+    // (the previous behavior) hides the whole document from the analyzer
+    // because such a blob always gets filtered as non-substantive — and
+    // the user sees "1 clauses · 0 high risk" on a 60-page contract.
+    //
+    // Instead, split on blank-line paragraph breaks (or, failing that, on
+    // newlines) and emit each paragraph as its own clause. The analyzer's
+    // substantive-check still drops genuine non-clauses (short fragments,
+    // page markers); real provisions get a chance to be analyzed.
+    console.warn(
+      `[ingestion] structure detector found 0 sections in ${text.length} chars — falling back to paragraph chunks`,
+    );
+    const candidates =
+      text.split(/\n\s*\n/).length > 1
+        ? text.split(/\n\s*\n/)
+        : text.split(/\n/);
+    const paragraphs = candidates
+      .map((p) => p.replace(/[ \t]+/g, " ").trim())
+      .filter((p) => p.length >= MIN_CLAUSE_LENGTH);
+
+    if (paragraphs.length === 0) {
+      cleaned.push({
+        title: "Body",
+        clauses: [{ id: randomUUID(), text: text.trim().slice(0, 4000), position: 0 }],
+      });
+    } else {
+      cleaned.push({
+        title: "Body",
+        clauses: paragraphs.map((p, i) => ({
+          id: randomUUID(),
+          text: p,
+          position: i,
+        })),
+      });
+    }
   }
 
   return { sections: cleaned };

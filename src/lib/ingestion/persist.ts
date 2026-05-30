@@ -61,6 +61,14 @@ export async function persistContract(
   if (updateError) throw new Error(`contract structure persist failed: ${updateError.message}`);
 }
 
+export interface FinalizeExtras {
+  // Short human-readable note when analysis was partial/degraded. Stored on the
+  // existing error_message column (even on a 'ready' contract) so the UI can
+  // show a non-blocking warning instead of a misleading "0 high risk". We avoid
+  // a dedicated column here to keep this a migration-free change.
+  errorMessage?: string | null;
+}
+
 // Flip the contract to 'ready' once the full analysis pipeline has finished.
 // Called by the orchestrator after classification + risk + citations have
 // written their per-clause columns, so the result page never renders against
@@ -68,13 +76,18 @@ export async function persistContract(
 export async function finalizeContractReady(
   client: SupabaseClient,
   contractId: string,
+  extras: FinalizeExtras = {},
 ): Promise<void> {
+  const update: Record<string, unknown> = {
+    status: "ready",
+    processed_at: new Date().toISOString(),
+  };
+  if (extras.errorMessage !== undefined) {
+    update.error_message = extras.errorMessage;
+  }
   const { error } = await client
     .from("contracts")
-    .update({
-      status: "ready",
-      processed_at: new Date().toISOString(),
-    })
+    .update(update)
     .eq("id", contractId);
   if (error) throw new Error(`contract finalize failed: ${error.message}`);
 }

@@ -50,7 +50,20 @@ function llmText(text: string) {
 }
 
 describe("analyzeClauseRisks", () => {
-  it("rule-only path: uncapped liability is HIGH without LLM call", async () => {
+  it("uncapped liability stays HIGH even when the LLM downgrades it", async () => {
+    // Every substantive clause now gets a model pass (recall fix). The rule's
+    // HIGH severity must still win the merge so a soft LLM opinion can never
+    // bury a real risk.
+    createMock.mockResolvedValueOnce(
+      llmTool({
+        risk_level: "low",
+        issue: "Liability allocation looks standard",
+        explanation: "Reads like a typical allocation of liability.",
+        suggestion: "",
+        confidence: 0.6,
+      }),
+    );
+
     const out = await analyzeClauseRisks([
       {
         clauseId: "c1",
@@ -62,13 +75,12 @@ describe("analyzeClauseRisks", () => {
     ]);
 
     expect(out).toHaveLength(1);
+    expect(createMock).toHaveBeenCalledTimes(1);
     expect(out[0]?.riskLevel).toBe("high");
-    expect(out[0]?.method).toBe("rule");
     expect(out[0]?.ruleIds).toContain("lol.uncapped");
     expect(out[0]?.explanation).toMatch(
       /\[CITE: Indian Contract Act 1872 \| s\.73 \| 1872\]/,
     );
-    expect(createMock).not.toHaveBeenCalled();
   });
 
   it("DPDP category always escalates to LLM even when rules fire", async () => {
@@ -188,8 +200,7 @@ describe("analyzeClauseRisks", () => {
       },
       {
         clauseId: "c-page-marker",
-        clauseText:
-          "Lorem ipsum but very long PAGE 1 of 11 still substantive though",
+        clauseText: "PAGE 1 of 11",
         category: "other",
         classificationConfidence: 0.5,
       },
@@ -199,6 +210,8 @@ describe("analyzeClauseRisks", () => {
     expect(out[0]?.ruleIds).toContain("NON_SUBSTANTIVE");
     expect(out[0]?.issue).toBe("");
     expect(out[0]?.explanation).toBe("");
+    // The short page marker is filtered before the analyzer too; neither clause
+    // reaches the LLM.
     expect(createMock).not.toHaveBeenCalled();
   });
 

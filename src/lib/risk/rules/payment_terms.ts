@@ -1,6 +1,10 @@
 import type { RuleFn } from "../types";
 
-const HAS_DUE_DATE = /\b(?:within\s+\d{1,3}\s*(?:days?|weeks?|months?)|net\s*\d{1,3}|due\s+(?:date|on)|payable\s+within|by\s+the\s+\d{1,2}(?:st|nd|rd|th)\s+(?:day\s+of)?)/i;
+// Accepts numeric ("within 30 days"), spelled ("within ninety days") and
+// parenthesised ("within ninety (90) days") day counts — all common in real
+// contracts. The older numeric-only form silently failed on spelled numbers,
+// which in turn suppressed the MSMED 45-day check downstream.
+const HAS_DUE_DATE = /\b(?:within\s+(?:\d{1,3}|[a-z]+(?:[\s-]*\(?\d{1,3}\)?)?)\s*(?:business\s+)?(?:days?|weeks?|months?)|net\s*\d{1,3}|due\s+(?:date|on)|payable\s+within|by\s+the\s+\d{1,2}(?:st|nd|rd|th)\s+(?:day\s+of)?)/i;
 const FOREIGN_CURRENCY = /\b(?:usd|us\s*dollars?|eur|euro|gbp|pounds?\s+sterling|sgd|singapore\s+dollars?|aud)\b/i;
 const HAS_FEMA_REFERENCE = /\b(?:fema|foreign\s+exchange\s+management\s+act|reserve\s+bank\s+of\s+india|rbi\s+approval)\b/i;
 const HAS_GST = /\b(?:gst|goods\s+and\s+services\s+tax|tds|tax\s+deduct(?:ion|ed)\s+at\s+source|withholding\s+tax)\b/i;
@@ -27,8 +31,14 @@ export const msmedExceeds45Days: RuleFn = ({ lower }) => {
   if (!MENTIONS_MSME_SUPPLIER.test(lower)) return null;
   if (!HAS_DUE_DATE.test(lower)) return null;
   if (HAS_45_DAYS.test(lower)) return null;
-  // Heuristic: if the clause specifies any period > 45 days for MSME supplier.
-  const longerPeriod = /\b(?:60|90|120|150|180)\s*days?\b/i.test(lower);
+  // Heuristic: clause specifies a period > 45 days for an MSME supplier.
+  // Tolerant of spelled and parenthesised counts ("ninety (90) days",
+  // "sixty days") — the older numeric-only `\b90\b\s*days` form silently
+  // missed "ninety (90) days" because the "90" is followed by ")".
+  const longerPeriod =
+    /\b(?:60|sixty|90|ninety|120|150|180)\b[\s\S]{0,8}\bdays?\b|\bone\s+hundred(?:\s+and)?\s+(?:twenty|fifty|eighty)\b[\s\S]{0,8}\bdays?\b/i.test(
+      lower,
+    );
   if (!longerPeriod) return null;
   return {
     ruleId: "pay.msmed_violation",
