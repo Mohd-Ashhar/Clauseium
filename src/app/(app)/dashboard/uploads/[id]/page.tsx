@@ -90,18 +90,33 @@ export default async function UploadResultPage({
     );
   }
 
+  // Load the caller's clause actions, tolerating a DB that has not yet run
+  // migration 0010 (modified_text) — fall back to the older projection so a
+  // reviewer's accept/reject decisions never vanish before the migration runs.
+  const loadActions = async (): Promise<Array<Record<string, unknown>>> => {
+    const primary = await supabase
+      .from("clause_actions")
+      .select("clause_id, state, note, modified_text")
+      .eq("owner_user_id", user.id);
+    if (primary.error?.code === "42703") {
+      const fallback = await supabase
+        .from("clause_actions")
+        .select("clause_id, state, note")
+        .eq("owner_user_id", user.id);
+      return (fallback.data ?? []) as Array<Record<string, unknown>>;
+    }
+    return (primary.data ?? []) as Array<Record<string, unknown>>;
+  };
+
   // Fetch all per-clause derived data in one shot, plus the user's actions.
-  const [{ data: clauseRows }, { data: actionRows }] = await Promise.all([
+  const [{ data: clauseRows }, actionRows] = await Promise.all([
     supabase
       .from("clauses")
       .select(
         "id, position, clause_text, section_title, citations, trust_score, risk_level, risk_issue, risk_explanation, risk_suggestion, risk_confidence, risk_method, risk_rule_ids, clause_classifications(category, confidence, method, classified_at)",
       )
       .eq("contract_id", id),
-    supabase
-      .from("clause_actions")
-      .select("clause_id, state, note")
-      .eq("owner_user_id", user.id),
+    loadActions(),
   ]);
 
   type ClauseRowFull = {
@@ -128,15 +143,27 @@ export default async function UploadResultPage({
       | null;
   };
 
-  type ActionRow = { clause_id: string; state: string; note: string | null };
+  type ActionRow = {
+    clause_id: string;
+    state: string;
+    note: string | null;
+    modified_text?: string | null;
+  };
 
   // `clause_actions` may not exist yet (migration 0006 unapplied) — fall back
   // to an empty map so the page still renders. The API route returns 500 in
   // that case; the table presence is the source of truth.
-  const actions = new Map<string, { state: ClauseActionState; note: string | null }>();
+  const actions = new Map<
+    string,
+    { state: ClauseActionState; note: string | null; modifiedText: string | null }
+  >();
   for (const row of (actionRows ?? []) as ActionRow[]) {
     if (isActionState(row.state)) {
-      actions.set(row.clause_id, { state: row.state, note: row.note });
+      actions.set(row.clause_id, {
+        state: row.state,
+        note: row.note,
+        modifiedText: row.modified_text ?? null,
+      });
     }
   }
 
@@ -225,6 +252,7 @@ export default async function UploadResultPage({
         typeof trust === "number" && Number.isFinite(trust) ? trust : null,
       action: action?.state ?? "pending",
       actionNote: action?.note ?? null,
+      actionModifiedText: action?.modifiedText ?? null,
     });
   }
 

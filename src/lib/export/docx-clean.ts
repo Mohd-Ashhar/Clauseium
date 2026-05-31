@@ -77,7 +77,7 @@ export async function generateCleanDocx(input: ExportInput): Promise<Blob> {
       }),
     );
 
-    if (decision.kind === "manual-edit") {
+    if (decision.kind === "manual-edit" && decision.needsWork) {
       children.push(
         new Paragraph({
           spacing: { after: 120 },

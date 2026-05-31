@@ -64,6 +64,9 @@ export interface ClauseAnalysis {
   summary: string;
   reasoning: string;
   suggestedRedline?: string;
+  // Reviewer-edited redline wording (the "Modify" workflow). When present it is
+  // used verbatim by the export engines in place of suggestedRedline.
+  modifiedText?: string;
   citations: LegalCitation[];
   confidence: number;
   isFromPlaybook: boolean;

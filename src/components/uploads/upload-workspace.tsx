@@ -16,6 +16,7 @@ import {
   Gavel,
   GripHorizontal,
   Info,
+  Loader2,
   MessageSquare,
   MoreHorizontal,
   PenLine,
@@ -27,9 +28,6 @@ import {
 import type { StructuredDocument } from "@/types/ingestion";
 import type {
   CitationStatus,
-  ClauseAnalysis,
-  ClauseCategory,
-  Contract,
   DocumentAnalysisView,
   LegalCitation,
   RiskLevel,
@@ -41,7 +39,22 @@ import type {
 import type { RiskMethod } from "@/lib/risk";
 import { AskAiChat } from "./ask-ai-chat";
 import { type ClauseActionState } from "./clause-actions";
+import { RedlineEditor } from "./redline-editor";
 import { cn } from "@/lib/utils";
+
+export type ExportFormat = "redlined" | "clean" | "summary" | "full";
+export type ViewMode = "redlined" | "original" | "clean";
+
+// Per-clause editor state, kept alongside the clause's action state. Tracks the
+// reviewer's edited redline text plus the in-flight save status so the UI can
+// show spinners / per-clause errors without a generic "something failed" toast.
+export interface ClauseEdit {
+  modifiedText: string | null;
+  saving: boolean;
+  error: string | null;
+}
+
+const EMPTY_EDIT: ClauseEdit = { modifiedText: null, saving: false, error: null };
 
 const CATEGORY_LABELS: Record<ClassificationLabel, string> = {
   indemnification: "Indemnification",
@@ -114,20 +127,6 @@ const CITATION_LABELS: Record<CitationStatus, string> = {
   unverified: "unverified",
 };
 
-const CATEGORY_TO_CONTRACT: Record<ClassificationLabel, ClauseCategory> = {
-  indemnification: "indemnification",
-  limitation_of_liability: "limitation_of_liability",
-  termination: "termination",
-  governing_law: "governing_law",
-  jurisdiction: "jurisdiction",
-  data_protection_dpdp: "data_protection_dpdp",
-  payment_terms: "payment_terms",
-  ip_assignment: "ip_assignment",
-  // Preserve "other" honestly instead of mislabeling it as confidentiality in
-  // exports — these are genuinely uncategorized clauses.
-  other: "other",
-};
-
 export interface ClauseWorkspaceItem {
   id: string;
   position: number;
@@ -151,6 +150,7 @@ export interface ClauseWorkspaceItem {
   trustScore: number | null;
   action: ClauseActionState;
   actionNote: string | null;
+  actionModifiedText: string | null;
 }
 
 export interface WorkspaceSummary {
@@ -185,89 +185,6 @@ export interface UploadWorkspaceProps {
   analysisNotes?: string[];
 }
 
-function buildContractForExport(args: {
-  contractId: string;
-  contractTitle: string;
-  originalFilename: string;
-  pageCount: number | null;
-  clauses: ClauseWorkspaceItem[];
-  summary: WorkspaceSummary;
-}): Contract {
-  const { contractId, contractTitle, originalFilename, pageCount, clauses, summary } = args;
-
-  const analysisClauses: ClauseAnalysis[] = clauses
-    .slice()
-    .sort((a, b) => a.position - b.position)
-    .map((c) => {
-      const category: ClauseCategory = c.classification
-        ? CATEGORY_TO_CONTRACT[c.classification.category]
-        : "confidentiality";
-      const cleanText = stripCiteTokens(c.text) || c.text;
-      const cleanIssue = stripCiteTokens(c.risk?.issue ?? null);
-      const cleanReasoning = stripCiteTokens(c.risk?.explanation ?? null);
-      const cleanSuggestion = stripCiteTokens(c.risk?.suggestion ?? null);
-      const level: RiskLevel = c.risk?.level ?? "standard";
-      const summaryText = cleanIssue || (level === "missing"
-        ? "Required clause not present in this contract."
-        : level === "standard" || level === "low"
-          ? "Matches our playbook and the Indian commercial benchmark corpus."
-          : "Material risk identified for reviewer attention.");
-      return {
-        id: c.id,
-        clauseNumber: String(c.position),
-        category,
-        title: c.sectionTitle || `Clause ${c.position}`,
-        originalText: cleanText,
-        riskLevel: level,
-        summary: summaryText,
-        reasoning: cleanReasoning || "",
-        suggestedRedline: cleanSuggestion || undefined,
-        citations: c.citations,
-        confidence: c.risk?.confidence ?? 0,
-        isFromPlaybook: false,
-        marketPosition: "at",
-        trustScore: c.trustScore ?? undefined,
-        issue: cleanIssue || undefined,
-      };
-    });
-
-  const totalRisky = summary.high * 6 + summary.medium * 2 + summary.missing * 3;
-  const ceiling = summary.totalClauses * 6;
-  const overall = ceiling === 0 ? 0 : Math.min(1, totalRisky / ceiling);
-  const overallScore = Math.round(overall * 100);
-
-  const fileSize = pageCount ? `${pageCount} pages` : originalFilename;
-
-  return {
-    id: contractId,
-    title: contractTitle,
-    counterparty: "—",
-    contractType: "msa",
-    jurisdiction: "India",
-    governingLaw: "Indian Contract Act, 1872",
-    status: "in_progress",
-    riskSummary: {
-      high: summary.high,
-      medium: summary.medium,
-      low: summary.low,
-      standard: summary.standard,
-      missing: summary.missing,
-      overallScore,
-      escalationRecommended: summary.high > 0,
-    },
-    totalClauses: summary.totalClauses,
-    reviewedClauses: 0,
-    uploadedBy: "—",
-    uploadedAt: new Date(),
-    lastUpdated: new Date(),
-    version: 1,
-    fileSize,
-    pageCount: pageCount ?? 0,
-    tags: [],
-    clauses: analysisClauses,
-  };
-}
-
 type FilterLevel = "all" | "high" | "medium" | "standard" | "missing";
 
 interface ToastItem {
@@ -297,6 +214,22 @@ export function UploadWorkspace({
     for (const c of clauses) init[c.id] = c.action;
     return init;
   });
+  const [clauseEdits, setClauseEdits] = useState<Record<string, ClauseEdit>>(
+    () => {
+      const init: Record<string, ClauseEdit> = {};
+      for (const c of clauses) {
+        init[c.id] = {
+          modifiedText: c.actionModifiedText ?? null,
+          saving: false,
+          error: null,
+        };
+      }
+      return init;
+    },
+  );
+  // How the document pane renders accepted/modified clauses: with tracked-change
+  // styling (redlined), the original source (original), or the final text (clean).
+  const [viewMode, setViewMode] = useState<ViewMode>("redlined");
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const toastIdRef = useRef(0);
 
@@ -328,25 +261,71 @@ export function UploadWorkspace({
   const setClauseAction = async (
     clauseId: string,
     next: Exclude<ClauseActionState, "pending">,
-  ) => {
-    const prev = clauseStates[clauseId] ?? "pending";
+    opts?: { modifiedText?: string },
+  ): Promise<boolean> => {
+    // Guard against a second action on the same clause while one is in flight
+    // (the buttons disable on `saving`, this is defence in depth).
+    if ((clauseEdits[clauseId] ?? EMPTY_EDIT).saving) return false;
+    const prevState = clauseStates[clauseId] ?? "pending";
+    const prevEdit = clauseEdits[clauseId] ?? EMPTY_EDIT;
+    // Edited text only rides with the "modified" state; clear it otherwise so an
+    // accepted/rejected clause never carries stale edits.
+    const nextModified =
+      next === "modified"
+        ? opts?.modifiedText ?? prevEdit.modifiedText
+        : null;
+
     setClauseStates((s) => ({ ...s, [clauseId]: next }));
+    setClauseEdits((s) => ({
+      ...s,
+      [clauseId]: { modifiedText: nextModified, saving: true, error: null },
+    }));
+
     try {
       const res = await fetch(`/api/contracts/${contractId}/clause-actions`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clause_id: clauseId, state: next }),
+        body: JSON.stringify({
+          clause_id: clauseId,
+          state: next,
+          ...(next === "modified" && nextModified != null
+            ? { modified_text: nextModified }
+            : {}),
+        }),
       });
       if (!res.ok) throw new Error(String(res.status));
+      const json = (await res.json().catch(() => null)) as
+        | { action?: { modified_text?: string | null } }
+        | null;
+      const serverModified =
+        next === "modified"
+          ? json?.action?.modified_text ?? nextModified
+          : null;
+      setClauseEdits((s) => ({
+        ...s,
+        [clauseId]: { modifiedText: serverModified, saving: false, error: null },
+      }));
+      return true;
     } catch {
-      setClauseStates((s) => ({ ...s, [clauseId]: prev }));
+      setClauseStates((s) => ({ ...s, [clauseId]: prevState }));
+      setClauseEdits((s) => ({
+        ...s,
+        [clauseId]: { ...prevEdit, saving: false, error: "Could not save — try again" },
+      }));
       toast("Could not save — try again", "info");
+      return false;
     }
   };
 
   const resetClauseAction = async (clauseId: string) => {
-    const prev = clauseStates[clauseId] ?? "pending";
+    if ((clauseEdits[clauseId] ?? EMPTY_EDIT).saving) return;
+    const prevState = clauseStates[clauseId] ?? "pending";
+    const prevEdit = clauseEdits[clauseId] ?? EMPTY_EDIT;
     setClauseStates((s) => ({ ...s, [clauseId]: "pending" }));
+    setClauseEdits((s) => ({
+      ...s,
+      [clauseId]: { modifiedText: null, saving: true, error: null },
+    }));
     try {
       const res = await fetch(`/api/contracts/${contractId}/clause-actions`, {
         method: "DELETE",
@@ -354,51 +333,82 @@ export function UploadWorkspace({
         body: JSON.stringify({ clause_id: clauseId }),
       });
       if (!res.ok) throw new Error(String(res.status));
+      setClauseEdits((s) => ({ ...s, [clauseId]: EMPTY_EDIT }));
     } catch {
-      setClauseStates((s) => ({ ...s, [clauseId]: prev }));
+      setClauseStates((s) => ({ ...s, [clauseId]: prevState }));
+      setClauseEdits((s) => ({
+        ...s,
+        [clauseId]: { ...prevEdit, saving: false, error: "Could not reset — try again" },
+      }));
       toast("Could not reset — try again", "info");
     }
   };
 
-  const [isExporting, setIsExporting] = useState(false);
-  const exportContractAs = async (
-    format: "redlined" | "clean" | "summary" | "full",
-  ) => {
+  // Export runs server-side (POST /api/contracts/[id]/export). The server reads
+  // the persisted clause_actions (incl. modified_text) so the download reflects
+  // exactly what the reviewer decided — and the redlined/clean DOCX are tracked
+  // changes injected into the ORIGINAL document, preserving its formatting.
+  const [isExporting, setIsExporting] = useState<ExportFormat | null>(null);
+  const exportContractAs = async (format: ExportFormat) => {
     if (isExporting) return;
-    setIsExporting(true);
-    const labelMap = {
+    setIsExporting(format);
+    const labelMap: Record<ExportFormat, string> = {
       redlined: "Redlined Word doc",
       clean: "Clean Word doc",
       summary: "Risk summary PDF",
       full: "Full analysis report",
-    } as const;
+    };
     toast(`Generating ${labelMap[format]}…`, "info");
     try {
-      const contract = buildContractForExport({
-        contractId,
-        contractTitle,
-        originalFilename,
-        pageCount,
-        clauses,
-        summary,
+      const res = await fetch(`/api/contracts/${contractId}/export`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ format }),
       });
-      const [{ exportContract }, { triggerDownload }] = await Promise.all([
-        import("@/lib/export"),
-        import("@/lib/export/download"),
-      ]);
-      const { blob, filename } = await exportContract({
-        contract,
-        clauseStates,
-        format,
-        includeReasoning: true,
-      });
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as {
+          message?: string;
+          error?: string;
+        };
+        throw new Error(err.message ?? err.error ?? String(res.status));
+      }
+      const cd = res.headers.get("Content-Disposition") ?? "";
+      const isPdf = format === "summary" || format === "full";
+      const filename =
+        /filename="?([^"]+)"?/.exec(cd)?.[1] ??
+        `${contractTitle}-${format}.${isPdf ? "pdf" : "docx"}`;
+      const blob = await res.blob();
+      const { triggerDownload } = await import("@/lib/export/download");
       triggerDownload(blob, filename);
-      toast(`Downloaded ${filename}`, "success");
+
+      const reconstructed = res.headers.get("X-Redline-Reconstructed") === "true";
+      const applied = res.headers.get("X-Redline-Applied");
+      const fallback = res.headers.get("X-Redline-Fallback");
+      if (reconstructed) {
+        toast(
+          `Downloaded ${filename} · reconstructed (original was a non-editable PDF)`,
+          "success",
+        );
+      } else if (applied !== null) {
+        const commented =
+          fallback && fallback !== "0" ? `, ${fallback} as comments` : "";
+        toast(
+          `Downloaded ${filename} · ${applied} tracked change${
+            applied === "1" ? "" : "s"
+          }${commented}`,
+          "success",
+        );
+      } else {
+        toast(`Downloaded ${filename}`, "success");
+      }
     } catch (err) {
       console.error("Export failed", err);
-      toast("Export failed — please try again", "info");
+      toast(
+        err instanceof Error ? `Export failed — ${err.message}` : "Export failed — please try again",
+        "info",
+      );
     } finally {
-      setIsExporting(false);
+      setIsExporting(null);
     }
   };
 
@@ -423,6 +433,14 @@ export function UploadWorkspace({
     for (const c of clauses) m.set(c.id, c);
     return m;
   }, [clauses]);
+
+  // Review progress: how many clauses have a decision (accept/modify/reject).
+  const resolvedCount = useMemo(
+    () =>
+      clauses.filter((c) => (clauseStates[c.id] ?? "pending") !== "pending")
+        .length,
+    [clauses, clauseStates],
+  );
 
   const visible = useMemo(() => {
     let list = clauses;
@@ -467,6 +485,10 @@ export function UploadWorkspace({
               structured={structured}
               clauseById={clauseById}
               activeClauseId={activeClauseId}
+              clauseStates={clauseStates}
+              clauseEdits={clauseEdits}
+              viewMode={viewMode}
+              setViewMode={setViewMode}
             />
           </Panel>
           <Separator className="w-1 bg-ink-700 hover:bg-brand-500 data-[resize-state=dragging]:bg-brand-500 transition-colors cursor-col-resize" />
@@ -481,9 +503,12 @@ export function UploadWorkspace({
               activeClauseId={activeClauseId}
               setActiveClauseId={setActiveClauseId}
               clauseStates={clauseStates}
+              clauseEdits={clauseEdits}
               setClauseAction={setClauseAction}
               resetClauseAction={resetClauseAction}
               acceptAllStandard={acceptAllStandard}
+              onExport={exportContractAs}
+              resolvedCount={resolvedCount}
               toast={toast}
             />
           </Panel>
@@ -499,6 +524,10 @@ export function UploadWorkspace({
           structured={structured}
           clauseById={clauseById}
           activeClauseId={activeClauseId}
+          clauseStates={clauseStates}
+          clauseEdits={clauseEdits}
+          viewMode={viewMode}
+          setViewMode={setViewMode}
         />
         <AnalysisPane
           contractId={contractId}
@@ -510,9 +539,12 @@ export function UploadWorkspace({
           activeClauseId={activeClauseId}
           setActiveClauseId={setActiveClauseId}
           clauseStates={clauseStates}
+          clauseEdits={clauseEdits}
           setClauseAction={setClauseAction}
           resetClauseAction={resetClauseAction}
           acceptAllStandard={acceptAllStandard}
+          onExport={exportContractAs}
+          resolvedCount={resolvedCount}
           toast={toast}
         />
         <div className="h-[60vh] border-t border-ink-700">
@@ -539,10 +571,11 @@ function TopBar({
   pageCount: number | null;
   summary: WorkspaceSummary;
   toast: (m: string, t?: "success" | "info") => void;
-  onExport: (format: "redlined" | "clean" | "summary" | "full") => Promise<void>;
-  isExporting: boolean;
+  onExport: (format: ExportFormat) => Promise<void>;
+  isExporting: ExportFormat | null;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
   const stdCount = summary.standard + summary.low;
 
   return (
@@ -592,18 +625,83 @@ function TopBar({
           )}
         </div>
 
-        <button
-          type="button"
-          onClick={() => void onExport("redlined")}
-          disabled={isExporting}
-          className="inline-flex items-center gap-1.5 bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium px-3.5 py-1.5 rounded-lg transition-colors disabled:opacity-70 disabled:cursor-wait"
-        >
-          <Download className="h-3.5 w-3.5" />
-          <span className="hidden sm:inline">
-            {isExporting ? "Generating…" : "Export Redlined Word"}
-          </span>
-          <span className="sm:hidden">{isExporting ? "…" : "Export"}</span>
-        </button>
+        <div className="relative">
+          <div className="flex items-stretch">
+            <button
+              type="button"
+              onClick={() => void onExport("redlined")}
+              disabled={isExporting !== null}
+              className="inline-flex items-center gap-1.5 bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium pl-3.5 pr-3 py-1.5 rounded-l-lg transition-colors disabled:opacity-70 disabled:cursor-wait"
+            >
+              {isExporting === "redlined" ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Download className="h-3.5 w-3.5" />
+              )}
+              <span className="hidden sm:inline">
+                {isExporting === "redlined"
+                  ? "Generating…"
+                  : "Export Redlined Word"}
+              </span>
+              <span className="sm:hidden">
+                {isExporting !== null ? "…" : "Export"}
+              </span>
+            </button>
+            <button
+              type="button"
+              aria-label="More export formats"
+              onClick={() => setExportOpen((v) => !v)}
+              disabled={isExporting !== null}
+              className="inline-flex items-center justify-center bg-brand-500 hover:bg-brand-600 text-white px-1.5 rounded-r-lg border-l border-white/20 transition-colors disabled:opacity-70 disabled:cursor-wait"
+            >
+              <ChevronDown className="h-4 w-4" />
+            </button>
+          </div>
+          {exportOpen && (
+            <div
+              className="absolute right-0 top-full mt-1 w-64 bg-ink-800 border border-ink-700 rounded-lg shadow-xl py-1 z-30"
+              onMouseLeave={() => setExportOpen(false)}
+            >
+              <ExportMenuItem
+                label="Redlined Word (.docx)"
+                desc="Original document + tracked changes"
+                busy={isExporting === "redlined"}
+                onClick={() => {
+                  setExportOpen(false);
+                  void onExport("redlined");
+                }}
+              />
+              <ExportMenuItem
+                label="Clean Word (.docx)"
+                desc="Final text with accepted changes applied"
+                busy={isExporting === "clean"}
+                onClick={() => {
+                  setExportOpen(false);
+                  void onExport("clean");
+                }}
+              />
+              <div className="my-1 border-t border-ink-700" />
+              <ExportMenuItem
+                label="Risk summary (.pdf)"
+                desc="Issues, risk levels & recommendations"
+                busy={isExporting === "summary"}
+                onClick={() => {
+                  setExportOpen(false);
+                  void onExport("summary");
+                }}
+              />
+              <ExportMenuItem
+                label="Full report (.pdf)"
+                desc="Every clause with reasoning & citations"
+                busy={isExporting === "full"}
+                onClick={() => {
+                  setExportOpen(false);
+                  void onExport("full");
+                }}
+              />
+            </div>
+          )}
+        </div>
 
         <div className="relative">
           <button
@@ -689,6 +787,36 @@ function MenuItem({
   );
 }
 
+function ExportMenuItem({
+  label,
+  desc,
+  busy,
+  onClick,
+}: {
+  label: string;
+  desc: string;
+  busy: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="w-full flex items-start gap-2.5 px-3 py-2 text-left hover:bg-ink-850 transition-colors"
+    >
+      {busy ? (
+        <Loader2 className="h-3.5 w-3.5 text-brand-300 mt-0.5 shrink-0 animate-spin" />
+      ) : (
+        <Download className="h-3.5 w-3.5 text-ink-500 mt-0.5 shrink-0" />
+      )}
+      <div className="min-w-0">
+        <div className="text-[13px] text-ink-100">{label}</div>
+        <div className="text-[11px] text-ink-500 leading-snug">{desc}</div>
+      </div>
+    </button>
+  );
+}
+
 function DocumentPane({
   title,
   originalFilename,
@@ -696,6 +824,10 @@ function DocumentPane({
   structured,
   clauseById,
   activeClauseId,
+  clauseStates,
+  clauseEdits,
+  viewMode,
+  setViewMode,
 }: {
   title: string;
   originalFilename: string;
@@ -703,19 +835,33 @@ function DocumentPane({
   structured: StructuredDocument;
   clauseById: Map<string, ClauseWorkspaceItem>;
   activeClauseId: string | null;
+  clauseStates: Record<string, ClauseActionState>;
+  clauseEdits: Record<string, ClauseEdit>;
+  viewMode: ViewMode;
+  setViewMode: (m: ViewMode) => void;
 }) {
   return (
     <div className="h-full flex flex-col bg-ink-850 min-h-0">
       <div className="flex-1 overflow-y-auto dark-scrollbar">
         <article className="max-w-3xl mx-auto px-12 py-10">
           <header className="pb-6 mb-6 border-b border-ink-700/60">
-            <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold text-ink-100 leading-tight">
-              {title}
-            </h1>
-            <p className="text-[13px] text-ink-500 mt-2">
-              {originalFilename}
-              {pageCount ? ` · ${pageCount} pages` : ""}
-            </p>
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold text-ink-100 leading-tight">
+                  {title}
+                </h1>
+                <p className="text-[13px] text-ink-500 mt-2">
+                  {originalFilename}
+                  {pageCount ? ` · ${pageCount} pages` : ""}
+                </p>
+              </div>
+              <div className="shrink-0 flex items-center gap-2 pt-1">
+                <span className="hidden sm:inline text-[11px] text-ink-500">
+                  Show
+                </span>
+                <ViewToggle viewMode={viewMode} setViewMode={setViewMode} />
+              </div>
+            </div>
           </header>
           <div className="space-y-1">
             {structured.sections.map((section, i) => (
@@ -728,6 +874,15 @@ function DocumentPane({
                     const item = clauseById.get(clause.id);
                     const lvl = item?.risk?.level;
                     const isActive = activeClauseId === clause.id;
+                    const state = clauseStates[clause.id] ?? "pending";
+                    const edit = clauseEdits[clause.id];
+                    const suggestion = stripCiteTokens(item?.risk?.suggestion ?? null);
+                    const finalText =
+                      state === "modified"
+                        ? edit?.modifiedText ?? null
+                        : state === "accepted"
+                          ? suggestion || null
+                          : null;
                     const accent =
                       lvl === "high"
                         ? "before:bg-risk-high"
@@ -751,7 +906,15 @@ function DocumentPane({
                           <span className="font-[family-name:var(--font-mono)] text-[12px] text-ink-500 mr-2">
                             #{clause.position}
                           </span>
-                          {clause.text}
+                          {state !== "pending" && (
+                            <DocStatusTag state={state} />
+                          )}
+                          <DocClauseText
+                            original={clause.text}
+                            finalText={finalText}
+                            state={state}
+                            viewMode={viewMode}
+                          />
                         </p>
                       </div>
                     );
@@ -763,6 +926,106 @@ function DocumentPane({
         </article>
       </div>
     </div>
+  );
+}
+
+function ViewToggle({
+  viewMode,
+  setViewMode,
+}: {
+  viewMode: ViewMode;
+  setViewMode: (m: ViewMode) => void;
+}) {
+  const opts: Array<{ key: ViewMode; label: string }> = [
+    { key: "redlined", label: "Redlined" },
+    { key: "original", label: "Original" },
+    { key: "clean", label: "Clean" },
+  ];
+  return (
+    <div className="inline-flex items-center gap-0.5 rounded-lg bg-ink-900 border border-ink-700 p-0.5">
+      {opts.map((o) => (
+        <button
+          key={o.key}
+          type="button"
+          onClick={() => setViewMode(o.key)}
+          aria-pressed={viewMode === o.key}
+          className={cn(
+            "text-[11.5px] px-2.5 py-1 rounded-md transition-colors",
+            viewMode === o.key
+              ? "bg-brand-500/15 text-brand-200"
+              : "text-ink-500 hover:text-ink-300",
+          )}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// A tiny status chip shown inline at the head of a decided clause in the
+// document pane, so an applied/rejected redline is scannable while reading.
+function DocStatusTag({ state }: { state: ClauseActionState }) {
+  const meta =
+    state === "accepted"
+      ? { label: "Accepted", tone: "bg-risk-low/15 text-risk-low" }
+      : state === "modified"
+        ? { label: "Edited", tone: "bg-brand-500/15 text-brand-200" }
+        : { label: "Rejected", tone: "bg-ink-700 text-ink-400" };
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center align-middle mr-2 px-1.5 py-0.5 rounded text-[9.5px] uppercase tracking-wider font-medium",
+        meta.tone,
+      )}
+    >
+      {meta.label}
+    </span>
+  );
+}
+
+// Renders a clause's body in the document pane according to the chosen view:
+//   • original  → always the source text
+//   • clean     → the final text (accepted suggestion / edited wording) applied
+//   • redlined  → original struck through + final text inserted (tracked-change
+//                 styling) for accepted/modified clauses; rejected stays faint.
+function DocClauseText({
+  original,
+  finalText,
+  state,
+  viewMode,
+}: {
+  original: string;
+  finalText: string | null;
+  state: ClauseActionState;
+  viewMode: ViewMode;
+}) {
+  const hasChange =
+    (state === "accepted" || state === "modified") &&
+    finalText != null &&
+    finalText.trim().length > 0;
+
+  if (viewMode === "original" || !hasChange) {
+    if (state === "rejected") {
+      return <span className="text-ink-400">{original}</span>;
+    }
+    return <>{original}</>;
+  }
+
+  if (viewMode === "clean") {
+    return <span className="text-ink-100">{finalText}</span>;
+  }
+
+  // redlined
+  return (
+    <>
+      <span className="text-risk-high/70 line-through decoration-risk-high/50">
+        {original}
+      </span>{" "}
+      <span className="text-risk-low bg-risk-low/10 rounded px-1 py-0.5">
+        {finalText}
+      </span>
+    </>
   );
 }
 
@@ -785,9 +1048,12 @@ function RightColumn({
   activeClauseId,
   setActiveClauseId,
   clauseStates,
+  clauseEdits,
   setClauseAction,
   resetClauseAction,
   acceptAllStandard,
+  onExport,
+  resolvedCount,
   toast,
 }: AnalysisPaneProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -854,9 +1120,12 @@ function RightColumn({
           activeClauseId={activeClauseId}
           setActiveClauseId={setActiveClauseId}
           clauseStates={clauseStates}
+          clauseEdits={clauseEdits}
           setClauseAction={setClauseAction}
           resetClauseAction={resetClauseAction}
           acceptAllStandard={acceptAllStandard}
+          onExport={onExport}
+          resolvedCount={resolvedCount}
           toast={toast}
         />
       </div>
@@ -907,12 +1176,16 @@ interface AnalysisPaneProps {
   activeClauseId: string | null;
   setActiveClauseId: (id: string | null) => void;
   clauseStates: Record<string, ClauseActionState>;
+  clauseEdits: Record<string, ClauseEdit>;
   setClauseAction: (
     id: string,
     next: Exclude<ClauseActionState, "pending">,
-  ) => Promise<void>;
+    opts?: { modifiedText?: string },
+  ) => Promise<boolean>;
   resetClauseAction: (id: string) => Promise<void>;
   acceptAllStandard: () => void;
+  onExport: (format: ExportFormat) => Promise<void>;
+  resolvedCount: number;
   toast: (m: string, t?: "success" | "info") => void;
 }
 
@@ -926,9 +1199,12 @@ function AnalysisPane({
   activeClauseId,
   setActiveClauseId,
   clauseStates,
+  clauseEdits,
   setClauseAction,
   resetClauseAction,
   acceptAllStandard,
+  onExport,
+  resolvedCount,
   toast,
 }: AnalysisPaneProps) {
   return (
@@ -937,7 +1213,7 @@ function AnalysisPane({
         <div className="flex items-baseline justify-between gap-3">
           <h2 className="text-sm font-semibold text-ink-100">AI Review</h2>
           <span className="text-[12px] text-ink-500 truncate">
-            {summary.totalClauses} clauses · {summary.high} high risk
+            {resolvedCount} of {summary.totalClauses} resolved
           </span>
         </div>
         <FilterRow filter={filter} setFilter={setFilter} summary={summary} />
@@ -947,7 +1223,8 @@ function AnalysisPane({
         <SummaryCard
           summary={summary}
           acceptAllStandard={acceptAllStandard}
-          toast={toast}
+          resolvedCount={resolvedCount}
+          onExport={onExport}
         />
 
         {documentAnalysis && (
@@ -970,6 +1247,7 @@ function AnalysisPane({
                   setActiveClauseId(activeClauseId === c.id ? null : c.id)
                 }
                 state={clauseStates[c.id] ?? "pending"}
+                edit={clauseEdits[c.id] ?? EMPTY_EDIT}
                 setClauseAction={setClauseAction}
                 resetClauseAction={resetClauseAction}
                 toast={toast}
@@ -1224,14 +1502,20 @@ function DocFindingGroup({
 function SummaryCard({
   summary,
   acceptAllStandard,
-  toast,
+  resolvedCount,
+  onExport,
 }: {
   summary: WorkspaceSummary;
   acceptAllStandard: () => void;
-  toast: (m: string, t?: "success" | "info") => void;
+  resolvedCount: number;
+  onExport: (format: ExportFormat) => Promise<void>;
 }) {
   const score = summary.overallRiskScore;
   const stdCount = summary.standard + summary.low;
+  const reviewPct =
+    summary.totalClauses > 0
+      ? Math.round((resolvedCount / summary.totalClauses) * 100)
+      : 0;
   const escalate =
     summary.high >= 3 || (summary.high >= 1 && summary.medium >= 4);
   const escalationReason = escalate
@@ -1281,6 +1565,21 @@ function SummaryCard({
         </div>
       </div>
 
+      <div>
+        <div className="flex items-baseline justify-between mb-1.5">
+          <span className="text-[13px] text-ink-300">Review progress</span>
+          <span className="text-[12px] text-ink-400 font-[family-name:var(--font-mono)]">
+            {resolvedCount}/{summary.totalClauses}
+          </span>
+        </div>
+        <div className="h-1.5 bg-ink-800 rounded-full overflow-hidden">
+          <div
+            className="h-full rounded-full bg-brand-500 transition-all"
+            style={{ width: `${reviewPct}%` }}
+          />
+        </div>
+      </div>
+
       {escalate && escalationReason && (
         <div className="flex items-start gap-2.5 bg-risk-med/8 border border-risk-med/20 rounded-lg p-3">
           <Zap className="h-4 w-4 text-risk-med shrink-0 mt-0.5" />
@@ -1305,7 +1604,7 @@ function SummaryCard({
         </button>
         <button
           type="button"
-          onClick={() => toast("Export summary coming in next phase", "info")}
+          onClick={() => void onExport("summary")}
           className="inline-flex items-center gap-1.5 border border-ink-700 hover:border-ink-500 text-ink-300 hover:text-ink-100 text-[13px] px-3 py-1.5 rounded-lg transition-colors"
         >
           <Download className="h-3.5 w-3.5" />
@@ -1347,6 +1646,7 @@ function ClauseCard({
   isActive,
   onToggle,
   state,
+  edit,
   setClauseAction,
   resetClauseAction,
   toast,
@@ -1356,10 +1656,12 @@ function ClauseCard({
   isActive: boolean;
   onToggle: () => void;
   state: ClauseActionState;
+  edit?: ClauseEdit;
   setClauseAction: (
     id: string,
     next: Exclude<ClauseActionState, "pending">,
-  ) => Promise<void>;
+    opts?: { modifiedText?: string },
+  ) => Promise<boolean>;
   resetClauseAction: (id: string) => Promise<void>;
   toast: (m: string, t?: "success" | "info") => void;
 }) {
@@ -1402,6 +1704,16 @@ function ClauseCard({
           </h3>
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          {state === "modified" && (
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9.5px] uppercase tracking-wider font-medium bg-brand-500/15 text-brand-200">
+              Edited
+            </span>
+          )}
+          {state === "rejected" && (
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9.5px] uppercase tracking-wider font-medium bg-ink-700 text-ink-400">
+              Rejected
+            </span>
+          )}
           {risk && <RiskBadge level={risk.level} />}
           <ChevronDown
             className={cn(
@@ -1442,7 +1754,9 @@ function ClauseCard({
               contractId={contractId}
               clause={clause}
               state={state}
+              edit={edit}
               setClauseAction={setClauseAction}
+              resetClauseAction={resetClauseAction}
               toast={toast}
             />
           </motion.div>
@@ -1455,21 +1769,32 @@ function ClauseCard({
 function ExpandedSections({
   clause,
   state,
+  edit,
   setClauseAction,
+  resetClauseAction,
   toast,
 }: {
   contractId: string;
   clause: ClauseWorkspaceItem;
   state: ClauseActionState;
+  edit?: ClauseEdit;
   setClauseAction: (
     id: string,
     next: Exclude<ClauseActionState, "pending">,
-  ) => Promise<void>;
+    opts?: { modifiedText?: string },
+  ) => Promise<boolean>;
+  resetClauseAction: (id: string) => Promise<void>;
   toast: (m: string, t?: "success" | "info") => void;
 }) {
   const risk = clause.risk;
   const hasRedline = Boolean(risk?.suggestion);
   const isStandard = !risk || risk.level === "low" || risk.level === "standard";
+  const saving = edit?.saving ?? false;
+  const error = edit?.error ?? null;
+  const suggestionText = stripCiteTokens(risk?.suggestion ?? null);
+  const modifiedText = edit?.modifiedText ?? null;
+
+  const [editing, setEditing] = useState(false);
 
   return (
     <div className="mt-4 pt-4 border-t border-ink-700/60 space-y-4">
@@ -1494,7 +1819,17 @@ function ExpandedSections({
         <Section label="Suggested redline">
           <div className="rounded bg-ink-950/70 border border-ink-700/60 px-3 py-2">
             <p className="text-[13px] text-ink-200 leading-relaxed">
-              {stripCiteTokens(risk.suggestion)}
+              {suggestionText}
+            </p>
+          </div>
+        </Section>
+      )}
+
+      {state === "modified" && modifiedText && !editing && (
+        <Section label="Your edited redline">
+          <div className="rounded bg-brand-500/5 border border-brand-500/20 px-3 py-2">
+            <p className="text-[13px] text-ink-100 leading-relaxed whitespace-pre-wrap">
+              {modifiedText}
             </p>
           </div>
         </Section>
@@ -1524,72 +1859,117 @@ function ExpandedSections({
         </div>
       )}
 
-      <div className="flex flex-wrap items-center gap-2 pt-1">
-        {hasRedline && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              void setClauseAction(clause.id, "accepted");
-              toast(`Redline accepted for §${clause.position}`, "success");
-            }}
-            className="inline-flex items-center gap-1.5 bg-risk-low/15 hover:bg-risk-low/25 text-risk-low text-[13px] font-medium px-3 py-1.5 rounded-lg transition-colors"
-          >
-            <Check className="h-3.5 w-3.5" />
-            Accept redline
-          </button>
-        )}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            void setClauseAction(clause.id, "modified");
-            toast("Inline editor coming in next phase");
-          }}
-          className="inline-flex items-center gap-1.5 border border-ink-700 hover:border-ink-500 text-ink-300 hover:text-ink-100 text-[13px] px-3 py-1.5 rounded-lg transition-colors"
-        >
-          <PenLine className="h-3.5 w-3.5" />
-          Modify
-        </button>
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            void setClauseAction(clause.id, "rejected");
-            toast(`Suggestion rejected for §${clause.position}`);
-          }}
-          className="inline-flex items-center gap-1.5 text-ink-500 hover:text-ink-300 text-[13px] px-2 py-1.5 rounded-lg transition-colors"
-        >
-          <X className="h-3.5 w-3.5" />
-          Reject
-        </button>
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            const prompt = `Tell me more about §${clause.position}${
-              risk?.issue ? ` — ${risk.issue}` : ""
-            }`;
-            window.dispatchEvent(
-              new CustomEvent("clauseium:ask-ai", { detail: prompt }),
+      {editing ? (
+        <RedlineEditor
+          clausePosition={clause.position}
+          initialText={modifiedText || suggestionText || stripCiteTokens(clause.text)}
+          saving={saving}
+          error={error}
+          onSave={(text) => {
+            void setClauseAction(clause.id, "modified", { modifiedText: text }).then(
+              (ok) => {
+                if (ok) {
+                  setEditing(false);
+                  toast(`Edit saved for §${clause.position}`, "success");
+                }
+              },
             );
           }}
-          className="inline-flex items-center gap-1.5 text-brand-400 hover:text-brand-300 text-[13px] px-2 py-1.5 rounded-lg transition-colors ml-auto"
-        >
-          <MessageSquare className="h-3.5 w-3.5" />
-          Ask AI
-        </button>
-      </div>
+          onCancel={() => setEditing(false)}
+        />
+      ) : (
+        <>
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            {hasRedline && (
+              <button
+                type="button"
+                disabled={saving}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  void setClauseAction(clause.id, "accepted").then((ok) => {
+                    if (ok) toast(`Redline accepted for §${clause.position}`, "success");
+                  });
+                }}
+                className="inline-flex items-center gap-1.5 bg-risk-low/15 hover:bg-risk-low/25 text-risk-low text-[13px] font-medium px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+              >
+                {saving ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Check className="h-3.5 w-3.5" />
+                )}
+                Accept redline
+              </button>
+            )}
+            <button
+              type="button"
+              disabled={saving}
+              onClick={(e) => {
+                e.stopPropagation();
+                setEditing(true);
+              }}
+              className="inline-flex items-center gap-1.5 border border-ink-700 hover:border-ink-500 text-ink-300 hover:text-ink-100 text-[13px] px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+            >
+              <PenLine className="h-3.5 w-3.5" />
+              {state === "modified" ? "Edit redline" : "Modify"}
+            </button>
+            <button
+              type="button"
+              disabled={saving}
+              onClick={(e) => {
+                e.stopPropagation();
+                void setClauseAction(clause.id, "rejected").then((ok) => {
+                  if (ok) toast(`Suggestion rejected for §${clause.position}`);
+                });
+              }}
+              className="inline-flex items-center gap-1.5 text-ink-500 hover:text-ink-300 text-[13px] px-2 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+            >
+              <X className="h-3.5 w-3.5" />
+              Reject
+            </button>
+            {(state === "modified" || state === "rejected") && (
+              <button
+                type="button"
+                disabled={saving}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  void resetClauseAction(clause.id);
+                  toast(`Reset §${clause.position} for re-review`);
+                }}
+                className="inline-flex items-center gap-1.5 text-ink-500 hover:text-ink-300 text-[13px] px-2 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+              >
+                Reset
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                const prompt = `Tell me more about §${clause.position}${
+                  risk?.issue ? ` — ${risk.issue}` : ""
+                }`;
+                window.dispatchEvent(
+                  new CustomEvent("clauseium:ask-ai", { detail: prompt }),
+                );
+              }}
+              className="inline-flex items-center gap-1.5 text-brand-400 hover:text-brand-300 text-[13px] px-2 py-1.5 rounded-lg transition-colors ml-auto"
+            >
+              <MessageSquare className="h-3.5 w-3.5" />
+              Ask AI
+            </button>
+          </div>
 
-      {state === "rejected" && (
-        <p className="text-[12px] text-ink-500 italic">
-          Suggestion rejected — original clause text retained.
-        </p>
-      )}
-      {state === "modified" && (
-        <p className="text-[12px] text-ink-500 italic">
-          Marked for manual modification.
-        </p>
+          {error && (
+            <p role="alert" className="text-[12px] text-risk-high">
+              {error}
+            </p>
+          )}
+
+          {state === "rejected" && (
+            <p className="text-[12px] text-ink-500 italic">
+              Suggestion rejected — original clause text retained.
+            </p>
+          )}
+        </>
       )}
     </div>
   );

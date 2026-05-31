@@ -20,12 +20,20 @@ const CURLY_SINGLE = /[‘’]/g;
 const CURLY_DOUBLE = /[“”]/g;
 const WHITESPACE = /\s+/g;
 
-export function computeSearchAnchor(clauseText: string): string {
-  const normalized = clauseText
+// Steps 1–4 of the anchor pipeline (NO length slice). Exported so the export
+// OOXML engine can normalize full clause text AND the document's plain-text
+// projection with byte-identical rules — guaranteeing a stored anchor matches
+// what we compute against the live document. computeSearchAnchor() is just this
+// plus the 150-char slice.
+export function normalizeForAnchor(text: string): string {
+  return text
     .replace(SOFT_HYPHEN, "")
     .replace(CURLY_SINGLE, "'")
     .replace(CURLY_DOUBLE, '"')
     .replace(WHITESPACE, " ")
     .trim();
-  return normalized.slice(0, MAX_LEN);
+}
+
+export function computeSearchAnchor(clauseText: string): string {
+  return normalizeForAnchor(clauseText).slice(0, MAX_LEN);
 }

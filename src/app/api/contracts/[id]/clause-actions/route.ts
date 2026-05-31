@@ -13,6 +13,10 @@ const upsertSchema = z.object({
   clause_id: z.string().uuid(),
   state: z.enum(STATE_VALUES),
   note: z.string().max(2000).optional(),
+  // Reviewer-edited redline wording (the "Modify" workflow). Persisted to
+  // clause_actions.modified_text (migration 0010) and used verbatim by the
+  // export engines. Only meaningful when state === "modified".
+  modified_text: z.string().max(20000).optional(),
 });
 
 const deleteSchema = z.object({
@@ -23,8 +27,15 @@ interface ActionRow {
   clause_id: string;
   state: (typeof STATE_VALUES)[number];
   note: string | null;
+  modified_text: string | null;
   updated_at: string;
 }
+
+// Postgres "undefined_column" — thrown when migration 0010 (modified_text) has
+// not been applied yet. We degrade gracefully so the existing accept/reject
+// flow keeps working before the migration runs (mirrors persist.ts /
+// document-persist.ts which swallow 42703 to stay migration-tolerant).
+const UNDEFINED_COLUMN = "42703";
 
 // GET: list all clause-action rows for the current user against the given
 // contract. Filters via an inner-join on clauses.contract_id; RLS confines
@@ -80,11 +91,26 @@ export async function GET(
     return NextResponse.json({ actions: [] }, { status: 200 });
   }
 
-  const { data: actionRows, error: actionErr } = await supabase
+  const primaryActions = await supabase
     .from("clause_actions")
-    .select("clause_id, state, note, updated_at")
+    .select("clause_id, state, note, modified_text, updated_at")
     .eq("owner_user_id", user.id)
     .in("clause_id", clauseIds);
+
+  let rawActions: Array<Record<string, unknown>>;
+  let actionErr = primaryActions.error;
+  if (actionErr?.code === UNDEFINED_COLUMN) {
+    // 0010 not applied — re-select without modified_text.
+    const fallback = await supabase
+      .from("clause_actions")
+      .select("clause_id, state, note, updated_at")
+      .eq("owner_user_id", user.id)
+      .in("clause_id", clauseIds);
+    rawActions = (fallback.data ?? []) as Array<Record<string, unknown>>;
+    actionErr = fallback.error;
+  } else {
+    rawActions = (primaryActions.data ?? []) as Array<Record<string, unknown>>;
+  }
 
   if (actionErr) {
     return NextResponse.json(
@@ -93,16 +119,25 @@ export async function GET(
     );
   }
 
-  return NextResponse.json(
-    { actions: (actionRows ?? []) as ActionRow[] },
-    { status: 200 },
-  );
+  const actions: ActionRow[] = rawActions.map((r) => ({
+    clause_id: r.clause_id as string,
+    state: r.state as (typeof STATE_VALUES)[number],
+    note: (r.note as string | null) ?? null,
+    modified_text:
+      "modified_text" in r ? ((r.modified_text as string | null) ?? null) : null,
+    updated_at: r.updated_at as string,
+  }));
+
+  return NextResponse.json({ actions }, { status: 200 });
 }
 
 // PUT: idempotent upsert of a single clause action. Body
-//   { clause_id, state, note? }
-// State must be one of accepted/modified/rejected. To clear a decision,
-// call DELETE instead. RLS chains through the clauses → contracts owner.
+//   { clause_id, state, note?, modified_text? }
+// State must be one of accepted/modified/rejected. modified_text holds the
+// reviewer's edited redline and is only persisted when state === "modified"
+// (cleared to null otherwise so an accepted/rejected row never carries stale
+// edits). To clear a decision, call DELETE instead. RLS chains through the
+// clauses → contracts owner.
 export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -150,19 +185,40 @@ export async function PUT(
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 
-  const { data, error } = await supabase
+  const baseRow = {
+    clause_id: parsed.data.clause_id,
+    owner_user_id: user.id,
+    state: parsed.data.state,
+    note: parsed.data.note ?? null,
+  };
+  // Only the "modified" state carries edited text; clear it for accept/reject.
+  const modifiedText =
+    parsed.data.state === "modified" ? parsed.data.modified_text ?? null : null;
+
+  const primaryUpsert = await supabase
     .from("clause_actions")
     .upsert(
-      {
-        clause_id: parsed.data.clause_id,
-        owner_user_id: user.id,
-        state: parsed.data.state,
-        note: parsed.data.note ?? null,
-      },
+      { ...baseRow, modified_text: modifiedText },
       { onConflict: "clause_id,owner_user_id" },
     )
-    .select("clause_id, state, note, updated_at")
+    .select("clause_id, state, note, modified_text, updated_at")
     .single();
+
+  let data: Record<string, unknown> | null =
+    primaryUpsert.data as Record<string, unknown> | null;
+  let error = primaryUpsert.error;
+
+  if (error?.code === UNDEFINED_COLUMN) {
+    // 0010 not applied — persist without modified_text so accept/reject (and a
+    // best-effort modify) still work. The edited text is lost until 0010 runs.
+    const fallbackUpsert = await supabase
+      .from("clause_actions")
+      .upsert(baseRow, { onConflict: "clause_id,owner_user_id" })
+      .select("clause_id, state, note, updated_at")
+      .single();
+    data = fallbackUpsert.data as Record<string, unknown> | null;
+    error = fallbackUpsert.error;
+  }
 
   if (error) {
     return NextResponse.json(

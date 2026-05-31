@@ -1,4 +1,3 @@
-import type { Contract } from "@/types/contract";
 import type { ExportFormat } from "./index";
 
 const formatSuffix: Record<ExportFormat, string> = {
@@ -35,7 +34,7 @@ function yyyymmdd(d: Date): string {
 }
 
 export function buildFilename(args: {
-  contract: Contract;
+  contract: { title: string; version: number };
   format: ExportFormat;
 }): string {
   const { contract, format } = args;
