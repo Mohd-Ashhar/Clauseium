@@ -197,7 +197,6 @@ export async function POST(
           {
             model: CHAT_MODEL,
             max_tokens: CHAT_MAX_TOKENS,
-            temperature: 0.2,
             system: systemPrompt,
             messages: toAnthropicMessages(messages),
           },

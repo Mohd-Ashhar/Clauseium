@@ -236,7 +236,6 @@ async function callAnalyzer(
       // covers the schema ceilings (issue 400 / explanation 2000 /
       // suggestion 1200) plus tool-call overhead.
       max_tokens: 4096,
-      temperature: 0,
       system: [
         {
           type: "text",

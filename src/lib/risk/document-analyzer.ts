@@ -362,7 +362,6 @@ export async function analyzeDocument(
           {
             model: RISK_MODEL_ESCALATION,
             max_tokens: DOC_ANALYSIS_MAX_TOKENS,
-            temperature: 0,
             system: [
               {
                 type: "text",

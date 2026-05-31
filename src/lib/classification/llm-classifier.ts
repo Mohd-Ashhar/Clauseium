@@ -78,7 +78,6 @@ export async function classifyByLlm(
     {
       model: CLASSIFIER_MODEL,
       max_tokens: 200,
-      temperature: 0,
       system: [
         {
           type: "text",

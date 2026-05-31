@@ -92,7 +92,7 @@ describe("classifyByLlm", () => {
     const call = createMock.mock.calls[0]?.[0];
     expect(call.system?.[0]?.cache_control?.type).toBe("ephemeral");
     expect(call.model).toMatch(/haiku-4-5/);
-    expect(call.temperature).toBe(0);
+    expect(call.temperature).toBeUndefined();
   });
 
   it("isLlmAvailable reflects ANTHROPIC_API_KEY presence", () => {
