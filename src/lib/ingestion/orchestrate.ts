@@ -6,6 +6,8 @@ import { parsePdf } from "./parse-pdf";
 import { parseDocx } from "./parse-docx";
 import { normalize } from "./normalize";
 import { detectStructure } from "./structure";
+import { validateStructure } from "./validate-structure";
+import { isSegmentRepairAvailable, repairSegmentation } from "./segment-repair";
 import { finalizeContractReady, persistContract } from "./persist";
 import { structuredDocumentSchema } from "./schemas";
 import {
@@ -59,7 +61,28 @@ export async function processContract(contract: ContractRecord): Promise<void> {
     }
 
     const normalized = normalize({ text, pageTexts });
-    const structured = detectStructure(normalized);
+    let structured = detectStructure(normalized);
+
+    // The deterministic parser is sequence-aware and handles clean documents.
+    // When its numbered-clause skeleton looks incoherent (duplicate/scrambled
+    // numbering or a collapsed parse), fall back to an LLM segmentation-repair
+    // pass. repairSegmentation never throws (returns null on failure), so this
+    // degrades gracefully to the deterministic result.
+    const validation = validateStructure(structured, normalized);
+    let usedRepair = false;
+    if (!validation.valid && isSegmentRepairAvailable()) {
+      const repaired = await repairSegmentation(normalized);
+      if (repaired) {
+        const rv = validateStructure(repaired, normalized);
+        if (rv.valid || rv.problems.length < validation.problems.length) {
+          structured = repaired;
+          usedRepair = true;
+        }
+      }
+    }
+    const parseValid = usedRepair
+      ? validateStructure(structured, normalized).valid
+      : validation.valid;
 
     // Observability: we previously had no signal that the parser had
     // collapsed a 60-page contract into 1 clause. A single line per
@@ -74,7 +97,7 @@ export async function processContract(contract: ContractRecord): Promise<void> {
       .map((s) => `${s.title}(${s.clauses.length})`)
       .join(", ");
     console.warn(
-      `[ingestion] contract=${contract.id} mime=${contract.mime_type} chars=${normalized.length} sections=${structured.sections.length} clauses=${clauseCount} firstSections=[${sectionTitles}]`,
+      `[ingestion] contract=${contract.id} mime=${contract.mime_type} chars=${normalized.length} sections=${structured.sections.length} clauses=${clauseCount} parseValid=${parseValid} problems=[${validation.problems.join(",")}] estimated=${validation.estimatedCount} repaired=${usedRepair} firstSections=[${sectionTitles}]`,
     );
 
     const validated = structuredDocumentSchema.parse(structured);
@@ -180,10 +203,15 @@ export async function processContract(contract: ContractRecord): Promise<void> {
     // parsed document is viewable, but we RECORD the degradation rather than
     // silently presenting a green review.
     const noClauses = clauseCount === 0;
-    const degraded = noClauses || !classificationOk || !riskOk || !llmAvailable;
+    const degraded =
+      noClauses || !parseValid || !classificationOk || !riskOk || !llmAvailable;
     const notes: string[] = [];
     if (noClauses)
       notes.push("No clauses were detected — parsing/segmentation may have failed.");
+    if (!noClauses && !parseValid)
+      notes.push(
+        "Clause segmentation may be imperfect — the numbering looked irregular.",
+      );
     if (!classificationOk) notes.push("Clause classification failed.");
     if (!riskOk && !noClauses)
       notes.push("Risk analysis failed — risks may be missing.");

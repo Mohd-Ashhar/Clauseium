@@ -12,6 +12,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "ingest:legal": "tsx --require ./scripts/server-only-shim.cjs scripts/ingest-legal-corpus.ts",
+    "reprocess:contract": "node --env-file=.env --import tsx --require ./scripts/server-only-shim.cjs scripts/reprocess-contract.ts",
     "backfill:citation-urls": "tsx --require ./scripts/server-only-shim.cjs scripts/backfill-citation-urls.ts",
     "eval:accuracy": "vitest run tests/eval/accuracy.test.ts",
     "eval:report": "tsx --require ./scripts/server-only-shim.cjs scripts/eval-accuracy.ts"

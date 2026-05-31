@@ -246,6 +246,86 @@ describe("analyzeClauseRisks", () => {
     expect(skippedMethods.every((m) => m === "rule")).toBe(true);
   });
 
+  it("suppresses a generic termination redline on an unrelated (confidentiality) clause", async () => {
+    // term.no_notice fires on any termination-category clause lacking notice
+    // language — even a misclassified confidentiality clause. With an empty LLM
+    // suggestion, the generic "thirty (30) days' notice" template must NOT leak.
+    createMock.mockResolvedValueOnce(
+      llmTool({
+        risk_level: "medium",
+        issue: "Broad confidentiality obligation",
+        explanation:
+          "The confidentiality obligation is broad. [CITE: Indian Contract Act 1872 | s.73 | 1872]",
+        suggestion: "",
+        confidence: 0.6,
+      }),
+    );
+
+    const out = await analyzeClauseRisks([
+      {
+        clauseId: "c-conf",
+        clauseText:
+          "Each Party shall keep the other Party's Confidential Information strictly secret and shall not disclose it to any third party.",
+        category: "termination",
+        classificationConfidence: 0.95,
+      },
+    ]);
+
+    expect(out[0]?.ruleIds).toContain("term.no_notice");
+    expect(out[0]?.suggestion).toBe("");
+  });
+
+  it("keeps the termination redline when the clause is actually about termination", async () => {
+    createMock.mockResolvedValueOnce(
+      llmTool({
+        risk_level: "medium",
+        issue: "No notice period",
+        explanation:
+          "Termination without notice. [CITE: Indian Contract Act 1872 | s.73 | 1872]",
+        suggestion: "",
+        confidence: 0.6,
+      }),
+    );
+
+    const out = await analyzeClauseRisks([
+      {
+        clauseId: "c-term",
+        clauseText:
+          "Either Party may terminate this Agreement and the termination shall take immediate effect.",
+        category: "termination",
+        classificationConfidence: 0.95,
+      },
+    ]);
+
+    expect(out[0]?.suggestion).toMatch(/thirty \(30\) days/);
+  });
+
+  it("always prefers the LLM's contextual redline over the rule template", async () => {
+    createMock.mockResolvedValueOnce(
+      llmTool({
+        risk_level: "medium",
+        issue: "x",
+        explanation: "y [CITE: Indian Contract Act 1872 | s.73 | 1872]",
+        suggestion: "Narrow the confidentiality carve-outs to exclude residuals.",
+        confidence: 0.7,
+      }),
+    );
+
+    const out = await analyzeClauseRisks([
+      {
+        clauseId: "c-llm",
+        clauseText:
+          "Each Party shall keep Confidential Information secret and not disclose it to third parties.",
+        category: "termination",
+        classificationConfidence: 0.95,
+      },
+    ]);
+
+    expect(out[0]?.suggestion).toBe(
+      "Narrow the confidentiality carve-outs to exclude residuals.",
+    );
+  });
+
   it("backfills [CITE: …] when LLM omits citations on a high-severity finding", async () => {
     createMock.mockResolvedValueOnce(
       llmTool({

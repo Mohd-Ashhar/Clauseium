@@ -9,8 +9,20 @@ import type {
 } from "./types";
 import type { CitationStatusValue } from "./schemas";
 
-export const RELEVANCE_VERIFIED = 0.55;
-export const RELEVANCE_PARTIAL = 0.35;
+// A confirmed EXACT corpus match is our source of truth (CLAUDE.md mandates
+// "verified against our corpus"). Relevance is a confidence signal, NOT a hard
+// gate — it can only DEMOTE an exact match, and only on strong, measured
+// evidence of topic mismatch (below this floor). Indian Kanoon is optional
+// corroboration that boosts confidence, never a requirement for "verified".
+export const RELEVANCE_DEMOTE_FLOOR = 0.35;
+// A fuzzy (hybrid-search) hit is weaker — it must clear this measured relevance,
+// or be corroborated by Kanoon, to reach "verified".
+export const RELEVANCE_HYBRID_VERIFIED = 0.55;
+// Mirror of local-check's NEUTRAL_RELEVANCE: a relevance of exactly 0.5 means
+// "no embedding available" (unmeasured), not a real low score. We never demote
+// on it — that would wrongly punish legitimate matches whose chunk had no
+// embedding.
+export const NEUTRAL_RELEVANCE = 0.5;
 
 export interface VerifyDeps {
   supabase: SupabaseClient;
@@ -76,20 +88,29 @@ function decideStatus(
 
   const localOk = local.checked && local.confirmed;
   const kanoonOk = kanoon.checked && kanoon.confirmed;
+  const exact = localOk && local.exactMatch === true;
   const relevance = local.relevance;
+  // "measured" = embeddings were actually present (not the 0.5 neutral fallback).
+  const measured = relevance !== NEUTRAL_RELEVANCE;
 
-  if (localOk && kanoonOk) {
-    if (relevance >= RELEVANCE_VERIFIED) return "verified";
-    if (relevance >= RELEVANCE_PARTIAL) return "partially_verified";
+  // Exact curated-corpus hit: the corpus IS our source of truth. Verified unless
+  // there is STRONG, measured evidence the citation is off-topic for this clause
+  // (the P2-1 mismatch guard) — never demoted on the neutral 0.5 fallback.
+  if (exact) {
+    if (measured && relevance < RELEVANCE_DEMOTE_FLOOR) return "partially_verified";
+    return "verified";
+  }
+
+  // Fuzzy (hybrid-search) corpus hit: weaker — needs measured relevance or an
+  // independent Kanoon corroboration to reach verified.
+  if (localOk) {
+    if (measured && relevance >= RELEVANCE_HYBRID_VERIFIED) return "verified";
+    if (kanoonOk) return "verified";
     return "partially_verified";
   }
 
-  if (localOk || kanoonOk) {
-    if (localOk && relevance >= RELEVANCE_PARTIAL) return "partially_verified";
-    if (kanoonOk) return "partially_verified";
-    return "unverified";
-  }
-
+  // No local corpus hit — Kanoon alone is never "verified".
+  if (kanoonOk) return "partially_verified";
   return "unverified";
 }
 
@@ -103,14 +124,21 @@ function computeConfidence(
 
   const localOk = local.checked && local.confirmed;
   const kanoonOk = kanoon.checked && kanoon.confirmed;
-  const both = localOk && kanoonOk;
-  const sourceAgreement = both ? 1 : localOk || kanoonOk ? 0.5 : 0;
+  const exact = localOk && local.exactMatch === true;
 
-  // If we don't have a clause embedding, relevance is neutral; weight stays the same.
-  const relevance = localOk ? local.relevance : 0.5;
+  // Corpus base signal: an exact curated hit is near-certain; a fuzzy hit is
+  // solid; Kanoon-only (no corpus) is weak.
+  const corpusBase = exact ? 0.85 : localOk ? 0.6 : 0.4;
+  // Relevance contributes only when measured; the neutral 0.5 neither helps nor
+  // hurts.
+  const relevance = localOk ? local.relevance : NEUTRAL_RELEVANCE;
+  // Kanoon corroboration is a bonus, never a requirement.
+  const kanoonBoost = kanoonOk ? 0.1 : 0;
   const formatValid = citation.formatValid ? 1 : 0;
 
-  return 0.5 * sourceAgreement + 0.4 * relevance + 0.1 * formatValid;
+  const raw =
+    0.6 * corpusBase + 0.3 * relevance + 0.1 * formatValid + kanoonBoost;
+  return Math.max(0, Math.min(1, raw));
 }
 
 function mapLocalDeps(deps: VerifyDeps): LocalCheckDeps {

@@ -25,6 +25,10 @@ export const sourceCheckSchema = z.object({
   latencyMs: z.number().int().min(0),
   error: z.string().nullable().default(null),
   cacheHit: z.boolean().optional(),
+  // True only when the local source confirmed via an EXACT curated-corpus match
+  // (statute_name + section, or case_name + year). A fuzzy hybrid-search hit
+  // sets this false. Drives the "corpus match = verified" decision in verify.ts.
+  exactMatch: z.boolean().optional(),
 });
 export type SourceCheck = z.infer<typeof sourceCheckSchema>;
 

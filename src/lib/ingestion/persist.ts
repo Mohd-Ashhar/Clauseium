@@ -93,6 +93,9 @@ export async function finalizeContractReady(
 }
 
 function extractClauseNumber(text: string): string | null {
-  const match = /^(\d+(?:\.\d+)*|\([a-z]{1,3}\)|\([ivx]{1,5}\))\s/i.exec(text);
+  // Sequence-aware parser emits clauses as "14. COMPLIANCE WITH LAWS…" — allow
+  // the trailing "." or ")" after the number (and before the whitespace) so the
+  // clause_number column populates. Also matches "14 …", "(a) …", "(iv) …".
+  const match = /^(\d+(?:\.\d+)*|\([a-z]{1,3}\)|\([ivx]{1,5}\))[.)]?\s/i.exec(text);
   return match ? match[1] : null;
 }

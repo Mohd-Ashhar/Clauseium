@@ -98,6 +98,17 @@ function makeFetch(json: unknown): typeof fetch {
   ) as unknown as typeof fetch;
 }
 
+const ICA_73_ROW = {
+  id: "doc-ica-73",
+  source: "statute",
+  statute_name: "Indian Contract Act",
+  section: "73",
+  case_name: null,
+  citation: null,
+  url: "https://indiankanoon.org/doc/1745449/",
+  year: 1872,
+};
+
 describe("verifyCitationsForClause", () => {
   it("returns trust=1 when no citations are present", async () => {
     const supabase = makeSupabase({}, { data: [], error: null });
@@ -192,44 +203,80 @@ describe("verifyCitationsForClause", () => {
     expect(out.trustScore).toBeGreaterThan(0);
   });
 
-  it("degrades to partial when Kanoon is unavailable", async () => {
+  // An exact curated-corpus match is our source of truth: it is "verified" even
+  // when Indian Kanoon is unavailable. This is the P1-2 fix — previously this
+  // exact ICA s.73 hit was wrongly downgraded to "partially_verified" because
+  // "verified" required BOTH local AND Kanoon.
+  it("verifies an exact corpus match even when Kanoon is unavailable", async () => {
     delete process.env.INDIAN_KANOON_API_TOKEN;
     const clauseEmbedding = new Array(1536).fill(0.1);
     const matchingChunkEmbedding = new Array(1536).fill(0.1);
     embedQueryMock.mockResolvedValueOnce(clauseEmbedding);
 
     const supabase = makeSupabase(
-      {
-        "legal_documents:statute": {
-          data: [
-            {
-              id: "doc-ica-73",
-              source: "statute",
-              statute_name: "Indian Contract Act",
-              section: "73",
-              case_name: null,
-              citation: null,
-              url: "https://indiankanoon.org/doc/1745449/",
-              year: 1872,
-            },
-          ],
-          error: null,
-        },
-      },
+      { "legal_documents:statute": { data: [ICA_73_ROW], error: null } },
       { data: [{ embedding: matchingChunkEmbedding }], error: null },
     );
 
     const out = await verifyCitationsForClause(
       {
         clauseId: "clause-y",
-        clauseText: "Damages clause.",
+        clauseText: "Compensation for breach of contract under Indian law.",
         citationCarrier: "[CITE: Indian Contract Act | 73 | 1872]",
       },
       { supabase, fetchImpl: makeFetch({ docs: [] }) },
     );
 
     expect(out.citations).toHaveLength(1);
+    expect(out.citations[0].status).toBe("verified");
+    expect(out.citations[0].warning).toBeUndefined();
+  });
+
+  it("verifies an exact corpus match even with neutral relevance (no chunk embedding)", async () => {
+    delete process.env.INDIAN_KANOON_API_TOKEN;
+    const clauseEmbedding = new Array(1536).fill(0.1);
+    embedQueryMock.mockResolvedValueOnce(clauseEmbedding);
+
+    // No chunk embedding → relevance falls back to neutral 0.5 (which is below
+    // the old 0.55 cutoff). It must still verify on the exact corpus match.
+    const supabase = makeSupabase(
+      { "legal_documents:statute": { data: [ICA_73_ROW], error: null } },
+      { data: [], error: null },
+    );
+
+    const out = await verifyCitationsForClause(
+      {
+        clauseId: "clause-z",
+        clauseText: "Damages for breach.",
+        citationCarrier: "[CITE: Indian Contract Act | 73 | 1872]",
+      },
+      { supabase, fetchImpl: makeFetch({ docs: [] }) },
+    );
+
+    expect(out.citations[0].status).toBe("verified");
+  });
+
+  it("demotes an exact match to partial when the clause is off-topic for it (P2-1)", async () => {
+    delete process.env.INDIAN_KANOON_API_TOKEN;
+    const clauseEmbedding = new Array(1536).fill(0.1);
+    const oppositeChunkEmbedding = new Array(1536).fill(-0.1); // cosine → 0 relevance
+    embedQueryMock.mockResolvedValueOnce(clauseEmbedding);
+
+    const supabase = makeSupabase(
+      { "legal_documents:statute": { data: [ICA_73_ROW], error: null } },
+      { data: [{ embedding: oppositeChunkEmbedding }], error: null },
+    );
+
+    const out = await verifyCitationsForClause(
+      {
+        clauseId: "clause-mismatch",
+        clauseText: "Each party shall keep the other's confidential information secret.",
+        citationCarrier: "[CITE: Indian Contract Act | 73 | 1872]",
+      },
+      { supabase, fetchImpl: makeFetch({ docs: [] }) },
+    );
+
     expect(out.citations[0].status).toBe("partially_verified");
-    expect(out.citations[0].warning).toMatch(/unavailable|partial/i);
+    expect(out.citations[0].warning).toMatch(/relevance|partial/i);
   });
 });

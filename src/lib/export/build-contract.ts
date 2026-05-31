@@ -79,6 +79,38 @@ export interface BuildExportResult {
   clauseStates: Record<string, ClauseState>;
 }
 
+// Per-level penalty weights for the overall risk score. The old formula divided
+// by a `totalClauses * 6` ceiling, which implicitly assumed a contract was
+// "fine" unless EVERY clause was high-risk — so even many high-risk clauses
+// barely moved the needle (the IPPB MSA scored 73/100 while ~45% of its clauses
+// were risky). This penalty-density model scales the penalty to the clause
+// count and adds a high-risk-share amplifier so concentrated severity is
+// punished. Calibrated so an IPPB-style PSU vendor MSA lands ~30-55 and a
+// well-drafted balanced MSA lands ~70-85. NOTE: the denominator's correctness
+// depends on the parser producing real clauses (Stage 1) — inflated clause
+// counts would deflate density and inflate the score.
+const HIGH_W = 10;
+const MISSING_W = 6;
+const MEDIUM_W = 4;
+const LOW_W = 1;
+const PENALTY_NORM = 7;
+
+export function computeOverallScore(
+  summary: { high: number; medium: number; low: number; missing: number },
+  totalClauses: number,
+): number {
+  if (totalClauses === 0) return 100;
+  const penalty =
+    summary.high * HIGH_W +
+    summary.missing * MISSING_W +
+    summary.medium * MEDIUM_W +
+    summary.low * LOW_W;
+  const density = penalty / (totalClauses * PENALTY_NORM);
+  const highShare = summary.high / totalClauses;
+  const amplified = density * (1 + 0.5 * highShare);
+  return Math.round(Math.max(0, Math.min(1, 1 - amplified)) * 100);
+}
+
 export function buildContractForExport(args: {
   contract: ExportContractRow;
   clauses: ExportClauseRow[];
@@ -140,10 +172,7 @@ export function buildContractForExport(args: {
     });
 
   const totalClauses = analysisClauses.length;
-  const risky = summary.high * 6 + summary.medium * 2 + summary.missing * 3;
-  const ceiling = totalClauses * 6;
-  const overallScore =
-    ceiling === 0 ? 100 : Math.round((1 - Math.min(1, risky / ceiling)) * 100);
+  const overallScore = computeOverallScore(summary, totalClauses);
 
   const fileSize = contract.page_count
     ? `${contract.page_count} pages`

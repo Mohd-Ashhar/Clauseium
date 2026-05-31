@@ -72,6 +72,7 @@ export async function checkLocal(
       relevance,
       latencyMs: Date.now() - start,
       error: null,
+      exactMatch: true,
     };
   }
 
@@ -101,6 +102,7 @@ export async function checkLocal(
     relevance,
     latencyMs: Date.now() - start,
     error: null,
+    exactMatch: false,
   };
 }
 

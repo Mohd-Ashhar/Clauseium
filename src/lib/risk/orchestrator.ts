@@ -129,6 +129,7 @@ async function llmFallback(
       ruleFindings,
       response,
       ragContext.length,
+      input.clauseText,
     );
     // When the analyzer hit the soft fallback (exhausted retries / parse
     // failure), tag the row so the admin re-analyze endpoint can find it.
@@ -153,6 +154,7 @@ function mergeRuleAndLlm(
   ruleFindings: readonly RuleFinding[],
   llm: LlmRiskResponse,
   ragHitCount: number,
+  clauseText: string,
 ): RiskAnalysisResult {
   const primary = pickPrimary(ruleFindings);
   const ruleIds = aggregateRuleIds(ruleFindings);
@@ -169,10 +171,7 @@ function mergeRuleAndLlm(
 
   const issue = primary && primary.level === riskLevel ? primary.issue : llm.issue;
   const explanation = ensureCitations(llm.explanation, citationHints, riskLevel);
-  const suggestion =
-    llm.suggestion && llm.suggestion.length > 0
-      ? llm.suggestion
-      : (primary?.suggestion ?? "");
+  const suggestion = pickSuggestion(llm.suggestion, primary, clauseText);
 
   const confidence = finalConfidence(
     primary?.confidence ?? null,
@@ -191,6 +190,77 @@ function mergeRuleAndLlm(
     method,
     ruleIds,
   };
+}
+
+// Choose the redline to surface. The per-clause LLM suggestion is always
+// preferred — it is written against the actual clause. Rule suggestions are
+// generic templates keyed to a detected pattern (e.g. "no notice period"), so
+// when the LLM produced no redline AND the rule template's topic is absent from
+// the clause, applying it would leak an irrelevant redline onto an unrelated
+// clause (the P1-1 bug: the same "thirty (30) days' notice" text appearing on
+// Confidentiality, Severability, Survival…). In that case we suppress it
+// entirely rather than mislead the reviewer. NOTE: the rule-only degraded path
+// (ruleOnlyResult, used when the LLM is unavailable) is intentionally left
+// unguarded — there the whole document is rule-only.
+function pickSuggestion(
+  llmSuggestion: string,
+  primary: RuleFinding | null,
+  clauseText: string,
+): string {
+  if (llmSuggestion && llmSuggestion.length > 0) return llmSuggestion;
+  if (!primary || !primary.suggestion) return "";
+  return ruleSuggestionFitsClause(primary.ruleId, clauseText)
+    ? primary.suggestion
+    : "";
+}
+
+function ruleSuggestionFitsClause(ruleId: string, clauseText: string): boolean {
+  const anchors = anchorsForRule(ruleId);
+  if (anchors.length === 0) return true; // unknown family → don't over-suppress
+  const text = clauseText.toLowerCase();
+  return anchors.some((a) => a.test(text));
+}
+
+// Topic anchors per rule family, mirroring each rule pack's own vocabulary. A
+// template "fits" only if the clause mentions at least one anchor for its
+// family. Errs toward keeping (returns [] → keep) for unrecognised families.
+function anchorsForRule(ruleId: string): RegExp[] {
+  if (ruleId.startsWith("term."))
+    return [/terminat/, /\bnotice\b/, /\bcure\b/, /surviv/, /expir/, /renew/];
+  if (ruleId.startsWith("indem."))
+    return [/indemnif/, /hold harmless/, /\bdefend\b/, /infring/];
+  if (ruleId.startsWith("pay."))
+    return [
+      /\bpay(?:ment|able|s)?\b/,
+      /invoice/,
+      /\bfee(?:s)?\b/,
+      /\bdue\b/,
+      /\bgst\b/,
+      /\btds\b/,
+      /\btax/,
+      /currency|remit|fema/,
+      /msme/,
+    ];
+  if (ruleId.startsWith("lol."))
+    return [/liabilit/, /\bliable\b/, /\bcap(?:ped|s)?\b/, /damages/, /consequential/];
+  if (ruleId.startsWith("ip."))
+    return [
+      /intellectual property/,
+      /copyright/,
+      /\bip\b/,
+      /work[ -]for[ -]hire/,
+      /moral right/,
+      /deliverable/,
+      /invention/,
+      /proprietary/,
+    ];
+  if (ruleId.startsWith("dpdp."))
+    return [/\bdata\b/, /personal data/, /privacy/, /consent/, /\bbreach\b/, /process/];
+  if (ruleId.startsWith("gl."))
+    return [/governing law/, /\bgovern/, /construed/, /laws of/];
+  if (ruleId.startsWith("juris."))
+    return [/jurisdiction/, /\bcourt/, /arbitrat/, /\bforum\b/];
+  return [];
 }
 
 function ruleOnlyResult(
