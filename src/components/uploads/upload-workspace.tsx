@@ -473,8 +473,6 @@ export function UploadWorkspace({
         isExporting={isExporting}
       />
 
-      {partial && <PartialAnalysisBanner notes={analysisNotes} />}
-
       <div className="hidden lg:flex flex-1 min-h-0">
         <Group orientation="horizontal" className="flex-1 flex">
           <Panel defaultSize={55} minSize={35} maxSize={70} className="min-w-0">
@@ -2128,28 +2126,6 @@ function ToastContainer({ toasts }: { toasts: ToastItem[] }) {
           </motion.div>
         ))}
       </AnimatePresence>
-    </div>
-  );
-}
-
-// Non-blocking warning rendered above the panes when the contract finalized
-// 'ready' but one or more analysis stages degraded/failed. Prevents a partial
-// review from being read as a clean "0 high risk" result.
-function PartialAnalysisBanner({ notes }: { notes: string[] }) {
-  return (
-    <div className="shrink-0 bg-risk-med/10 border-b border-risk-med/30 px-4 py-2.5 flex items-start gap-2.5">
-      <AlertTriangle className="h-4 w-4 text-risk-med mt-0.5 shrink-0" />
-      <div className="min-w-0">
-        <p className="text-[13px] font-medium text-risk-med">
-          Partial analysis — results may be incomplete
-        </p>
-        {notes.length > 0 && (
-          <p className="text-[12px] text-ink-300 mt-0.5 leading-relaxed">
-            {notes.join(" ")} Re-run the analysis or review this contract
-            manually before relying on it.
-          </p>
-        )}
-      </div>
     </div>
   );
 }
