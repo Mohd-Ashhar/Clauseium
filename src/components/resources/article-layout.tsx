@@ -37,7 +37,7 @@ export function ArticleLayout({
           className="pointer-events-none absolute -top-40 right-[-10%] h-[480px] w-[480px] rounded-full opacity-50 blur-3xl"
           style={{
             background:
-              "radial-gradient(closest-side, rgba(124,92,255,0.35), rgba(124,92,255,0.06) 60%, rgba(124,92,255,0) 80%)",
+              "radial-gradient(closest-side, rgba(201,164,73,0.35), rgba(201,164,73,0.06) 60%, rgba(201,164,73,0) 80%)",
           }}
         />
         <div
@@ -123,7 +123,7 @@ export function ArticleLayout({
           className="pointer-events-none absolute inset-0 opacity-60"
           style={{
             background:
-              "radial-gradient(circle at 30% 50%, rgba(124,92,255,0.18), transparent 55%)",
+              "radial-gradient(circle at 30% 50%, rgba(201,164,73,0.18), transparent 55%)",
           }}
         />
         <div className="relative mx-auto max-w-[1240px] px-6 text-center">

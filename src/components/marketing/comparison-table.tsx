@@ -21,7 +21,7 @@ export function ComparisonTable({
             <th className="px-6 py-4 font-mono text-[11px] uppercase tracking-[0.14em] text-paper-600">
               Feature
             </th>
-            <th className="border-x border-brand-200 bg-brand-50/40 px-6 py-4 text-center font-display text-[15px] font-semibold text-brand-600">
+            <th className="border-x border-counsel-200 bg-counsel-50/40 px-6 py-4 text-center font-display text-[15px] font-semibold text-counsel-600">
               Clauseium
             </th>
             <th className="px-6 py-4 text-center font-display text-[15px] font-semibold text-paper-900">
@@ -56,7 +56,7 @@ function Cell({
   highlighted?: boolean;
 }) {
   const cellClass = highlighted
-    ? "border-x border-brand-200 bg-brand-50/40"
+    ? "border-x border-counsel-200 bg-counsel-50/40"
     : "";
 
   if (typeof value === "boolean") {
@@ -64,7 +64,7 @@ function Cell({
       <td className={`px-6 py-3.5 text-center ${cellClass}`}>
         {value ? (
           <Check
-            className="mx-auto h-4 w-4 text-brand-600"
+            className="mx-auto h-4 w-4 text-counsel-600"
             aria-label="Yes"
           />
         ) : (

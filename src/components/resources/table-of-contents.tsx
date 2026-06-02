@@ -95,7 +95,7 @@ function TOCItem({
           "block border-l-2 py-1 pl-4 text-[13.5px] leading-snug transition-colors -ml-px",
           heading.depth === 3 && "pl-7",
           active
-            ? "border-brand-500 text-paper-900"
+            ? "border-counsel-500 text-paper-900"
             : "border-transparent text-paper-600 hover:border-paper-300 hover:text-paper-900",
         )}
       >

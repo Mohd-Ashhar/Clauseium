@@ -56,13 +56,13 @@ export function HeroProductPreview() {
         className="pointer-events-none absolute -inset-6 -z-10 rounded-[28px]"
         style={{
           background:
-            "radial-gradient(60% 40% at 50% 100%, rgba(124,92,255,0.35), transparent 70%)",
+            "radial-gradient(60% 40% at 50% 100%, rgba(201,164,73,0.35), transparent 70%)",
           filter: "blur(24px)",
         }}
       />
 
       <div
-        className="overflow-hidden rounded-2xl border border-ink-700 bg-ink-850 shadow-[0_20px_80px_rgba(124,92,255,0.18),0_0_0_1px_rgba(255,255,255,0.04)_inset] md:transform-[rotateX(6deg)]"
+        className="overflow-hidden rounded-2xl border border-ink-700 bg-ink-850 shadow-[0_20px_80px_rgba(201,164,73,0.18),0_0_0_1px_rgba(255,255,255,0.04)_inset] md:transform-[rotateX(6deg)]"
       >
         {/* Browser chrome */}
         <div className="flex items-center gap-3 border-b border-ink-700 bg-ink-900 px-4 py-3">
@@ -165,7 +165,7 @@ export function HeroProductPreview() {
               <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">
                 Clause analysis
               </span>
-              <span className="font-mono text-[10px] text-brand-500">
+              <span className="font-mono text-[10px] text-counsel-500">
                 Live ●
               </span>
             </div>
@@ -233,7 +233,7 @@ function ClauseCard({
       {streamingText && (
         <div
           className={cn(
-            "mt-3 overflow-hidden border-l-2 border-brand-500/50 pl-3 text-[11.5px] leading-relaxed text-ink-300",
+            "mt-3 overflow-hidden border-l-2 border-counsel-500/50 pl-3 text-[11.5px] leading-relaxed text-ink-300",
           )}
         >
           <span
@@ -245,7 +245,7 @@ function ClauseCard({
             {streamingText}
           </span>
           <span
-            className="ml-1 inline-block h-3 w-[2px] bg-brand-400 align-middle"
+            className="ml-1 inline-block h-3 w-[2px] bg-counsel-400 align-middle"
             style={{ animation: "cursor-blink 1s steps(2) infinite" }}
           />
         </div>

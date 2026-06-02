@@ -10,10 +10,10 @@ export function KeyTakeaways({
 
   return (
     <aside
-      className="key-takeaways not-prose my-10 rounded-2xl border border-brand-200 bg-brand-50 p-6 md:p-7"
+      className="key-takeaways not-prose my-10 rounded-2xl border border-counsel-200 bg-counsel-50 p-6 md:p-7"
       aria-label="Key takeaways"
     >
-      <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.16em] text-brand-600">
+      <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.16em] text-counsel-600">
         <Sparkles className="h-3.5 w-3.5" />
         Key takeaways
       </div>
@@ -23,7 +23,7 @@ export function KeyTakeaways({
             key={i}
             className="flex items-start gap-3 text-[15px] leading-[1.6] text-paper-900/90"
           >
-            <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-500 font-mono text-[11px] font-semibold text-white">
+            <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-counsel-500 font-mono text-[11px] font-semibold text-white">
               {i + 1}
             </span>
             <div className="min-w-0 flex-1">{child}</div>

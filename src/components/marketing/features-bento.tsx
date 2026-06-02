@@ -29,7 +29,7 @@ export function FeaturesBento() {
     >
       <div className="mx-auto max-w-[1240px] px-6">
         <FadeUp>
-          <p className="text-center font-mono text-[11px] uppercase tracking-[0.18em] text-brand-600">
+          <p className="text-center font-mono text-[11px] uppercase tracking-[0.18em] text-counsel-600">
             Capabilities
           </p>
           <h2 className="mx-auto mt-3 max-w-3xl text-center font-display text-[clamp(1.75rem,2vw+0.5rem,2.4rem)] font-bold tracking-[-0.02em] text-paper-900">
@@ -120,8 +120,8 @@ function BentoCard({
       className={cn(
         "group relative flex flex-col overflow-hidden rounded-2xl border p-6 transition-all duration-300 hover:-translate-y-0.5 md:p-8",
         isDark
-          ? "border-ink-700 bg-ink-900 text-ink-100 hover:border-brand-500/50 hover:shadow-[0_8px_32px_rgba(124,92,255,0.18)]"
-          : "border-paper-200 bg-white hover:border-brand-500/30 hover:shadow-[0_4px_20px_rgba(124,92,255,0.08)]",
+          ? "border-ink-700 bg-ink-900 text-ink-100 hover:border-counsel-500/50 hover:shadow-[0_8px_32px_rgba(201,164,73,0.18)]"
+          : "border-paper-200 bg-white hover:border-counsel-500/30 hover:shadow-[0_4px_20px_rgba(201,164,73,0.08)]",
         className,
       )}
     >
@@ -130,15 +130,15 @@ function BentoCard({
           className={cn(
             "inline-flex h-9 w-9 items-center justify-center rounded-lg",
             isDark
-              ? "bg-brand-500/15 text-brand-200"
-              : "bg-brand-500/10 text-brand-500",
+              ? "bg-counsel-500/15 text-counsel-200"
+              : "bg-counsel-500/10 text-counsel-500",
           )}
         >
           {icon}
         </span>
         {heroBadge && (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-500/15 px-2.5 py-0.5 text-[11px] font-medium text-brand-200">
-            <span className="h-1.5 w-1.5 rounded-full bg-brand-200" />
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-counsel-500/15 px-2.5 py-0.5 text-[11px] font-medium text-counsel-200">
+            <span className="h-1.5 w-1.5 rounded-full bg-counsel-200" />
             Core feature
           </span>
         )}
@@ -215,7 +215,7 @@ function HeroClausesVisual() {
           <div
             key={it.id}
             className={cn(
-              "w-full rounded-xl border border-ink-700 border-l-[4px] bg-ink-850 p-4 shadow-[0_4px_16px_rgba(124,92,255,0.10)]",
+              "w-full rounded-xl border border-ink-700 border-l-[4px] bg-ink-850 p-4 shadow-[0_4px_16px_rgba(201,164,73,0.10)]",
               it.borderColor,
             )}
           >
@@ -241,7 +241,7 @@ function HeroClausesVisual() {
           <div
             key={it.id}
             className={cn(
-              "absolute right-0 w-[280px] rounded-xl border border-ink-700 border-l-[4px] bg-ink-850 p-4 shadow-[0_8px_32px_rgba(124,92,255,0.12)] backdrop-blur",
+              "absolute right-0 w-[280px] rounded-xl border border-ink-700 border-l-[4px] bg-ink-850 p-4 shadow-[0_8px_32px_rgba(201,164,73,0.12)] backdrop-blur",
               it.borderColor,
               it.tilt,
             )}
@@ -298,7 +298,7 @@ function TypingClauseVisual() {
       <div className="text-paper-900/40">§ 12 Indemnification (drafting…)</div>
       <div className="mt-2 overflow-hidden">
         <span
-          className="inline-block whitespace-nowrap border-r-2 border-brand-500 align-bottom"
+          className="inline-block whitespace-nowrap border-r-2 border-counsel-500 align-bottom"
           style={{
             animation:
               "bento-typewriter 6s steps(80, end) infinite, bento-caret 0.75s step-end infinite",
@@ -416,7 +416,7 @@ function WordAddinVisual() {
       <div className="flex-1 rounded-md bg-paper-100 p-2">
         <div className="h-1.5 w-3/4 rounded bg-paper-200" />
         <div className="mt-1.5 h-1.5 w-1/2 rounded bg-paper-200" />
-        <div className="mt-2 inline-block rounded-sm bg-brand-500/15 px-1.5 py-0.5 font-mono text-[9px] text-brand-600">
+        <div className="mt-2 inline-block rounded-sm bg-counsel-500/15 px-1.5 py-0.5 font-mono text-[9px] text-counsel-600">
           Clauseium add-in
         </div>
       </div>

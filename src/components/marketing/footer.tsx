@@ -57,7 +57,7 @@ export function Footer() {
               href="/"
               className="inline-flex items-center gap-2 font-display text-[20px] font-bold text-white"
             >
-              <span className="text-brand-500">§</span> Clauseium
+              <span className="text-counsel-500">§</span> Clauseium
             </Link>
             <p className="mt-3 max-w-xs text-[13.5px] leading-relaxed text-ink-500">
               AI contract review and drafting copilot for Indian in-house
@@ -96,7 +96,7 @@ export function Footer() {
         <div className="mt-12 flex flex-col items-start justify-between gap-4 border-t border-ink-700/40 pt-8 text-[12px] text-ink-500 md:flex-row md:items-center">
           <span>© 2026 Clauseium Technologies Pvt Ltd. All rights reserved.</span>
           <span className="text-ink-500/80">
-            Made with <span className="text-brand-500">⚡</span> in Bengaluru
+            Made with <span className="text-counsel-500">⚡</span> in Bengaluru
           </span>
           <span className="max-w-md text-[11px] leading-relaxed text-ink-500/70">
             This platform provides AI-assisted analysis. Not a substitute for

@@ -4,7 +4,6 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { FadeUp } from "@/components/motion/fade-up";
-import { GradientText } from "@/components/motion/gradient-text";
 import { MagneticButton } from "@/components/motion/magnetic-button";
 import { Button } from "@/components/ui/button";
 
@@ -22,28 +21,19 @@ export function FinalCTA() {
       <div className="absolute inset-0 -z-10">
         <AuroraBackground intensity="dim" />
       </div>
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 -z-10"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px)",
-          backgroundSize: "32px 32px",
-        }}
-      />
 
       <div className="mx-auto max-w-3xl px-6 text-center">
         <FadeUp>
           <h2
-            className="font-display font-bold tracking-[-0.02em] text-white"
+            className="font-display font-medium text-white"
             style={{
               fontSize: "clamp(2rem, 4vw + 0.5rem, 3rem)",
-              lineHeight: 1.05,
+              lineHeight: 1.1,
             }}
           >
             Stop reading the same NDA twice.
             <br />
-            <GradientText>Start closing.</GradientText>
+            <span className="italic text-counsel-300">Start closing.</span>
           </h2>
         </FadeUp>
         <FadeUp delay={0.1}>

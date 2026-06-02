@@ -25,7 +25,7 @@ export function PillarLayout({
           className="pointer-events-none absolute -top-40 right-[-10%] h-[520px] w-[520px] rounded-full opacity-50 blur-3xl"
           style={{
             background:
-              "radial-gradient(closest-side, rgba(124,92,255,0.35), rgba(124,92,255,0.06) 60%, rgba(124,92,255,0) 80%)",
+              "radial-gradient(closest-side, rgba(201,164,73,0.35), rgba(201,164,73,0.06) 60%, rgba(201,164,73,0) 80%)",
           }}
         />
         <div
@@ -108,7 +108,7 @@ export function PillarLayout({
           className="pointer-events-none absolute inset-0 opacity-60"
           style={{
             background:
-              "radial-gradient(circle at 30% 50%, rgba(124,92,255,0.18), transparent 55%)",
+              "radial-gradient(circle at 30% 50%, rgba(201,164,73,0.18), transparent 55%)",
           }}
         />
         <div className="relative mx-auto max-w-[1240px] px-6 text-center">
@@ -187,13 +187,13 @@ function SpokeGrid({
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="group flex flex-col rounded-xl border border-paper-200 bg-white p-5 transition-all hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-md"
+                  className="group flex flex-col rounded-xl border border-paper-200 bg-white p-5 transition-all hover:-translate-y-0.5 hover:border-counsel-200 hover:shadow-md"
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-paper-500">
                       Guide
                     </span>
-                    <ArrowUpRight className="h-3.5 w-3.5 text-paper-400 transition-colors group-hover:text-brand-600" />
+                    <ArrowUpRight className="h-3.5 w-3.5 text-paper-400 transition-colors group-hover:text-counsel-600" />
                   </div>
                   <h4 className="mt-3 font-display text-[15.5px] font-semibold leading-snug text-paper-900">
                     {item.title}
@@ -215,8 +215,8 @@ function SpokeGrid({
 
 function PillarSidebarCTA({ slug }: { slug: string }) {
   return (
-    <div className="rounded-xl border border-brand-200 bg-brand-50 p-5">
-      <div className="font-mono text-[10.5px] uppercase tracking-[0.16em] text-brand-600">
+    <div className="rounded-xl border border-counsel-200 bg-counsel-50 p-5">
+      <div className="font-mono text-[10.5px] uppercase tracking-[0.16em] text-counsel-600">
         Try Clauseium
       </div>
       <h4 className="mt-2 font-display text-[15.5px] font-semibold leading-snug text-paper-900">

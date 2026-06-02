@@ -60,9 +60,9 @@ export function TemplateDownloadCTA({
   }
 
   return (
-    <aside className="my-10 rounded-2xl border border-brand-200 bg-brand-50 p-6 md:p-8">
+    <aside className="my-10 rounded-2xl border border-counsel-200 bg-counsel-50 p-6 md:p-8">
       <div className="flex items-start gap-4">
-        <span className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-500 text-white sm:inline-flex">
+        <span className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-counsel-500 text-white sm:inline-flex">
           <FileDown className="h-5 w-5" />
         </span>
         <div className="flex-1">
@@ -74,9 +74,9 @@ export function TemplateDownloadCTA({
           </p>
 
           {state.status === "success" ? (
-            <div className="mt-5 rounded-xl border border-brand-200 bg-white p-4">
+            <div className="mt-5 rounded-xl border border-counsel-200 bg-white p-4">
               <div className="flex items-center gap-2 text-[14px] font-medium text-paper-900">
-                <CheckCircle2 className="h-4 w-4 text-brand-600" />
+                <CheckCircle2 className="h-4 w-4 text-counsel-600" />
                 Your template is ready.
               </div>
               {state.downloadUrl ? (

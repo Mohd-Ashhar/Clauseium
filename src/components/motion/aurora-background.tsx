@@ -7,11 +7,21 @@ type AuroraBackgroundProps = {
   intensity?: "default" | "dim";
 };
 
+// Faint film grain — keeps deep-ink surfaces from looking flat without the
+// "AI startup" aurora. Static (no animation), so it respects reduced-motion.
+const GRAIN =
+  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")";
+
+/**
+ * Refined backdrop for dark hero surfaces. Replaces the multi-colour aurora
+ * with a restrained deep-ink wash + a single quiet counsel-gold pool and faint
+ * grain — the premium legaltech atmosphere (Harvey / Spellbook), not dev-tool.
+ */
 export function AuroraBackground({
   className,
   intensity = "default",
 }: AuroraBackgroundProps) {
-  const baseOpacity = intensity === "dim" ? 0.22 : 0.4;
+  const glow = intensity === "dim" ? 0.05 : 0.09;
   return (
     <div
       aria-hidden="true"
@@ -20,45 +30,28 @@ export function AuroraBackground({
         className,
       )}
     >
+      {/* Deep vertical ink wash */}
       <div
-        className="absolute left-[5%] top-[10%] h-[520px] w-[520px] rounded-full"
+        className="absolute inset-0"
         style={{
-          background: "#7c5cff",
+          background:
+            "linear-gradient(180deg, #07080a 0%, #050505 55%, #030303 100%)",
+        }}
+      />
+      {/* Single quiet warm pool, low and centred — a hint of counsel-gold */}
+      <div
+        className="absolute left-1/2 top-[-10%] h-[640px] w-[900px] -translate-x-1/2 rounded-full"
+        style={{
+          background:
+            "radial-gradient(ellipse at center, rgba(201,164,73,1) 0%, transparent 70%)",
           filter: "blur(120px)",
-          opacity: baseOpacity,
-          willChange: "transform",
-          animation: "aurora-1 22s ease-in-out infinite",
+          opacity: glow,
         }}
       />
+      {/* Faint grain */}
       <div
-        className="absolute right-[8%] top-[20%] h-[460px] w-[460px] rounded-full"
-        style={{
-          background: "#4cc2ff",
-          filter: "blur(140px)",
-          opacity: baseOpacity * 0.85,
-          willChange: "transform",
-          animation: "aurora-2 25s ease-in-out infinite",
-        }}
-      />
-      <div
-        className="absolute bottom-[5%] left-[15%] h-[420px] w-[420px] rounded-full"
-        style={{
-          background: "#e040a0",
-          filter: "blur(140px)",
-          opacity: baseOpacity * 0.7,
-          willChange: "transform",
-          animation: "aurora-3 20s ease-in-out infinite",
-        }}
-      />
-      <div
-        className="absolute bottom-[10%] right-[10%] h-[560px] w-[560px] rounded-full"
-        style={{
-          background: "#1e40af",
-          filter: "blur(150px)",
-          opacity: baseOpacity * 0.8,
-          willChange: "transform",
-          animation: "aurora-4 18s ease-in-out infinite",
-        }}
+        className="absolute inset-0 mix-blend-soft-light"
+        style={{ backgroundImage: GRAIN, opacity: 0.18 }}
       />
     </div>
   );

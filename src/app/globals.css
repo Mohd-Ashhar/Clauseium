@@ -27,7 +27,11 @@
   --color-brand-500: #7c5cff;
   --color-brand-600: #6b46ff;
 
+  --color-counsel-50: #faf6ea;
+  --color-counsel-100: #f3e9c9;
   --color-counsel-200: #efddb0;
+  --color-counsel-300: #e3c87f;
+  --color-counsel-400: #d6b563;
   --color-counsel-500: #c9a449;
   --color-counsel-600: #a98736;
 
@@ -55,6 +59,16 @@ body {
   color: var(--color-paper-900);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Editorial serif display — the legaltech voice. Serifs read premium at
+   near-zero tracking and generous line-height, not the tight sans tracking. */
+.font-display {
+  font-feature-settings: "ss01";
+  letter-spacing: -0.005em;
+}
+h1.font-display {
+  letter-spacing: -0.018em;
 }
 
 /* Aurora orb keyframes — driven via CSS for 60fps performance */
@@ -99,7 +113,7 @@ body {
 
 @keyframes bento-caret {
   from, to { border-color: transparent; }
-  50% { border-color: var(--color-brand-500); }
+  50% { border-color: var(--color-counsel-500); }
 }
 
 @keyframes bento-fade-in {
@@ -108,8 +122,8 @@ body {
 }
 
 @keyframes subtle-glow-pulse {
-  0%, 100% { box-shadow: 0 0 30px rgba(124, 92, 255, 0.10), 0 20px 60px rgba(10,11,13,0.18); }
-  50%      { box-shadow: 0 0 60px rgba(124, 92, 255, 0.22), 0 20px 60px rgba(10,11,13,0.18); }
+  0%, 100% { box-shadow: 0 24px 60px rgba(5,5,5,0.45), 0 0 0 1px rgba(255,255,255,0.04); }
+  50%      { box-shadow: 0 28px 80px rgba(5,5,5,0.55), 0 0 0 1px rgba(201,164,73,0.18); }
 }
 
 @keyframes hero-highlight {
@@ -128,8 +142,8 @@ body {
 
 /* Soft selection colors */
 ::selection {
-  background: var(--color-brand-500);
-  color: white;
+  background: var(--color-counsel-500);
+  color: var(--color-ink-950);
 }
 
 /* Subtle scrollbar on dark surfaces */

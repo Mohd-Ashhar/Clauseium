@@ -4,7 +4,6 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { ArrowRight, Play } from "lucide-react";
 import { FadeUp } from "@/components/motion/fade-up";
-import { GradientText } from "@/components/motion/gradient-text";
 import { MagneticButton } from "@/components/motion/magnetic-button";
 import { Button } from "@/components/ui/button";
 import { HeroProductPreview } from "./hero-product-preview";
@@ -17,33 +16,14 @@ const AuroraBackground = dynamic(
 export function Hero() {
   return (
     <section className="relative isolate overflow-hidden bg-ink-950 pt-28 md:pt-32">
-      {/* Dot grid */}
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 -z-10"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px)",
-          backgroundSize: "32px 32px",
-        }}
-      />
-      {/* Aurora */}
+      {/* Refined ink backdrop (deep wash + quiet gold pool + grain) */}
       <div className="absolute inset-0 -z-10">
         <AuroraBackground />
       </div>
-      {/* Vignette to darken edges */}
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 -z-10"
-        style={{
-          background:
-            "radial-gradient(ellipse 80% 60% at 50% 30%, transparent 0%, rgba(5,5,5,0.6) 100%)",
-        }}
-      />
 
       <div className="mx-auto max-w-5xl px-6 text-center">
         <FadeUp delay={0}>
-          <span className="inline-flex items-center gap-2 rounded-full border border-brand-500/30 bg-brand-500/10 px-4 py-1.5 text-xs font-medium text-brand-200">
+          <span className="inline-flex items-center gap-2 rounded-full border border-counsel-500/25 bg-counsel-500/8 px-4 py-1.5 text-xs font-medium text-counsel-200">
             <span className="relative flex h-2 w-2">
               <span className="absolute inset-0 animate-ping rounded-full bg-emerald-400/60" />
               <span className="relative h-2 w-2 rounded-full bg-emerald-400" />
@@ -54,22 +34,20 @@ export function Hero() {
 
         <FadeUp delay={0.1}>
           <h1
-            className="mt-8 font-display font-bold tracking-[-0.03em] text-white"
+            className="mt-8 font-display font-medium text-white"
             style={{
               fontSize: "clamp(2.4rem, 6vw + 1rem, 5.5rem)",
-              lineHeight: 1.02,
+              lineHeight: 1.04,
             }}
           >
-            <GradientText className="from-white via-brand-200 to-counsel-200">
-              India&apos;s AI Contract
-            </GradientText>
+            India&apos;s AI Contract
             <br />
             Review Platform.
           </h1>
         </FadeUp>
 
         <FadeUp delay={0.15}>
-          <h2 className="mx-auto mt-6 max-w-3xl font-display text-[clamp(1.15rem,1.4vw+0.5rem,1.55rem)] font-semibold leading-snug tracking-tight text-white/90">
+          <h2 className="mx-auto mt-6 max-w-3xl text-[clamp(1.1rem,1.2vw+0.5rem,1.4rem)] font-normal leading-snug text-white/80">
             Review contracts in 6 minutes, not 6 hours — grounded in the
             Indian Contract Act, DPDP, and your own playbook.
           </h2>

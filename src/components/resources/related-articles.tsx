@@ -43,7 +43,7 @@ export async function RelatedArticles({
           <Link
             key={item.frontmatter.slug}
             href={`/resources/${item.frontmatter.category}/${item.frontmatter.slug}`}
-            className="group flex flex-col rounded-xl border border-paper-200 bg-white p-5 transition-all hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-md"
+            className="group flex flex-col rounded-xl border border-paper-200 bg-white p-5 transition-all hover:-translate-y-0.5 hover:border-counsel-200 hover:shadow-md"
           >
             <span className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-counsel-600">
               {CATEGORY_LABELS[item.frontmatter.category]}
@@ -54,7 +54,7 @@ export async function RelatedArticles({
             <p className="mt-2 line-clamp-2 text-[13.5px] leading-relaxed text-paper-600">
               {item.frontmatter.description}
             </p>
-            <span className="mt-4 inline-flex items-center gap-1 text-[12.5px] font-medium text-brand-600 transition-transform group-hover:translate-x-0.5">
+            <span className="mt-4 inline-flex items-center gap-1 text-[12.5px] font-medium text-counsel-600 transition-transform group-hover:translate-x-0.5">
               Read article
               <ArrowUpRight className="h-3.5 w-3.5" />
             </span>

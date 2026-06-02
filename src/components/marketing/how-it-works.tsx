@@ -24,7 +24,7 @@ export function HowItWorks() {
     <section className="bg-paper-50 py-24 md:py-28">
       <div className="mx-auto max-w-[1240px] px-6">
         <FadeUp>
-          <p className="text-center font-mono text-[11px] uppercase tracking-[0.18em] text-brand-600">
+          <p className="text-center font-mono text-[11px] uppercase tracking-[0.18em] text-counsel-600">
             Workflow
           </p>
           <h2 className="mt-3 text-center font-display text-[clamp(1.75rem,2vw+0.5rem,2.4rem)] font-bold tracking-[-0.02em] text-paper-900">
@@ -37,7 +37,7 @@ export function HowItWorks() {
             <StaggerItem key={s.n} className="flex-1">
               <div className="relative flex flex-col items-start">
                 <div className="flex items-center gap-4 self-stretch">
-                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 border-brand-500 bg-paper-50 font-mono text-[13px] font-semibold text-brand-500">
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 border-counsel-500 bg-paper-50 font-mono text-[13px] font-semibold text-counsel-500">
                     {s.n}
                   </span>
                   {i < steps.length - 1 && (

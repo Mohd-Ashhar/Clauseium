@@ -27,7 +27,7 @@ export function InlineCTA({
             variant={variant === "primary" ? "primary" : "outline"}
             className={
               variant === "outline"
-                ? "border-brand-500/30 bg-white text-brand-600 hover:border-brand-500/60 hover:bg-brand-500/5"
+                ? "border-counsel-500/30 bg-white text-counsel-600 hover:border-counsel-500/60 hover:bg-counsel-500/5"
                 : ""
             }
           >

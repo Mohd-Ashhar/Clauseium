@@ -4,7 +4,7 @@ type Status = "done" | "active" | "upcoming";
 
 const STATUS_STYLES: Record<Status, string> = {
   done: "border-paper-300 bg-paper-100 text-paper-600",
-  active: "border-brand-500 bg-brand-500 text-white",
+  active: "border-counsel-500 bg-counsel-500 text-white",
   upcoming: "border-paper-300 bg-white text-paper-500",
 };
 
@@ -16,7 +16,7 @@ const STATUS_LABEL: Record<Status, string> = {
 
 const STATUS_PILL: Record<Status, string> = {
   done: "bg-paper-200 text-paper-600",
-  active: "bg-brand-500/10 text-brand-600",
+  active: "bg-counsel-500/10 text-counsel-600",
   upcoming: "bg-counsel-500/10 text-counsel-600",
 };
 

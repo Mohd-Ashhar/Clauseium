@@ -54,7 +54,7 @@ export function StatsStrip() {
                   format={s.format}
                   className="tabular-nums"
                 />
-                <span className="text-brand-500">{s.suffix}</span>
+                <span className="text-counsel-500">{s.suffix}</span>
               </div>
               <div className="mt-1 text-[13.5px] font-medium text-paper-900/70">
                 {s.label}

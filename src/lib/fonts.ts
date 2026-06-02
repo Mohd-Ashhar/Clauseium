@@ -1,13 +1,18 @@
-import { Inter, JetBrains_Mono, Plus_Jakarta_Sans } from 'next/font/google';
+import { Fraunces, Inter, JetBrains_Mono } from 'next/font/google';
 
 export const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
 });
 
-export const display = Plus_Jakarta_Sans({
+// Editorial serif for display headlines — gives the premium legaltech voice
+// (Harvey / Spellbook) instead of the geometric-sans dev-tool look.
+// Lighter weights read more refined; avoid 800. To A/B a more conservative
+// transitional serif, swap `Fraunces` for `Newsreader` or `Source_Serif_4`.
+export const display = Fraunces({
   subsets: ['latin'],
-  weight: ['600','700','800'],
+  weight: ['400', '500', '600', '700'],
+  style: ['normal', 'italic'],
   variable: '--font-display',
 });
 

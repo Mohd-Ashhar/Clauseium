@@ -46,8 +46,8 @@ export function NewsletterSignup({ contentSlug }: { contentSlug?: string }) {
       </p>
 
       {status === "success" ? (
-        <div className="mt-4 flex items-center gap-2 rounded-lg border border-brand-200 bg-white p-3 text-[13px] text-paper-900">
-          <CheckCircle2 className="h-4 w-4 text-brand-600" />
+        <div className="mt-4 flex items-center gap-2 rounded-lg border border-counsel-200 bg-white p-3 text-[13px] text-paper-900">
+          <CheckCircle2 className="h-4 w-4 text-counsel-600" />
           You&apos;re subscribed.
         </div>
       ) : (

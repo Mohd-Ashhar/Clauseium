@@ -7,7 +7,7 @@ const badgeVariants = cva(
   {
     variants: {
       tone: {
-        brand: "border-brand-500/30 bg-brand-500/10 text-brand-200",
+        brand: "border-counsel-500/30 bg-counsel-500/10 text-counsel-200",
         counsel: "border-counsel-500/30 bg-counsel-500/10 text-counsel-200",
         high: "border-risk-high/30 bg-risk-high/10 text-risk-high",
         med: "border-risk-med/30 bg-risk-med/10 text-risk-med",

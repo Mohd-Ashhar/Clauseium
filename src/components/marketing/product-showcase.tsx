@@ -57,7 +57,7 @@ export function ProductShowcase() {
     >
       <div className="mx-auto max-w-[1240px] px-6">
         <FadeUp>
-          <p className="text-center font-mono text-[11px] uppercase tracking-[0.18em] text-brand-600">
+          <p className="text-center font-mono text-[11px] uppercase tracking-[0.18em] text-counsel-600">
             Inside the workspace
           </p>
           <h2 className="mx-auto mt-3 max-w-3xl text-center font-display text-[clamp(1.75rem,2vw+0.5rem,2.4rem)] font-bold tracking-[-0.02em] text-paper-900">
@@ -79,7 +79,7 @@ export function ProductShowcase() {
                   className={cn(
                     "flex items-center justify-between rounded-lg px-4 py-3 text-left text-[14px] transition-all",
                     active === t.key
-                      ? "bg-brand-500/10 text-paper-900"
+                      ? "bg-counsel-500/10 text-paper-900"
                       : "text-paper-900/60 hover:bg-paper-100",
                   )}
                 >
@@ -87,7 +87,7 @@ export function ProductShowcase() {
                   <span
                     className={cn(
                       "h-2 w-2 rounded-full",
-                      active === t.key ? "bg-brand-500" : "bg-paper-200",
+                      active === t.key ? "bg-counsel-500" : "bg-paper-200",
                     )}
                   />
                 </button>
@@ -236,11 +236,11 @@ function Annotation({
   return (
     <div
       className={cn(
-        "absolute z-10 items-center gap-2 rounded-full border border-brand-500/20 bg-brand-500/10 px-3 py-1 font-mono text-[10px] text-brand-600 shadow-[0_4px_20px_rgba(124,92,255,0.15)] backdrop-blur",
+        "absolute z-10 items-center gap-2 rounded-full border border-counsel-500/20 bg-counsel-500/10 px-3 py-1 font-mono text-[10px] text-counsel-600 shadow-[0_4px_20px_rgba(201,164,73,0.15)] backdrop-blur",
         className,
       )}
     >
-      <span className="h-1.5 w-1.5 rounded-full bg-brand-500" />
+      <span className="h-1.5 w-1.5 rounded-full bg-counsel-500" />
       {text}
     </div>
   );

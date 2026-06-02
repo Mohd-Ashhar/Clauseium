@@ -58,7 +58,7 @@ export function Navbar({ forceLight = false }: { forceLight?: boolean }) {
             scrolled ? "text-paper-900" : "text-white",
           )}
         >
-          <span className="text-brand-500">§</span>
+          <span className="text-counsel-500">§</span>
           <span>Clauseium</span>
         </Link>
 

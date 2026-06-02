@@ -80,7 +80,7 @@ export function Pricing() {
     <section id="pricing" className="bg-paper-50 py-20 md:py-28">
       <div className="mx-auto max-w-[1240px] px-6">
         <FadeUp>
-          <p className="text-center font-mono text-[11px] uppercase tracking-[0.18em] text-brand-600">
+          <p className="text-center font-mono text-[11px] uppercase tracking-[0.18em] text-counsel-600">
             Pricing
           </p>
           <h2 className="mx-auto mt-3 max-w-3xl text-center font-display text-[clamp(1.75rem,2vw+0.5rem,2.4rem)] font-bold tracking-[-0.02em] text-paper-900">
@@ -118,8 +118,8 @@ export function Pricing() {
                   className={cn(
                     "rounded-full px-1.5 py-0.5 text-[10px] font-semibold",
                     cycle === "annual"
-                      ? "bg-brand-500/30 text-brand-200"
-                      : "bg-brand-500/10 text-brand-600",
+                      ? "bg-counsel-500/30 text-counsel-200"
+                      : "bg-counsel-500/10 text-counsel-600",
                   )}
                 >
                   Save 20%
@@ -154,12 +154,12 @@ function PricingCard({ tier, cycle }: { tier: Tier; cycle: Cycle }) {
       className={cn(
         "relative flex h-full flex-col rounded-2xl border bg-white p-7 transition-all",
         tier.highlighted
-          ? "border-2 border-brand-500 shadow-[0_0_0_1px_rgba(124,92,255,0.18),0_24px_60px_-20px_rgba(124,92,255,0.45)]"
+          ? "border-2 border-counsel-500 shadow-[0_0_0_1px_rgba(201,164,73,0.18),0_24px_60px_-20px_rgba(201,164,73,0.45)]"
           : "border-paper-200",
       )}
     >
       {tier.highlighted && (
-        <span className="absolute right-6 top-0 -translate-y-1/2 rounded-full bg-brand-500 px-3 py-1 text-[11px] font-semibold text-white">
+        <span className="absolute right-6 top-0 -translate-y-1/2 rounded-full bg-counsel-500 px-3 py-1 text-[11px] font-semibold text-white">
           Most Popular
         </span>
       )}
@@ -197,7 +197,7 @@ function PricingCard({ tier, cycle }: { tier: Tier; cycle: Cycle }) {
       <ul className="mt-6 flex flex-col gap-2.5">
         {tier.features.map((f) => (
           <li key={f} className="flex items-start gap-2.5 text-[13.5px] text-paper-900/80">
-            <span className="mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-brand-500/10 text-brand-600">
+            <span className="mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-counsel-500/10 text-counsel-600">
               <Check className="h-3 w-3" />
             </span>
             {f}

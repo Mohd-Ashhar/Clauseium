@@ -60,14 +60,16 @@ Clauseium follows a premium SaaS aesthetic inspired by Linear, Vercel, and Harve
 - Primary surfaces:
   - Dark: ink-950 → ink-800
   - Light: paper-50 → paper-200
-- Accent:
-  - brand-500 (primary CTA)
-  - counsel-500 (legal/trust accent)
+- Accent (legaltech palette — restraint, NOT the AI-startup violet):
+  - counsel-500 / counsel-gold (#c9a449) → primary accent + primary CTA, used SPARINGLY
+  - brand-500 (violet) → DEMOTED to a faint tint only; never the dominant accent or a glow
+  - Risk colors (high/med/low) are functional, not brand — leave them alone
 
-### Typography Rules
-- Headings → Display font (Plus Jakarta / Cal Sans)
-- Body → Inter
-- Clause IDs / citations → JetBrains Mono
+### Typography Rules (CRITICAL — this is what makes us read as legaltech, not a dev tool)
+- Headings → Display font = **editorial serif (Fraunces)** via `--font-display`. Solid color,
+  near-zero tracking, lighter weights (400–600) read most premium. NO gradient-clipped text.
+- Body / UI → Inter
+- Clause IDs / citations / legal identifiers → JetBrains Mono ONLY (don't sprinkle mono elsewhere)
 
 ### Component Rules
 - Always use Shadcn/UI as base
@@ -139,7 +141,8 @@ Each clause MUST show:
 ## Page-Level Rules
 
 ### Landing Page
-- Dark hero with gradient/aurora background
+- Dark hero with a RESTRAINED backdrop — deep ink wash + faint grain + a single quiet gold pool.
+  NO multi-color aurora, NO dot grid, NO glowing buttons (that's the dev-tool look we moved away from).
 - One clear CTA
 - Bento grid for features
 - Logo cloud for trust

@@ -52,7 +52,7 @@ export const mdxComponents: MDXComponents = {
           href={href}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-brand-600 underline decoration-brand-500/30 underline-offset-4 transition-colors hover:decoration-brand-500"
+          className="text-counsel-600 underline decoration-counsel-500/30 underline-offset-4 transition-colors hover:decoration-counsel-500"
           {...props}
         />
       );
@@ -60,7 +60,7 @@ export const mdxComponents: MDXComponents = {
     return (
       <Link
         href={href ?? "#"}
-        className="text-brand-600 underline decoration-brand-500/30 underline-offset-4 transition-colors hover:decoration-brand-500"
+        className="text-counsel-600 underline decoration-counsel-500/30 underline-offset-4 transition-colors hover:decoration-counsel-500"
         {...props}
       />
     );
@@ -68,7 +68,7 @@ export const mdxComponents: MDXComponents = {
   blockquote: (props) => (
     <blockquote
       {...props}
-      className="my-6 rounded-r-lg border-l-4 border-brand-500 bg-brand-50 px-6 py-4 italic text-paper-900/85"
+      className="my-6 rounded-r-lg border-l-4 border-counsel-500 bg-counsel-50 px-6 py-4 italic text-paper-900/85"
     />
   ),
   code: (props) => (
