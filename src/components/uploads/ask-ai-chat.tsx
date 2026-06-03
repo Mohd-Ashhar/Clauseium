@@ -311,11 +311,18 @@ export function AskAiChat({
           }}
           className="relative"
         >
-          <input
+          <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask about this contract…"
-            className="w-full bg-ink-850 border border-ink-700 hover:border-ink-500 focus:border-counsel-500 focus:outline-none focus:ring-1 focus:ring-counsel-500/30 rounded-xl px-4 py-3 pr-12 text-sm text-ink-100 placeholder:text-ink-500 transition-colors"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                if (!thinking) send(input);
+              }
+            }}
+            rows={1}
+            placeholder="Ask about this contract…  (Enter to send, Shift+Enter for newline)"
+            className="w-full resize-none bg-ink-850 border border-ink-700 hover:border-ink-500 focus:border-counsel-500 focus:outline-none focus:ring-1 focus:ring-counsel-500/30 rounded-xl px-4 py-3 pr-12 text-sm text-ink-100 placeholder:text-ink-500 transition-colors max-h-32"
             disabled={thinking}
           />
           {thinking ? (

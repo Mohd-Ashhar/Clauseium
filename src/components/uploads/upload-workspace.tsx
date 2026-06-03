@@ -39,6 +39,7 @@ import type {
 } from "@/lib/classification";
 import type { RiskMethod } from "@/lib/risk";
 import { AskAiChat } from "./ask-ai-chat";
+import { CitationsPane } from "./citations-pane";
 import { type ClauseActionState } from "./clause-actions";
 import { RedlineEditor } from "./redline-editor";
 import { cn } from "@/lib/utils";
@@ -232,6 +233,10 @@ export function UploadWorkspace({
   // styling (redlined), the original source (original), or the final text (clean).
   const [viewMode, setViewMode] = useState<ViewMode>("redlined");
   const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  const [mobileTab, setMobileTab] = useState<"document" | "analysis" | "chat">(
+    "analysis",
+  );
   const toastIdRef = useRef(0);
 
   const toast = (message: string, tone: "success" | "info" = "info") => {
@@ -462,6 +467,83 @@ export function UploadWorkspace({
     });
   }, [clauses, filter]);
 
+  // Keyboard model for fast review of long contracts. Ignored while typing in
+  // an input/textarea (chat, redline editor) so it never hijacks text entry.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (
+        t &&
+        (t.tagName === "INPUT" ||
+          t.tagName === "TEXTAREA" ||
+          t.isContentEditable)
+      )
+        return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+      const list = visible;
+      const idx = list.findIndex((c) => c.id === activeClauseId);
+      const go = (next: number) => {
+        if (list.length === 0) return;
+        const clamped = Math.max(0, Math.min(list.length - 1, next));
+        setActiveClauseId(list[clamped].id);
+      };
+
+      switch (e.key) {
+        case "j":
+        case "ArrowDown":
+          e.preventDefault();
+          go(idx < 0 ? 0 : idx + 1);
+          break;
+        case "k":
+        case "ArrowUp":
+          e.preventDefault();
+          go(idx < 0 ? 0 : idx - 1);
+          break;
+        case "n":
+        case "N": {
+          e.preventDefault();
+          const highs = list.filter((c) => c.risk?.level === "high");
+          if (highs.length === 0) break;
+          const curPos = idx >= 0 ? list[idx].position : -1;
+          const forward = e.key === "n";
+          const target = forward
+            ? highs.find((c) => c.position > curPos) ?? highs[0]
+            : [...highs].reverse().find((c) => c.position < curPos) ??
+              highs[highs.length - 1];
+          setActiveClauseId(target.id);
+          break;
+        }
+        case "a":
+          if (activeClauseId && clauseById.get(activeClauseId)?.risk?.suggestion) {
+            e.preventDefault();
+            void setClauseAction(activeClauseId, "accepted").then((ok) => {
+              if (ok) toast("Redline accepted", "success");
+            });
+          }
+          break;
+        case "r":
+          if (activeClauseId) {
+            e.preventDefault();
+            void setClauseAction(activeClauseId, "rejected").then((ok) => {
+              if (ok) toast("Suggestion rejected");
+            });
+          }
+          break;
+        case "Escape":
+          if (showShortcuts) setShowShortcuts(false);
+          else if (activeClauseId) setActiveClauseId(null);
+          break;
+        case "?":
+          e.preventDefault();
+          setShowShortcuts((v) => !v);
+          break;
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [visible, activeClauseId, clauseById, setClauseAction, showShortcuts]);
+
   return (
     <div className="-mx-6 -my-6 h-[calc(100vh-3.5rem)] flex flex-col bg-ink-950">
       <TopBar
@@ -501,6 +583,7 @@ export function UploadWorkspace({
               structured={structured}
               clauseById={clauseById}
               activeClauseId={activeClauseId}
+              setActiveClauseId={setActiveClauseId}
               clauseStates={clauseStates}
               clauseEdits={clauseEdits}
               viewMode={viewMode}
@@ -513,6 +596,7 @@ export function UploadWorkspace({
               contractId={contractId}
               summary={summary}
               clauses={visible}
+              allClauses={clauses}
               documentAnalysis={documentAnalysis}
               filter={filter}
               setFilter={setFilter}
@@ -531,45 +615,142 @@ export function UploadWorkspace({
         </Group>
       </div>
 
-      {/* Mobile fallback: stack panes vertically. */}
-      <div className="lg:hidden flex-1 min-h-0 overflow-y-auto dark-scrollbar">
-        <DocumentPane
-          title={contractTitle}
-          originalFilename={originalFilename}
-          pageCount={pageCount}
-          structured={structured}
-          clauseById={clauseById}
-          activeClauseId={activeClauseId}
-          clauseStates={clauseStates}
-          clauseEdits={clauseEdits}
-          viewMode={viewMode}
-          setViewMode={setViewMode}
-        />
-        <AnalysisPane
-          contractId={contractId}
-          summary={summary}
-          clauses={visible}
-          documentAnalysis={documentAnalysis}
-          filter={filter}
-          setFilter={setFilter}
-          activeClauseId={activeClauseId}
-          setActiveClauseId={setActiveClauseId}
-          clauseStates={clauseStates}
-          clauseEdits={clauseEdits}
-          setClauseAction={setClauseAction}
-          resetClauseAction={resetClauseAction}
-          acceptAllStandard={acceptAllStandard}
-          onExport={exportContractAs}
-          resolvedCount={resolvedCount}
-          toast={toast}
-        />
-        <div className="h-[60vh] border-t border-ink-700">
-          <AskAiChat contractId={contractId} />
+      {/* Mobile: tabbed panes (Document | Analysis | Ask AI) instead of a long
+          stacked scroll, so a reviewer reaches findings without scrolling the
+          whole contract first. */}
+      <div className="lg:hidden flex-1 min-h-0 flex flex-col">
+        <div className="flex shrink-0 border-b border-ink-700 bg-ink-900" role="tablist">
+          {([
+            ["analysis", "Analysis"],
+            ["document", "Document"],
+            ["chat", "Ask AI"],
+          ] as const).map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              role="tab"
+              aria-selected={mobileTab === key}
+              onClick={() => setMobileTab(key)}
+              className={cn(
+                "flex-1 py-3 text-[13px] font-medium transition-colors",
+                mobileTab === key
+                  ? "text-counsel-200 border-b-2 border-counsel-500"
+                  : "text-ink-500 border-b-2 border-transparent",
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <div className="flex-1 min-h-0">
+          {mobileTab === "document" && (
+            <DocumentPane
+              title={contractTitle}
+              originalFilename={originalFilename}
+              pageCount={pageCount}
+              structured={structured}
+              clauseById={clauseById}
+              activeClauseId={activeClauseId}
+              setActiveClauseId={setActiveClauseId}
+              clauseStates={clauseStates}
+              clauseEdits={clauseEdits}
+              viewMode={viewMode}
+              setViewMode={setViewMode}
+            />
+          )}
+          {mobileTab === "analysis" && (
+            <AnalysisPane
+              contractId={contractId}
+              summary={summary}
+              clauses={visible}
+              allClauses={clauses}
+              documentAnalysis={documentAnalysis}
+              filter={filter}
+              setFilter={setFilter}
+              activeClauseId={activeClauseId}
+              setActiveClauseId={setActiveClauseId}
+              clauseStates={clauseStates}
+              clauseEdits={clauseEdits}
+              setClauseAction={setClauseAction}
+              resetClauseAction={resetClauseAction}
+              acceptAllStandard={acceptAllStandard}
+              onExport={exportContractAs}
+              resolvedCount={resolvedCount}
+              toast={toast}
+            />
+          )}
+          {mobileTab === "chat" && (
+            <div className="h-full">
+              <AskAiChat contractId={contractId} />
+            </div>
+          )}
         </div>
       </div>
 
+      <ShortcutsOverlay open={showShortcuts} onClose={() => setShowShortcuts(false)} />
       <ToastContainer toasts={toasts} />
     </div>
+  );
+}
+
+function ShortcutsOverlay({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
+  const rows: [string, string][] = [
+    ["J / ↓", "Next clause"],
+    ["K / ↑", "Previous clause"],
+    ["N / ⇧N", "Next / previous high-risk clause"],
+    ["A", "Accept the active clause's redline"],
+    ["R", "Reject the active clause's suggestion"],
+    ["Esc", "Clear selection"],
+    ["?", "Toggle this help"],
+  ];
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15 }}
+          className="fixed inset-0 z-[110] flex items-center justify-center bg-ink-950/70 backdrop-blur-sm p-6"
+          onClick={onClose}
+        >
+          <div
+            className="w-full max-w-sm rounded-xl border border-ink-700 bg-ink-850 p-5 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-ink-100">
+                Keyboard shortcuts
+              </h2>
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Close"
+                className="rounded p-1 text-ink-500 hover:bg-ink-800 hover:text-ink-100"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <dl className="mt-4 space-y-2">
+              {rows.map(([key, desc]) => (
+                <div key={key} className="flex items-center justify-between gap-4">
+                  <dt className="text-[13px] text-ink-300">{desc}</dt>
+                  <dd className="font-[family-name:var(--font-mono)] text-[11.5px] text-ink-400 bg-ink-900 border border-ink-700 rounded px-1.5 py-0.5">
+                    {key}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 
@@ -840,6 +1021,7 @@ function DocumentPane({
   structured,
   clauseById,
   activeClauseId,
+  setActiveClauseId,
   clauseStates,
   clauseEdits,
   viewMode,
@@ -851,6 +1033,7 @@ function DocumentPane({
   structured: StructuredDocument;
   clauseById: Map<string, ClauseWorkspaceItem>;
   activeClauseId: string | null;
+  setActiveClauseId: (id: string | null) => void;
   clauseStates: Record<string, ClauseActionState>;
   clauseEdits: Record<string, ClauseEdit>;
   viewMode: ViewMode;
@@ -911,9 +1094,24 @@ function DocumentPane({
                       <div
                         key={clause.id}
                         id={`doc-clause-${clause.id}`}
+                        role={item ? "button" : undefined}
+                        tabIndex={item ? 0 : undefined}
+                        onClick={item ? () => setActiveClauseId(clause.id) : undefined}
+                        onKeyDown={
+                          item
+                            ? (e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                  e.preventDefault();
+                                  setActiveClauseId(clause.id);
+                                }
+                              }
+                            : undefined
+                        }
                         className={cn(
                           "relative pl-6 py-3 my-1 rounded transition-colors",
                           "before:absolute before:left-0 before:top-3 before:bottom-3 before:w-[3px] before:rounded-full",
+                          item &&
+                            "cursor-pointer hover:bg-ink-800/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-counsel-500/40",
                           accent,
                           isActive && "bg-counsel-500/5",
                         )}
@@ -1058,6 +1256,7 @@ function RightColumn({
   contractId,
   summary,
   clauses,
+  allClauses,
   documentAnalysis,
   filter,
   setFilter,
@@ -1130,6 +1329,7 @@ function RightColumn({
           contractId={contractId}
           summary={summary}
           clauses={clauses}
+          allClauses={allClauses}
           documentAnalysis={documentAnalysis}
           filter={filter}
           setFilter={setFilter}
@@ -1186,6 +1386,9 @@ interface AnalysisPaneProps {
   contractId: string;
   summary: WorkspaceSummary;
   clauses: ClauseWorkspaceItem[];
+  // Full, unfiltered clause list — the Authorities tab aggregates citations
+  // across the whole contract, not just the filtered/visible clauses.
+  allClauses: ClauseWorkspaceItem[];
   documentAnalysis?: DocumentAnalysisView | null;
   filter: FilterLevel;
   setFilter: (f: FilterLevel) => void;
@@ -1209,6 +1412,7 @@ function AnalysisPane({
   contractId,
   summary,
   clauses,
+  allClauses,
   documentAnalysis,
   filter,
   setFilter,
@@ -1223,56 +1427,111 @@ function AnalysisPane({
   resolvedCount,
   toast,
 }: AnalysisPaneProps) {
+  const [view, setView] = useState<"analysis" | "authorities">("analysis");
+  const citationCount = useMemo(
+    () => allClauses.reduce((n, c) => n + c.citations.length, 0),
+    [allClauses],
+  );
+
   return (
     <div className="h-full flex flex-col bg-ink-900 min-h-0">
       <header className="px-5 pt-5 pb-3 border-b border-ink-700 space-y-3 shrink-0">
-        <div className="flex items-baseline justify-between gap-3">
-          <h2 className="text-sm font-semibold text-ink-100">AI Review</h2>
+        <div className="flex items-center justify-between gap-3">
+          <div className="inline-flex items-center gap-0.5 rounded-lg bg-ink-850 border border-ink-700 p-0.5">
+            <PaneTab active={view === "analysis"} onClick={() => setView("analysis")}>
+              Analysis
+            </PaneTab>
+            <PaneTab
+              active={view === "authorities"}
+              onClick={() => setView("authorities")}
+            >
+              Authorities{citationCount > 0 ? ` (${citationCount})` : ""}
+            </PaneTab>
+          </div>
           <span className="text-[12px] text-ink-500 truncate">
             {resolvedCount} of {summary.totalClauses} resolved
           </span>
         </div>
-        <FilterRow filter={filter} setFilter={setFilter} summary={summary} />
+        {view === "analysis" && (
+          <FilterRow filter={filter} setFilter={setFilter} summary={summary} />
+        )}
       </header>
 
-      <div className="flex-1 overflow-y-auto dark-scrollbar px-5 py-4">
-        <SummaryCard
-          summary={summary}
-          acceptAllStandard={acceptAllStandard}
-          resolvedCount={resolvedCount}
-          onExport={onExport}
-        />
+      <div className="flex-1 overflow-y-auto dark-scrollbar">
+        {view === "authorities" ? (
+          <CitationsPane
+            clauses={allClauses}
+            activeClauseId={activeClauseId}
+            onJumpToClause={(id) => {
+              setActiveClauseId(id);
+              setView("analysis");
+            }}
+          />
+        ) : (
+          <div className="px-5 py-4">
+            <SummaryCard
+              summary={summary}
+              acceptAllStandard={acceptAllStandard}
+              resolvedCount={resolvedCount}
+              onExport={onExport}
+            />
 
-        {documentAnalysis && (
-          <DocumentReviewCard analysis={documentAnalysis} />
+            {documentAnalysis && <DocumentReviewCard analysis={documentAnalysis} />}
+
+            <div className="mt-4">
+              {clauses.length === 0 ? (
+                <p className="text-center text-sm text-ink-500 py-8">
+                  No clauses match this filter.
+                </p>
+              ) : (
+                clauses.map((c) => (
+                  <ClauseCard
+                    key={c.id}
+                    contractId={contractId}
+                    clause={c}
+                    isActive={activeClauseId === c.id}
+                    onToggle={() =>
+                      setActiveClauseId(activeClauseId === c.id ? null : c.id)
+                    }
+                    state={clauseStates[c.id] ?? "pending"}
+                    edit={clauseEdits[c.id] ?? EMPTY_EDIT}
+                    setClauseAction={setClauseAction}
+                    resetClauseAction={resetClauseAction}
+                    toast={toast}
+                  />
+                ))
+              )}
+            </div>
+          </div>
         )}
-
-        <div className="mt-4">
-          {clauses.length === 0 ? (
-            <p className="text-center text-sm text-ink-500 py-8">
-              No clauses match this filter.
-            </p>
-          ) : (
-            clauses.map((c) => (
-              <ClauseCard
-                key={c.id}
-                contractId={contractId}
-                clause={c}
-                isActive={activeClauseId === c.id}
-                onToggle={() =>
-                  setActiveClauseId(activeClauseId === c.id ? null : c.id)
-                }
-                state={clauseStates[c.id] ?? "pending"}
-                edit={clauseEdits[c.id] ?? EMPTY_EDIT}
-                setClauseAction={setClauseAction}
-                resetClauseAction={resetClauseAction}
-                toast={toast}
-              />
-            ))
-          )}
-        </div>
       </div>
     </div>
+  );
+}
+
+function PaneTab({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={cn(
+        "rounded-md px-2.5 py-1 text-[12.5px] font-medium transition-colors",
+        active
+          ? "bg-counsel-500/15 text-counsel-200"
+          : "text-ink-500 hover:text-ink-300",
+      )}
+    >
+      {children}
+    </button>
   );
 }
 
@@ -1821,6 +2080,27 @@ function ExpandedSections({
 
   return (
     <div className="mt-4 pt-4 border-t border-ink-700/60 space-y-4">
+      {!isStandard && risk && risk.ruleIds.length > 0 && (
+        <div className="flex items-start gap-2 rounded-lg border border-counsel-500/25 bg-counsel-500/5 px-3 py-2">
+          <Gavel className="h-3.5 w-3.5 shrink-0 text-counsel-400 mt-0.5" />
+          <div className="text-[12.5px] leading-relaxed text-ink-200">
+            <span className="font-medium text-counsel-200">
+              Deviates from your playbook
+            </span>{" "}
+            — flagged by{" "}
+            {risk.ruleIds.slice(0, 3).map((rid, i) => (
+              <span key={rid}>
+                {i > 0 ? ", " : ""}
+                <span className="font-[family-name:var(--font-mono)] text-[11.5px] text-counsel-200">
+                  {rid}
+                </span>
+              </span>
+            ))}
+            {risk.ruleIds.length > 3 ? ` +${risk.ruleIds.length - 3} more` : ""}.
+          </div>
+        </div>
+      )}
+
       {!isStandard && risk?.explanation && (
         <Section label="Why this matters">
           <p className="text-[13px] leading-relaxed text-ink-300">
@@ -1841,11 +2121,28 @@ function ExpandedSections({
 
       {hasRedline && risk?.suggestion && (
         <Section label="Suggested redline">
-          <div className="rounded bg-ink-950/70 border border-ink-700/60 px-3 py-2">
-            <p className="text-[13px] text-ink-200 leading-relaxed">
-              {suggestionText}
-            </p>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <div className="rounded bg-ink-950/70 border border-ink-700/60 px-3 py-2">
+              <div className="text-[9.5px] uppercase tracking-wider text-ink-500 mb-1">
+                Original
+              </div>
+              <p className="text-[12.5px] leading-relaxed text-ink-400 line-through decoration-risk-high/40">
+                {stripCiteTokens(clause.text)}
+              </p>
+            </div>
+            <div className="rounded bg-risk-low/5 border border-risk-low/20 px-3 py-2">
+              <div className="text-[9.5px] uppercase tracking-wider text-risk-low/80 mb-1">
+                Suggested
+              </div>
+              <p className="text-[13px] leading-relaxed text-ink-100">
+                {suggestionText}
+              </p>
+            </div>
           </div>
+          <p className="mt-1.5 text-[11px] text-ink-500">
+            Preview is clause-level; the exported Word doc applies word-level
+            tracked changes into your original document.
+          </p>
         </Section>
       )}
 
@@ -1867,20 +2164,6 @@ function ExpandedSections({
             ))}
           </div>
         </Section>
-      )}
-
-      {risk && risk.ruleIds.length > 0 && (
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px]">
-          <span className="text-ink-500">Rules matched:</span>
-          {risk.ruleIds.slice(0, 4).map((rid) => (
-            <span
-              key={rid}
-              className="inline-flex items-center rounded border border-ink-700/60 px-1.5 py-0.5 text-[10.5px] text-ink-400 font-[family-name:var(--font-mono)]"
-            >
-              {rid}
-            </span>
-          ))}
-        </div>
       )}
 
       {editing ? (
