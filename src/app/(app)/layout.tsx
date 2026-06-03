@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { AppSidebar } from "@/components/app/app-sidebar";
+import { CommandPaletteProvider } from "@/components/app/command-palette";
 import { SidebarProvider } from "@/components/app/sidebar-context";
 import { TopBar } from "@/components/app/top-bar";
 import { UploadDialogProvider } from "@/components/app/upload-dialog";
@@ -17,15 +18,17 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <SidebarProvider>
       <UploadDialogProvider>
-        <div className="flex min-h-screen bg-ink-950 text-ink-100 font-sans">
-          <AppSidebar user={user} />
-          <div className="flex-1 flex flex-col min-w-0">
-            <TopBar />
-            <main className="flex-1 overflow-y-auto dark-scrollbar">
-              <div className="px-6 py-6 max-w-[1280px] mx-auto w-full">{children}</div>
-            </main>
+        <CommandPaletteProvider>
+          <div className="flex min-h-screen bg-ink-950 text-ink-100 font-sans">
+            <AppSidebar user={user} />
+            <div className="flex-1 flex flex-col min-w-0">
+              <TopBar />
+              <main className="flex-1 overflow-y-auto dark-scrollbar">
+                <div className="px-6 py-6 max-w-[1280px] mx-auto w-full">{children}</div>
+              </main>
+            </div>
           </div>
-        </div>
+        </CommandPaletteProvider>
       </UploadDialogProvider>
     </SidebarProvider>
   );

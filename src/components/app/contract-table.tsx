@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   AlertCircle,
   ArrowRight,
+  ChevronLeft,
   ChevronRight,
   Loader2,
   Search,
@@ -17,6 +18,10 @@ import { RiskBadge } from "./risk-badge";
 import { StatusBadge } from "./status-badge";
 
 type FilterId = "all" | "needs_you" | "high" | "processing";
+type SortKey = "urgency" | "contract" | "risk" | "status" | "uploaded";
+type SortDir = "asc" | "desc";
+
+const PAGE_SIZE = 12;
 
 function urgencyBucket(c: DashboardContract): number {
   if (c.status === "needs_attention") return 0;
@@ -35,6 +40,23 @@ function urgencySort(a: DashboardContract, b: DashboardContract): number {
   const riskDiff = riskRank(b) - riskRank(a);
   if (riskDiff !== 0) return riskDiff;
   return b.uploadedAt.getTime() - a.uploadedAt.getTime();
+}
+
+// Column comparators. `urgency` is the smart default; explicit column sorts
+// flip direction on repeat header clicks.
+function compareBy(key: SortKey, a: DashboardContract, b: DashboardContract): number {
+  switch (key) {
+    case "contract":
+      return a.title.localeCompare(b.title);
+    case "risk":
+      return riskRank(a) - riskRank(b);
+    case "status":
+      return urgencyBucket(a) - urgencyBucket(b);
+    case "uploaded":
+      return a.uploadedAt.getTime() - b.uploadedAt.getTime();
+    default:
+      return urgencySort(a, b); // default: most urgent first (dir "asc")
+  }
 }
 
 function topRiskLevel(
@@ -75,6 +97,11 @@ export function ContractTable({
   const [filter, setFilter] = useState<FilterId>(initialFilter);
   const [query, setQuery] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [sort, setSort] = useState<{ key: SortKey; dir: SortDir }>({
+    key: "urgency",
+    dir: "asc",
+  });
+  const [page, setPage] = useState(1);
 
   const processingCount = contracts.filter((c) => c.status === "processing").length;
 
@@ -109,8 +136,28 @@ export function ContractTable({
         list = list.filter((c) => c.status === "processing");
         break;
     }
-    return [...list].sort(urgencySort);
-  }, [contracts, filter, query]);
+    const dir = sort.dir === "asc" ? 1 : -1;
+    return [...list].sort((a, b) => dir * compareBy(sort.key, a, b));
+  }, [contracts, filter, query, sort]);
+
+  // Reset to the first page whenever the result set changes.
+  useEffect(() => {
+    setPage(1);
+  }, [filter, query, sort]);
+
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+  const paged = filtered.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE,
+  );
+
+  const onSort = (key: SortKey) =>
+    setSort((s) =>
+      s.key === key
+        ? { key, dir: s.dir === "asc" ? "desc" : "asc" }
+        : { key, dir: key === "uploaded" || key === "risk" ? "desc" : "asc" },
+    );
 
   return (
     <div id="contract-queue" className="space-y-3 scroll-mt-20">
@@ -119,8 +166,12 @@ export function ContractTable({
 
         <div className="flex flex-col sm:flex-row sm:items-center gap-2">
           <div className="relative w-full sm:w-48">
+            <label htmlFor="contract-filter" className="sr-only">
+              Filter contracts
+            </label>
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-ink-500 pointer-events-none" />
             <input
+              id="contract-filter"
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -134,6 +185,7 @@ export function ContractTable({
               <button
                 key={f.id}
                 onClick={() => setFilter(f.id)}
+                aria-pressed={filter === f.id}
                 className={cn(
                   "text-xs px-3 py-1 rounded-full transition-colors whitespace-nowrap",
                   filter === f.id
@@ -154,29 +206,60 @@ export function ContractTable({
             <thead className="bg-ink-900 border-b border-ink-700">
               <tr className="text-[11px] uppercase tracking-wider text-ink-500 font-medium">
                 <th className="w-8 px-2" />
-                <th className="px-4 py-3 font-medium" style={{ width: "55%" }}>
-                  Contract
-                </th>
-                <th className="px-4 py-3 font-medium" style={{ width: "20%" }}>
-                  Risk
-                </th>
-                <th className="px-4 py-3 font-medium" style={{ width: "25%" }}>
-                  Status
-                </th>
+                <SortHeader
+                  label="Contract"
+                  active={sort.key === "contract"}
+                  dir={sort.dir}
+                  onClick={() => onSort("contract")}
+                  style={{ width: "42%" }}
+                />
+                <SortHeader
+                  label="Risk"
+                  active={sort.key === "risk"}
+                  dir={sort.dir}
+                  onClick={() => onSort("risk")}
+                  style={{ width: "16%" }}
+                />
+                <SortHeader
+                  label="Status"
+                  active={sort.key === "status"}
+                  dir={sort.dir}
+                  onClick={() => onSort("status")}
+                  style={{ width: "20%" }}
+                />
+                <SortHeader
+                  label="Uploaded"
+                  active={sort.key === "uploaded"}
+                  dir={sort.dir}
+                  onClick={() => onSort("uploaded")}
+                  style={{ width: "22%" }}
+                />
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-4 py-12 text-center text-sm text-ink-500">
+                  <td colSpan={5} className="px-4 py-12 text-center text-sm text-ink-500">
                     No contracts match this filter.
+                    {(query || filter !== "all") && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setQuery("");
+                          setFilter("all");
+                        }}
+                        className="ml-2 text-counsel-400 hover:text-counsel-300 underline-offset-2 hover:underline"
+                      >
+                        Clear filters
+                      </button>
+                    )}
                   </td>
                 </tr>
               )}
-              {filtered.map((c, i) => {
+              {paged.map((c, i) => {
                 const risk = topRiskLevel(c);
                 const isOpen = expanded === c.id;
-                const isLast = i === filtered.length - 1;
+                const isLast = i === paged.length - 1;
                 return (
                   <ExpandableRow
                     key={c.id}
@@ -194,11 +277,73 @@ export function ContractTable({
 
         <div className="bg-ink-900 border-t border-ink-700 px-4 py-3 flex items-center justify-between gap-3">
           <span className="text-[12px] text-ink-500">
-            Showing {filtered.length} of {contracts.length} contracts
+            Showing {paged.length} of {filtered.length}
+            {filtered.length !== contracts.length ? ` (${contracts.length} total)` : ""}
           </span>
+          {pageCount > 1 && (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                aria-label="Previous page"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-ink-700 text-ink-400 transition-colors hover:border-ink-500 hover:text-ink-100 disabled:opacity-40 disabled:hover:border-ink-700"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <span className="text-[12px] tabular-nums text-ink-400">
+                {currentPage} / {pageCount}
+              </span>
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+                disabled={currentPage === pageCount}
+                aria-label="Next page"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-ink-700 text-ink-400 transition-colors hover:border-ink-500 hover:text-ink-100 disabled:opacity-40 disabled:hover:border-ink-700"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
+  );
+}
+
+function SortHeader({
+  label,
+  active,
+  dir,
+  onClick,
+  style,
+}: {
+  label: string;
+  active: boolean;
+  dir: SortDir;
+  onClick: () => void;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <th
+      className="px-4 py-3 font-medium"
+      style={style}
+      aria-sort={active ? (dir === "asc" ? "ascending" : "descending") : "none"}
+    >
+      <button
+        type="button"
+        onClick={onClick}
+        className={cn(
+          "inline-flex items-center gap-1 uppercase tracking-wider transition-colors hover:text-ink-300",
+          active && "text-counsel-300",
+        )}
+      >
+        {label}
+        <span className="text-[9px] leading-none">
+          {active ? (dir === "asc" ? "▲" : "▼") : "↕"}
+        </span>
+      </button>
+    </th>
   );
 }
 
@@ -219,11 +364,21 @@ function ExpandableRow({
   return (
     <>
       <tr
+        role="button"
+        tabIndex={0}
+        aria-expanded={isOpen}
+        onClick={onToggle}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onToggle();
+          }
+        }}
         className={cn(
           "hover:bg-ink-800/60 transition-colors group cursor-pointer",
+          "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-counsel-500/50",
           !isLast && !isOpen && "border-b border-ink-700/50",
         )}
-        onClick={onToggle}
       >
         <td className="w-8 px-2 align-middle">
           <ChevronRight
@@ -251,11 +406,14 @@ function ExpandableRow({
         <td className="px-4 py-3 align-middle">
           <StatusCell status={c.status} />
         </td>
+        <td className="px-4 py-3 align-middle text-[12.5px] text-ink-400 whitespace-nowrap">
+          {formatShortDate(c.uploadedAt)}
+        </td>
       </tr>
       <AnimatePresence initial={false}>
         {isOpen && (
           <tr className={cn(!isLast && "border-b border-ink-700/50")}>
-            <td colSpan={4} className="p-0">
+            <td colSpan={5} className="p-0">
               <motion.div
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: "auto", opacity: 1 }}

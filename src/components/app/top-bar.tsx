@@ -2,6 +2,7 @@
 
 import { Menu, Plus, Search } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { useCommandPalette } from "./command-palette";
 import { useSidebar } from "./sidebar-context";
 import { useUploadDialog } from "./upload-dialog";
 
@@ -41,6 +42,7 @@ function buildBreadcrumb(pathname: string): { label: string; href?: string }[] {
 export function TopBar() {
   const { setMobileOpen } = useSidebar();
   const { open: openUpload } = useUploadDialog();
+  const { open: openPalette } = useCommandPalette();
   const pathname = usePathname() ?? "/dashboard";
   const crumbs = buildBreadcrumb(pathname);
 
@@ -78,11 +80,13 @@ export function TopBar() {
       {/* Center: command palette trigger */}
       <div className="flex-1 flex justify-center">
         <button
+          type="button"
+          onClick={openPalette}
           className="hidden md:flex items-center gap-2 bg-ink-850 border border-ink-700 hover:border-ink-500 rounded-lg px-4 py-1.5 text-sm text-ink-500 transition-colors min-w-[280px] max-w-[420px] w-full"
           aria-label="Open command palette"
         >
           <Search className="h-3.5 w-3.5" />
-          <span className="flex-1 text-left">Search contracts, clauses, parties…</span>
+          <span className="flex-1 text-left">Search actions and pages…</span>
           <span className="bg-ink-800 text-ink-500 text-[10px] font-[family-name:var(--font-mono)] px-1.5 py-0.5 rounded">
             ⌘K
           </span>

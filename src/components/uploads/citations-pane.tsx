@@ -2,33 +2,15 @@
 
 import { useMemo } from "react";
 import { BookOpen, ExternalLink } from "lucide-react";
-import type { CitationStatus } from "@/types/contract";
 import { cn } from "@/lib/utils";
 import { CitationChip } from "./citation-chip";
-import type { ClauseWorkspaceItem } from "./upload-workspace";
+import { buildAuthorities } from "./workspace/lib";
+import type { ClauseWorkspaceItem } from "./workspace/shared";
 
-// Aggregated "authority" = one source+section, with every clause that relies on
-// it. This is the third pane CLAUDE.md mandates (document / analysis / citations)
-// and a core trust artifact: counsel can see every place a statute is invoked
-// and whether it was verified against our corpus.
-interface Authority {
-  key: string;
-  source: string;
-  section: string;
-  label: string;
-  url: string | null;
-  warning: string | null;
-  status: CitationStatus;
-  relying: { clauseId: string; position: number }[];
-}
-
-// "worst" status wins so a single unverified use isn't hidden behind a verified one.
-const STATUS_RANK: Record<CitationStatus, number> = {
-  unverified: 0,
-  partially_verified: 1,
-  verified: 2,
-};
-
+// The third pane CLAUDE.md mandates (document / analysis / citations) and a core
+// trust artifact: counsel can see every place a statute is invoked and whether
+// it was verified against our corpus. Aggregation lives in workspace/lib.ts
+// (unit-tested) so this stays a thin presentational component.
 export function CitationsPane({
   clauses,
   activeClauseId,
@@ -38,41 +20,7 @@ export function CitationsPane({
   activeClauseId: string | null;
   onJumpToClause: (clauseId: string) => void;
 }) {
-  const authorities = useMemo(() => {
-    const map = new Map<string, Authority>();
-    for (const clause of clauses) {
-      for (const c of clause.citations) {
-        const section = c.section.replace(/^section\s+/i, "").trim();
-        const key = `${c.source}|${section}`.toLowerCase();
-        const label = section ? `${c.source} § ${section}` : c.source;
-        const existing = map.get(key);
-        if (existing) {
-          if (STATUS_RANK[c.status] < STATUS_RANK[existing.status])
-            existing.status = c.status;
-          if (!existing.relying.some((r) => r.clauseId === clause.id))
-            existing.relying.push({ clauseId: clause.id, position: clause.position });
-          existing.url = existing.url ?? c.url ?? null;
-          existing.warning = existing.warning ?? c.warning ?? null;
-        } else {
-          map.set(key, {
-            key,
-            source: c.source,
-            section,
-            label,
-            url: c.url ?? null,
-            warning: c.warning ?? null,
-            status: c.status,
-            relying: [{ clauseId: clause.id, position: clause.position }],
-          });
-        }
-      }
-    }
-    return [...map.values()].sort(
-      (a, b) =>
-        STATUS_RANK[a.status] - STATUS_RANK[b.status] ||
-        b.relying.length - a.relying.length,
-    );
-  }, [clauses]);
+  const authorities = useMemo(() => buildAuthorities(clauses), [clauses]);
 
   if (authorities.length === 0) {
     return (

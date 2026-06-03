@@ -26,173 +26,61 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import type { StructuredDocument } from "@/types/ingestion";
 import type {
-  CitationStatus,
   DocumentAnalysisView,
   LegalCitation,
   RiskLevel,
 } from "@/types/contract";
-import type {
-  ClassificationLabel,
-  ClassificationMethod,
-} from "@/lib/classification";
-import type { RiskMethod } from "@/lib/risk";
 import { AskAiChat } from "./ask-ai-chat";
 import { CitationsPane } from "./citations-pane";
 import { type ClauseActionState } from "./clause-actions";
 import { RedlineEditor } from "./redline-editor";
 import { cn } from "@/lib/utils";
+import { DocumentPane } from "./workspace/document-pane";
+import {
+  ACCENT_BORDER,
+  CATEGORY_LABELS,
+  CITATION_LABELS,
+  CITATION_TONES,
+  EMPTY_EDIT,
+  POSTURE_META,
+  RISK_BADGE,
+  type ClauseEdit,
+  type ClauseWorkspaceItem,
+  type ExportFormat,
+  type FilterLevel,
+  type ToastItem,
+  type UploadWorkspaceProps,
+  type ViewMode,
+  type WorkspaceSummary,
+} from "./workspace/shared";
+import {
+  clauseAtOffset,
+  nextHighRiskClause,
+  sortAndFilterClauses,
+  stripCiteTokens,
+} from "./workspace/lib";
 
-export type ExportFormat = "redlined" | "clean" | "summary" | "full";
-export type ViewMode = "redlined" | "original" | "clean";
+// page.tsx imports these workspace types from this module — keep them exported.
+export type {
+  ClauseWorkspaceItem,
+  WorkspaceSummary,
+} from "./workspace/shared";
 
-// Per-clause editor state, kept alongside the clause's action state. Tracks the
-// reviewer's edited redline text plus the in-flight save status so the UI can
-// show spinners / per-clause errors without a generic "something failed" toast.
-export interface ClauseEdit {
-  modifiedText: string | null;
-  saving: boolean;
-  error: string | null;
-}
-
-const EMPTY_EDIT: ClauseEdit = { modifiedText: null, saving: false, error: null };
-
-const CATEGORY_LABELS: Record<ClassificationLabel, string> = {
-  indemnification: "Indemnification",
-  limitation_of_liability: "Limitation of Liability",
-  termination: "Termination",
-  governing_law: "Governing Law",
-  jurisdiction: "Jurisdiction",
-  data_protection_dpdp: "DPDP / Data Protection",
-  payment_terms: "Payment Terms",
-  ip_assignment: "IP Assignment",
-  other: "Other",
-};
-
-const RISK_RANK: Record<RiskLevel, number> = {
-  high: 0,
-  missing: 1,
-  medium: 2,
-  low: 3,
-  standard: 3,
-};
-
-const ACCENT_BORDER: Record<RiskLevel, string> = {
-  high: "border-l-4 border-l-risk-high",
-  medium: "border-l-4 border-l-risk-med",
-  missing: "border-l-4 border-l-risk-info",
-  low: "border-l-4 border-l-risk-low",
-  standard: "border-l-4 border-l-risk-low",
-};
-
-const RISK_BADGE: Record<
-  RiskLevel,
-  { tone: string; dot: string; label: string }
-> = {
-  high: {
-    tone: "bg-risk-high/15 text-risk-high border-risk-high/30",
-    dot: "bg-risk-high",
-    label: "High",
-  },
-  medium: {
-    tone: "bg-risk-med/15 text-risk-med border-risk-med/30",
-    dot: "bg-risk-med",
-    label: "Medium",
-  },
-  missing: {
-    tone: "bg-risk-info/15 text-risk-info border-risk-info/30",
-    dot: "bg-risk-info",
-    label: "Missing",
-  },
-  low: {
-    tone: "bg-risk-low/15 text-risk-low border-risk-low/30",
-    dot: "bg-risk-low",
-    label: "Low",
-  },
-  standard: {
-    tone: "bg-risk-low/15 text-risk-low border-risk-low/30",
-    dot: "bg-risk-low",
-    label: "Standard",
-  },
-};
-
-const CITATION_TONES: Record<CitationStatus, string> = {
-  verified: "bg-risk-low/10 text-risk-low border-risk-low/30",
-  partially_verified: "bg-risk-med/10 text-risk-med border-risk-med/30",
-  unverified: "bg-risk-high/10 text-risk-high border-risk-high/30",
-};
-
-const CITATION_LABELS: Record<CitationStatus, string> = {
-  verified: "verified",
-  partially_verified: "partial",
-  unverified: "unverified",
-};
-
-export interface ClauseWorkspaceItem {
-  id: string;
-  position: number;
-  text: string;
-  sectionTitle: string;
-  classification: {
-    category: ClassificationLabel;
-    confidence: number;
-    method: ClassificationMethod;
-  } | null;
-  risk: {
-    level: RiskLevel;
-    issue: string | null;
-    explanation: string | null;
-    suggestion: string | null;
-    confidence: number | null;
-    method: RiskMethod | null;
-    ruleIds: string[];
-  } | null;
-  citations: LegalCitation[];
-  trustScore: number | null;
-  action: ClauseActionState;
-  actionNote: string | null;
-  actionModifiedText: string | null;
-}
-
-export interface WorkspaceSummary {
-  high: number;
-  medium: number;
-  missing: number;
-  low: number;
-  standard: number;
-  totalClauses: number;
-  verifiedCitations: number;
-  partialCitations: number;
-  droppedCitations: number;
-  overallTrust: number | null;
-  overallRiskScore: number; // 0–100
-}
-
-export interface UploadWorkspaceProps {
-  contractId: string;
-  contractTitle: string;
-  originalFilename: string;
-  pageCount: number | null;
-  structured: StructuredDocument;
-  clauses: ClauseWorkspaceItem[];
-  summary: WorkspaceSummary;
-  // Whole-document analysis (missing protections, cross-clause issues,
-  // one-sided terms, executive summary). Null when not yet available.
-  documentAnalysis?: DocumentAnalysisView | null;
-  // True when one or more analysis stages failed/degraded during processing.
-  // Drives a non-blocking warning so a degraded review is never mistaken for a
-  // clean "0 high risk" result.
-  partial?: boolean;
-  analysisNotes?: string[];
-}
-
-type FilterLevel = "all" | "high" | "medium" | "standard" | "missing";
-
-interface ToastItem {
-  id: number;
-  message: string;
-  tone: "success" | "info";
+// Render exactly ONE layout (desktop split-panes OR mobile tabs) rather than
+// both behind CSS — so clause anchor ids (doc-clause-*/card-clause-*) are never
+// duplicated in the DOM. Defaults to desktop on the server / first paint to
+// match SSR, then corrects after mount (no hydration mismatch).
+function useIsDesktop(): boolean {
+  const [isDesktop, setIsDesktop] = useState(true);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const update = () => setIsDesktop(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+  return isDesktop;
 }
 
 export function UploadWorkspace({
@@ -448,24 +336,12 @@ export function UploadWorkspace({
     [clauses, clauseStates],
   );
 
-  const visible = useMemo(() => {
-    let list = clauses;
-    if (filter === "high") list = list.filter((c) => c.risk?.level === "high");
-    else if (filter === "medium")
-      list = list.filter((c) => c.risk?.level === "medium");
-    else if (filter === "missing")
-      list = list.filter((c) => c.risk?.level === "missing");
-    else if (filter === "standard")
-      list = list.filter(
-        (c) => !c.risk || c.risk.level === "low" || c.risk.level === "standard",
-      );
-    return [...list].sort((a, b) => {
-      const ar = a.risk ? RISK_RANK[a.risk.level] : 4;
-      const br = b.risk ? RISK_RANK[b.risk.level] : 4;
-      if (ar !== br) return ar - br;
-      return a.position - b.position;
-    });
-  }, [clauses, filter]);
+  const visible = useMemo(
+    () => sortAndFilterClauses(clauses, filter),
+    [clauses, filter],
+  );
+
+  const isDesktop = useIsDesktop();
 
   // Keyboard model for fast review of long contracts. Ignored while typing in
   // an input/textarea (chat, redline editor) so it never hijacks text entry.
@@ -482,36 +358,27 @@ export function UploadWorkspace({
       if (e.metaKey || e.ctrlKey || e.altKey) return;
 
       const list = visible;
-      const idx = list.findIndex((c) => c.id === activeClauseId);
-      const go = (next: number) => {
-        if (list.length === 0) return;
-        const clamped = Math.max(0, Math.min(list.length - 1, next));
-        setActiveClauseId(list[clamped].id);
-      };
 
       switch (e.key) {
         case "j":
-        case "ArrowDown":
+        case "ArrowDown": {
           e.preventDefault();
-          go(idx < 0 ? 0 : idx + 1);
+          const next = clauseAtOffset(list, activeClauseId, 1);
+          if (next) setActiveClauseId(next);
           break;
+        }
         case "k":
-        case "ArrowUp":
+        case "ArrowUp": {
           e.preventDefault();
-          go(idx < 0 ? 0 : idx - 1);
+          const next = clauseAtOffset(list, activeClauseId, -1);
+          if (next) setActiveClauseId(next);
           break;
+        }
         case "n":
         case "N": {
           e.preventDefault();
-          const highs = list.filter((c) => c.risk?.level === "high");
-          if (highs.length === 0) break;
-          const curPos = idx >= 0 ? list[idx].position : -1;
-          const forward = e.key === "n";
-          const target = forward
-            ? highs.find((c) => c.position > curPos) ?? highs[0]
-            : [...highs].reverse().find((c) => c.position < curPos) ??
-              highs[highs.length - 1];
-          setActiveClauseId(target.id);
+          const target = nextHighRiskClause(list, activeClauseId, e.key === "n");
+          if (target) setActiveClauseId(target);
           break;
         }
         case "a":
@@ -573,7 +440,8 @@ export function UploadWorkspace({
         </div>
       )}
 
-      <div className="hidden lg:flex flex-1 min-h-0">
+      {isDesktop ? (
+      <div className="flex flex-1 min-h-0">
         <Group orientation="horizontal" className="flex-1 flex">
           <Panel defaultSize={55} minSize={35} maxSize={70} className="min-w-0">
             <DocumentPane
@@ -614,11 +482,11 @@ export function UploadWorkspace({
           </Panel>
         </Group>
       </div>
-
-      {/* Mobile: tabbed panes (Document | Analysis | Ask AI) instead of a long
-          stacked scroll, so a reviewer reaches findings without scrolling the
-          whole contract first. */}
-      <div className="lg:hidden flex-1 min-h-0 flex flex-col">
+      ) : (
+      // Mobile: tabbed panes (Document | Analysis | Ask AI) instead of a long
+      // stacked scroll, so a reviewer reaches findings without scrolling the
+      // whole contract first.
+      <div className="flex-1 min-h-0 flex flex-col">
         <div className="flex shrink-0 border-b border-ink-700 bg-ink-900" role="tablist">
           {([
             ["analysis", "Analysis"],
@@ -686,6 +554,7 @@ export function UploadWorkspace({
           )}
         </div>
       </div>
+      )}
 
       <ShortcutsOverlay open={showShortcuts} onClose={() => setShowShortcuts(false)} />
       <ToastContainer toasts={toasts} />
@@ -1011,235 +880,6 @@ function ExportMenuItem({
         <div className="text-[11px] text-ink-500 leading-snug">{desc}</div>
       </div>
     </button>
-  );
-}
-
-function DocumentPane({
-  title,
-  originalFilename,
-  pageCount,
-  structured,
-  clauseById,
-  activeClauseId,
-  setActiveClauseId,
-  clauseStates,
-  clauseEdits,
-  viewMode,
-  setViewMode,
-}: {
-  title: string;
-  originalFilename: string;
-  pageCount: number | null;
-  structured: StructuredDocument;
-  clauseById: Map<string, ClauseWorkspaceItem>;
-  activeClauseId: string | null;
-  setActiveClauseId: (id: string | null) => void;
-  clauseStates: Record<string, ClauseActionState>;
-  clauseEdits: Record<string, ClauseEdit>;
-  viewMode: ViewMode;
-  setViewMode: (m: ViewMode) => void;
-}) {
-  return (
-    <div className="h-full flex flex-col bg-ink-850 min-h-0">
-      <div className="flex-1 overflow-y-auto dark-scrollbar">
-        <article className="max-w-3xl mx-auto px-12 py-10">
-          <header className="pb-6 mb-6 border-b border-ink-700/60">
-            <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold text-ink-100 leading-tight">
-                  {title}
-                </h1>
-                <p className="text-[13px] text-ink-500 mt-2">
-                  {originalFilename}
-                  {pageCount ? ` · ${pageCount} pages` : ""}
-                </p>
-              </div>
-              <div className="shrink-0 flex items-center gap-2 pt-1">
-                <span className="hidden sm:inline text-[11px] text-ink-500">
-                  Show
-                </span>
-                <ViewToggle viewMode={viewMode} setViewMode={setViewMode} />
-              </div>
-            </div>
-          </header>
-          <div className="space-y-1">
-            {structured.sections.map((section, i) => (
-              <section key={`${section.title}-${i}`} className="pt-4">
-                <h2 className="font-[family-name:var(--font-display)] text-base font-semibold text-ink-100 mb-2">
-                  {section.title}
-                </h2>
-                <div className="space-y-1">
-                  {section.clauses.map((clause) => {
-                    const item = clauseById.get(clause.id);
-                    const lvl = item?.risk?.level;
-                    const isActive = activeClauseId === clause.id;
-                    const state = clauseStates[clause.id] ?? "pending";
-                    const edit = clauseEdits[clause.id];
-                    const suggestion = stripCiteTokens(item?.risk?.suggestion ?? null);
-                    const finalText =
-                      state === "modified"
-                        ? edit?.modifiedText ?? null
-                        : state === "accepted"
-                          ? suggestion || null
-                          : null;
-                    const accent =
-                      lvl === "high"
-                        ? "before:bg-risk-high"
-                        : lvl === "medium"
-                          ? "before:bg-risk-med"
-                          : lvl === "missing"
-                            ? "before:bg-risk-info"
-                            : "before:bg-transparent";
-                    return (
-                      <div
-                        key={clause.id}
-                        id={`doc-clause-${clause.id}`}
-                        role={item ? "button" : undefined}
-                        tabIndex={item ? 0 : undefined}
-                        onClick={item ? () => setActiveClauseId(clause.id) : undefined}
-                        onKeyDown={
-                          item
-                            ? (e) => {
-                                if (e.key === "Enter" || e.key === " ") {
-                                  e.preventDefault();
-                                  setActiveClauseId(clause.id);
-                                }
-                              }
-                            : undefined
-                        }
-                        className={cn(
-                          "relative pl-6 py-3 my-1 rounded transition-colors",
-                          "before:absolute before:left-0 before:top-3 before:bottom-3 before:w-[3px] before:rounded-full",
-                          item &&
-                            "cursor-pointer hover:bg-ink-800/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-counsel-500/40",
-                          accent,
-                          isActive && "bg-counsel-500/5",
-                        )}
-                      >
-                        <p className="text-[14px] leading-[1.85] text-ink-200 whitespace-pre-wrap">
-                          <span className="font-[family-name:var(--font-mono)] text-[12px] text-ink-500 mr-2">
-                            #{clause.position}
-                          </span>
-                          {state !== "pending" && (
-                            <DocStatusTag state={state} />
-                          )}
-                          <DocClauseText
-                            original={clause.text}
-                            finalText={finalText}
-                            state={state}
-                            viewMode={viewMode}
-                          />
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
-              </section>
-            ))}
-          </div>
-        </article>
-      </div>
-    </div>
-  );
-}
-
-function ViewToggle({
-  viewMode,
-  setViewMode,
-}: {
-  viewMode: ViewMode;
-  setViewMode: (m: ViewMode) => void;
-}) {
-  const opts: Array<{ key: ViewMode; label: string }> = [
-    { key: "redlined", label: "Redlined" },
-    { key: "original", label: "Original" },
-    { key: "clean", label: "Clean" },
-  ];
-  return (
-    <div className="inline-flex items-center gap-0.5 rounded-lg bg-ink-900 border border-ink-700 p-0.5">
-      {opts.map((o) => (
-        <button
-          key={o.key}
-          type="button"
-          onClick={() => setViewMode(o.key)}
-          aria-pressed={viewMode === o.key}
-          className={cn(
-            "text-[11.5px] px-2.5 py-1 rounded-md transition-colors",
-            viewMode === o.key
-              ? "bg-counsel-500/15 text-counsel-200"
-              : "text-ink-500 hover:text-ink-300",
-          )}
-        >
-          {o.label}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-// A tiny status chip shown inline at the head of a decided clause in the
-// document pane, so an applied/rejected redline is scannable while reading.
-function DocStatusTag({ state }: { state: ClauseActionState }) {
-  const meta =
-    state === "accepted"
-      ? { label: "Accepted", tone: "bg-risk-low/15 text-risk-low" }
-      : state === "modified"
-        ? { label: "Edited", tone: "bg-counsel-500/15 text-counsel-200" }
-        : { label: "Rejected", tone: "bg-ink-700 text-ink-400" };
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center align-middle mr-2 px-1.5 py-0.5 rounded text-[9.5px] uppercase tracking-wider font-medium",
-        meta.tone,
-      )}
-    >
-      {meta.label}
-    </span>
-  );
-}
-
-// Renders a clause's body in the document pane according to the chosen view:
-//   • original  → always the source text
-//   • clean     → the final text (accepted suggestion / edited wording) applied
-//   • redlined  → original struck through + final text inserted (tracked-change
-//                 styling) for accepted/modified clauses; rejected stays faint.
-function DocClauseText({
-  original,
-  finalText,
-  state,
-  viewMode,
-}: {
-  original: string;
-  finalText: string | null;
-  state: ClauseActionState;
-  viewMode: ViewMode;
-}) {
-  const hasChange =
-    (state === "accepted" || state === "modified") &&
-    finalText != null &&
-    finalText.trim().length > 0;
-
-  if (viewMode === "original" || !hasChange) {
-    if (state === "rejected") {
-      return <span className="text-ink-400">{original}</span>;
-    }
-    return <>{original}</>;
-  }
-
-  if (viewMode === "clean") {
-    return <span className="text-ink-100">{finalText}</span>;
-  }
-
-  // redlined
-  return (
-    <>
-      <span className="text-risk-high/70 line-through decoration-risk-high/50">
-        {original}
-      </span>{" "}
-      <span className="text-risk-low bg-risk-low/10 rounded px-1 py-0.5">
-        {finalText}
-      </span>
-    </>
   );
 }
 
@@ -1579,16 +1219,6 @@ function FilterRow({
     </div>
   );
 }
-
-const POSTURE_META: Record<
-  DocumentAnalysisView["overallPosture"],
-  { label: string; tone: string }
-> = {
-  favourable: { label: "Favourable", tone: "bg-risk-low/15 text-risk-low" },
-  balanced: { label: "Balanced", tone: "bg-risk-info/15 text-risk-info" },
-  unfavourable: { label: "Unfavourable", tone: "bg-risk-med/15 text-risk-med" },
-  high_risk: { label: "High risk", tone: "bg-risk-high/15 text-risk-high" },
-};
 
 // Whole-document analysis surface (Phase 1): executive summary, detected type,
 // missing protections, cross-clause issues, one-sided terms. This is the
@@ -2400,11 +2030,6 @@ function CitationPill({ citation }: { citation: LegalCitation }) {
       </span>
     </span>
   );
-}
-
-function stripCiteTokens(text: string | null): string {
-  if (!text) return "";
-  return text.replace(/\s*\[CITE:[^\]]+\]/gi, "").replace(/\s+\./g, ".").trim();
 }
 
 function ToastContainer({ toasts }: { toasts: ToastItem[] }) {
