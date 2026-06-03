@@ -14,12 +14,22 @@ const kicked = new Set<string>();
 // in flight. Keyed by contract id; entry cleared after the window.
 const reclaimed = new Set<string>();
 
-// A contract is considered stuck if it has been 'processing' longer than this.
-// The /process route runs under maxDuration=300s (5 min); anything still
-// 'processing' well past that was killed mid-flight (serverless timeout,
-// worker recycle) and will never finish on its own — so reclaiming is safe.
-const STALE_PROCESSING_MS = 7 * 60 * 1000;
+// A contract is "stuck" when its analysis HEARTBEAT has gone silent for this
+// long. The orchestrator bumps analysis_heartbeat_at as it works (start, after
+// each stage, and throttled during the risk fan-out), so a healthy long run —
+// even a slow 99-page contract — keeps a fresh heartbeat and is never reclaimed.
+// Only a genuinely dead run (serverless timeout, worker recycle) lets the
+// heartbeat go stale, and reclaiming it is then safe AND cheap: processContract
+// resumes, re-billing only the clauses that were never analyzed. Pre-migration
+// (no heartbeat column) we fall back to uploaded_at, preserving the old behaviour.
+const STALE_PROCESSING_MS = 4 * 60 * 1000;
 const RECLAIM_DEBOUNCE_MS = STALE_PROCESSING_MS;
+
+const STATUS_COLS_FULL =
+  "id, status, error_message, page_count, processed_at, uploaded_at, processing_started_at, analysis_heartbeat_at";
+const STATUS_COLS_BASE =
+  "id, status, error_message, page_count, processed_at, uploaded_at";
+const UNDEFINED_COLUMN = "42703";
 
 function kickProcess(
   req: Request,
@@ -53,11 +63,21 @@ export async function GET(
 
   const { id } = await params;
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("contracts")
-    .select("id, status, error_message, page_count, processed_at, uploaded_at")
+    .select(STATUS_COLS_FULL)
     .eq("id", id)
     .maybeSingle();
+
+  // Tolerate a database that hasn't run migration 0011 yet (no heartbeat
+  // columns): fall back to the base column set and the old uploaded_at timing.
+  if (error && error.code === UNDEFINED_COLUMN) {
+    ({ data, error } = await supabase
+      .from("contracts")
+      .select(STATUS_COLS_BASE)
+      .eq("id", id)
+      .maybeSingle());
+  }
 
   if (error) {
     return NextResponse.json({ error: "query_failed", message: error.message }, { status: 500 });
@@ -79,19 +99,25 @@ export async function GET(
     setTimeout(() => kicked.delete(id), 10_000);
   }
 
-  // Self-healing reclaim: a contract stuck in 'processing' past the serverless
-  // execution window was killed mid-flight and will never finish on its own.
-  // Reclaim it with force=1 so a fresh worker re-runs the pipeline. The longer
-  // debounce prevents re-firing while a reclaim is itself in flight.
+  // Self-healing reclaim: a contract whose analysis heartbeat has gone silent
+  // was killed mid-flight and will never finish on its own. Reclaim it with
+  // force=1 so a fresh worker RESUMES the pipeline (re-billing only the
+  // unfinished clauses, not the whole document). Staleness is measured from the
+  // freshest liveness signal we have — heartbeat, else processing start, else
+  // upload — so a healthy long run is never reclaimed and never re-charged.
   if (data.status === "processing" && !reclaimed.has(id)) {
-    const startedMs = data.uploaded_at
-      ? Date.parse(data.uploaded_at as string)
-      : Date.now();
-    const ageMs = Date.now() - startedMs;
-    if (Number.isFinite(ageMs) && ageMs > STALE_PROCESSING_MS) {
+    const row = data as Record<string, unknown>;
+    const reference =
+      (row.analysis_heartbeat_at as string | null | undefined) ??
+      (row.processing_started_at as string | null | undefined) ??
+      (row.uploaded_at as string | null | undefined) ??
+      null;
+    const refMs = reference ? Date.parse(reference) : Number.NaN;
+    const ageMs = Number.isFinite(refMs) ? Date.now() - refMs : Infinity;
+    if (ageMs > STALE_PROCESSING_MS) {
       reclaimed.add(id);
       console.warn(
-        `[status] contract ${id} stuck in processing for ${Math.round(ageMs / 1000)}s — reclaiming`,
+        `[status] contract ${id} heartbeat silent for ${Math.round(ageMs / 1000)}s — reclaiming (resume)`,
       );
       kickProcess(req, id, true);
       setTimeout(() => reclaimed.delete(id), RECLAIM_DEBOUNCE_MS);

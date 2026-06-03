@@ -3,10 +3,16 @@ import { isSubstantiveClause } from "@/lib/ingestion/substantive-check";
 import {
   analyzeByLlm,
   isRiskLlmAvailable,
+  type LlmAnalyzeInput,
+  type LlmAnalyzeResult,
   LLM_PARSE_FAILED_MARKER,
+  pickRiskModel,
+  RISK_MODEL_DEFAULT,
+  RISK_MODEL_ESCALATION,
   RiskLlmUnavailableError,
 } from "./llm-analyzer";
 import { getRagContext } from "./rag-context";
+import { groupByKey, normalizeForKey } from "@/lib/ai/dedupe";
 import {
   aggregateCitationHints,
   aggregateRuleIds,
@@ -35,6 +41,11 @@ export interface AnalyzeRiskOptions {
   concurrency?: number;
   maxLlmCalls?: number;
   signal?: AbortSignal;
+  // Called after each LLM-analyzed clause completes. The ingestion orchestrator
+  // wires this to a throttled DB heartbeat so a long risk fan-out keeps the
+  // contract marked "alive" and the status-route reclaim never fires mid-run
+  // (which would re-bill the whole document).
+  onProgress?: (done: number, total: number) => void;
 }
 
 export async function analyzeClauseRisks(
@@ -86,15 +97,40 @@ export async function analyzeClauseRisks(
   }
 
   // Pass 2: LLM analyzer for ambiguous / DPDP / no-rule cases.
-  const callable = llmEnabled ? llmQueue.slice(0, maxLlmCalls) : [];
-  const skipped = llmEnabled ? llmQueue.slice(maxLlmCalls) : llmQueue;
+  if (!llmEnabled) {
+    for (const { idx, input, ruleFindings } of llmQueue) {
+      results[idx] = ruleOnlyResult(input.clauseId, ruleFindings);
+    }
+    return results;
+  }
 
-  await runWithConcurrency(callable, concurrency, async ({ idx, input, ruleFindings }) => {
-    results[idx] = await llmFallback(input, ruleFindings, opts.signal);
+  // Dedup by (normalized clause text + category) so identical boilerplate is
+  // analyzed once. Grouping BEFORE the budget slice means maxLlmCalls counts
+  // UNIQUE clauses — boilerplate-heavy documents get more real coverage per
+  // dollar, not less.
+  const groups = groupByKey(
+    llmQueue,
+    (q) => `${normalizeForKey(q.input.clauseText)}|${q.input.category}`,
+  );
+  const callableGroups = groups.slice(0, maxLlmCalls);
+  const skippedGroups = groups.slice(maxLlmCalls);
+
+  let done = 0;
+  await runWithConcurrency(callableGroups, concurrency, async (group) => {
+    const rep = group[0];
+    const result = await llmFallback(rep.input, rep.ruleFindings, opts.signal);
+    for (const member of group) {
+      results[member.idx] =
+        member === rep ? result : { ...result, clauseId: member.input.clauseId };
+    }
+    done += 1;
+    opts.onProgress?.(done, callableGroups.length);
   });
 
-  for (const { idx, input, ruleFindings } of skipped) {
-    results[idx] = ruleOnlyResult(input.clauseId, ruleFindings);
+  for (const group of skippedGroups) {
+    for (const { idx, input, ruleFindings } of group) {
+      results[idx] = ruleOnlyResult(input.clauseId, ruleFindings);
+    }
   }
 
   return results;
@@ -105,6 +141,9 @@ async function llmFallback(
   ruleFindings: readonly RuleFinding[],
   signal?: AbortSignal,
 ): Promise<RiskAnalysisResult> {
+  // RAG context is fetched ONCE and reused across both cascade passes — the
+  // cheap pass and any escalation see the same grounding, at no extra
+  // embedding/search cost.
   let ragContext: LegalReference[] = [];
   try {
     ragContext = await getRagContext(input.category, input.clauseText);
@@ -112,17 +151,20 @@ async function llmFallback(
     ragContext = [];
   }
 
+  const llmInput: LlmAnalyzeInput = {
+    clauseId: input.clauseId,
+    category: input.category,
+    clauseText: input.clauseText,
+    ruleFindings,
+    ragContext,
+    classificationConfidence: input.classificationConfidence,
+  };
+
   try {
-    const { response, failedToParse } = await analyzeByLlm(
-      {
-        clauseId: input.clauseId,
-        category: input.category,
-        clauseText: input.clauseText,
-        ruleFindings,
-        ragContext,
-        classificationConfidence: input.classificationConfidence,
-      },
-      signal ? { signal } : undefined,
+    const { response, failedToParse } = await analyzeWithCascade(
+      llmInput,
+      ruleFindings,
+      signal,
     );
     const merged = mergeRuleAndLlm(
       input.clauseId,
@@ -147,6 +189,74 @@ async function llmFallback(
     );
     return ruleOnlyResult(input.clauseId, ruleFindings);
   }
+}
+
+// Cost-saving model cascade (recall-preserving). Clauses that pickRiskModel would
+// route to the cheaper default model run once, unchanged. Clauses it would send
+// straight to the expensive escalation model (high-stakes category, a high
+// rule-hit, or low classification confidence) instead get a CHEAP first pass and
+// are escalated to the strong model ONLY when that pass surfaces risk or
+// uncertainty — so the strong model is still spent on every clause that needs it,
+// but not on high-stakes clauses that are confidently clean.
+async function analyzeWithCascade(
+  llmInput: LlmAnalyzeInput,
+  ruleFindings: readonly RuleFinding[],
+  signal?: AbortSignal,
+): Promise<{ response: LlmRiskResponse; failedToParse?: boolean }> {
+  const base = signal ? { signal } : {};
+  const target = pickRiskModel(
+    llmInput.category,
+    ruleFindings,
+    llmInput.classificationConfidence,
+  );
+
+  // Not escalation-eligible, or cascade disabled → single pass with the model
+  // pickRiskModel chose (unchanged behaviour).
+  if (!cascadeEnabled() || target !== RISK_MODEL_ESCALATION) {
+    const r = await analyzeByLlm(llmInput, { ...base, model: target });
+    return { response: r.response, failedToParse: r.failedToParse };
+  }
+
+  // Escalation-eligible: cheap pass first.
+  const cheap = await analyzeByLlm(llmInput, { ...base, model: RISK_MODEL_DEFAULT });
+  if (!shouldEscalate(cheap, ruleFindings)) {
+    return { response: cheap.response, failedToParse: cheap.failedToParse };
+  }
+  // Risky or uncertain → spend the strong model (same RAG context).
+  const strong = await analyzeByLlm(llmInput, {
+    ...base,
+    model: RISK_MODEL_ESCALATION,
+  });
+  return { response: strong.response, failedToParse: strong.failedToParse };
+}
+
+// Escalate to the strong model when the cheap pass is anything other than a
+// confident "this clause is fine": any non-trivial risk level, low confidence, a
+// deterministic high rule-hit, or a parse failure. Biased toward escalation so
+// recall is preserved — only a confidently-standard/low clause skips the strong
+// model.
+function shouldEscalate(
+  cheap: LlmAnalyzeResult,
+  ruleFindings: readonly RuleFinding[],
+): boolean {
+  if (cheap.failedToParse) return true;
+  const level = cheap.response.risk_level;
+  if (level === "high" || level === "medium" || level === "missing") return true;
+  if (cheap.response.confidence < escalateBelowConfidence()) return true;
+  if (ruleFindings.some((f) => f.level === "high")) return true;
+  return false;
+}
+
+function cascadeEnabled(): boolean {
+  const raw = process.env.RISK_CASCADE;
+  // Default ON. Any of 0/false/off (case-insensitive) disables it.
+  return raw == null ? true : !/^(0|false|off)$/i.test(raw.trim());
+}
+
+function escalateBelowConfidence(): number {
+  const raw = process.env.RISK_CASCADE_ESCALATE_CONFIDENCE;
+  const n = raw ? Number.parseFloat(raw) : Number.NaN;
+  return Number.isFinite(n) && n >= 0 && n <= 1 ? n : 0.75;
 }
 
 function mergeRuleAndLlm(

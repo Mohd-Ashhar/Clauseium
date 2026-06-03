@@ -10,6 +10,7 @@ import {
   dominantRuleId,
   type RuleClassification,
 } from "./rule-classifier";
+import { groupByKey, normalizeForKey } from "@/lib/ai/dedupe";
 import type { ClassificationResult, ClauseInput } from "./types";
 
 const MIN_TEXT_LENGTH = 40;
@@ -61,15 +62,32 @@ export async function classifyClauses(
   }
 
   // Pass 2: LLM fallback for low-confidence or ambiguous clauses.
-  const callable = llmEnabled ? llmQueue.slice(0, maxLlmCalls) : [];
-  const skipped = llmEnabled ? llmQueue.slice(maxLlmCalls) : llmQueue;
+  if (!llmEnabled) {
+    for (const { idx, clause, ctx } of llmQueue) {
+      results[idx] = ruleOnlyFallback(clause.id, ctx);
+    }
+    return results;
+  }
 
-  await runWithConcurrency(callable, concurrency, async ({ idx, clause, ctx }) => {
-    results[idx] = await llmFallback(clause, ctx);
+  // Dedup by normalized clause text so identical clauses are classified once.
+  // Grouping before the budget slice means maxLlmCalls counts unique clauses.
+  const groups = groupByKey(llmQueue, (q) => normalizeForKey(q.clause.text));
+  const callableGroups = groups.slice(0, maxLlmCalls);
+  const skippedGroups = groups.slice(maxLlmCalls);
+
+  await runWithConcurrency(callableGroups, concurrency, async (group) => {
+    const rep = group[0];
+    const result = await llmFallback(rep.clause, rep.ctx);
+    for (const member of group) {
+      results[member.idx] =
+        member === rep ? result : { ...result, clauseId: member.clause.id };
+    }
   });
 
-  for (const { idx, clause, ctx } of skipped) {
-    results[idx] = ruleOnlyFallback(clause.id, ctx);
+  for (const group of skippedGroups) {
+    for (const { idx, clause, ctx } of group) {
+      results[idx] = ruleOnlyFallback(clause.id, ctx);
+    }
   }
 
   return results;

@@ -21,9 +21,14 @@ import { analyzeClauseRisks } from "./orchestrator";
 import { _resetForTests } from "./llm-analyzer";
 
 const ORIG_KEY = process.env.ANTHROPIC_API_KEY;
+const ORIG_CASCADE = process.env.RISK_CASCADE;
 
 beforeEach(() => {
   process.env.ANTHROPIC_API_KEY = "test-key";
+  // These tests exercise the rule/LLM MERGE logic with a single deterministic
+  // model pass. The cascade (cheap-first → escalate) is covered separately in
+  // orchestrator.cascade.test.ts; disable it here so call counts stay 1:1.
+  process.env.RISK_CASCADE = "0";
   _resetForTests();
   createMock.mockReset();
 });
@@ -31,6 +36,8 @@ beforeEach(() => {
 afterEach(() => {
   if (ORIG_KEY === undefined) delete process.env.ANTHROPIC_API_KEY;
   else process.env.ANTHROPIC_API_KEY = ORIG_KEY;
+  if (ORIG_CASCADE === undefined) delete process.env.RISK_CASCADE;
+  else process.env.RISK_CASCADE = ORIG_CASCADE;
 });
 
 // Mock Anthropic responses. The analyzer uses tool_use now, so successful
@@ -227,10 +234,11 @@ describe("analyzeClauseRisks", () => {
       }),
     );
 
+    // Distinct texts so within-contract dedup keeps them as 5 separate units —
+    // this test is about the call-budget cap, not dedup.
     const inputs = Array.from({ length: 5 }, (_, i) => ({
       clauseId: `c-${i}`,
-      clauseText:
-        "The Vendor shall implement reasonable security measures to protect personal data of customers.",
+      clauseText: `Clause ${i}: the Vendor shall implement reasonable security measures to protect personal data of customers in region ${i}.`,
       category: "data_protection_dpdp" as const,
       classificationConfidence: 0.9,
     }));

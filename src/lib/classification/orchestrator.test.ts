@@ -152,14 +152,32 @@ describe("classifyClauses", () => {
       llmText({ category: "other", confidence: 0.5, reasoning: "" }),
     );
 
-    const ambiguous = "The parties shall cooperate in good faith on matters arising from time to time.";
+    // Distinct texts so within-contract dedup keeps them as 5 separate units —
+    // this test is about the call-budget cap, not dedup.
     const inputs = Array.from({ length: 5 }, (_, i) => ({
       id: `c-${i}`,
-      text: ambiguous,
+      text: `Item ${i}: the parties shall cooperate in good faith on matters arising from time to time under section ${i}.`,
     }));
 
     const results = await classifyClauses(inputs, { maxLlmCalls: 2, concurrency: 1 });
     expect(createMock).toHaveBeenCalledTimes(2);
     expect(results).toHaveLength(5);
+  });
+
+  it("classifies identical clauses once and broadcasts the result to each id", async () => {
+    createMock.mockResolvedValue(
+      llmText({ category: "other", confidence: 0.5, reasoning: "" }),
+    );
+
+    const text = "The parties shall cooperate in good faith on matters arising from time to time.";
+    const results = await classifyClauses([
+      { id: "a", text },
+      { id: "b", text },
+      { id: "c", text },
+    ]);
+
+    expect(createMock).toHaveBeenCalledTimes(1);
+    expect(results.map((r) => r.clauseId)).toEqual(["a", "b", "c"]);
+    expect(results.every((r) => r.category === "other")).toBe(true);
   });
 });

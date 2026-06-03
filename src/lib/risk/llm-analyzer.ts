@@ -62,6 +62,9 @@ let _envWarned = false;
 
 export interface LlmAnalyzeOptions {
   signal?: AbortSignal;
+  // Force a specific model, bypassing pickRiskModel. The orchestrator's cascade
+  // uses this to run a cheap first pass and escalate only when warranted.
+  model?: string;
 }
 
 export interface LlmAnalyzeInput {
@@ -178,11 +181,13 @@ export async function analyzeByLlm(
 
   const client = await getClient(apiKey);
   const userText = buildRiskUserPrompt(input);
-  const model = pickRiskModel(
-    input.category,
-    input.ruleFindings,
-    input.classificationConfidence,
-  );
+  const model =
+    opts.model ??
+    pickRiskModel(
+      input.category,
+      input.ruleFindings,
+      input.classificationConfidence,
+    );
 
   try {
     // p-retry only retries transient failures (network / 5xx / rate limit).

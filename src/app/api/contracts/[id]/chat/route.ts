@@ -197,7 +197,17 @@ export async function POST(
           {
             model: CHAT_MODEL,
             max_tokens: CHAT_MAX_TOKENS,
-            system: systemPrompt,
+            // Cache the system block (clause context + verified refs). In a
+            // multi-turn conversation the prefix is identical across turns, so
+            // every follow-up reads it from cache at ~0.1× instead of re-billing
+            // the full clause+refs context.
+            system: [
+              {
+                type: "text",
+                text: systemPrompt,
+                cache_control: { type: "ephemeral" },
+              },
+            ],
             messages: toAnthropicMessages(messages),
           },
           { signal: upstreamController.signal },
