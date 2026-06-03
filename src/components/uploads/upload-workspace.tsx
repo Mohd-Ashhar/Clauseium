@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Group, Panel, Separator } from "react-resizable-panels";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -473,6 +474,23 @@ export function UploadWorkspace({
         isExporting={isExporting}
       />
 
+      {partial && (
+        <div
+          role="status"
+          className="mx-4 mt-3 flex items-start gap-2.5 rounded-lg border border-risk-med/30 bg-risk-med/10 px-4 py-2.5"
+        >
+          <AlertTriangle className="h-4 w-4 shrink-0 text-risk-med mt-0.5" />
+          <div className="text-[12.5px] leading-relaxed text-ink-200">
+            <span className="font-medium text-risk-med">Partial analysis.</span>{" "}
+            Some sections couldn&apos;t be fully analyzed, so this review may be
+            incomplete — don&apos;t treat a low risk count as a clean result.
+            {analysisNotes.length > 0 && (
+              <span className="text-ink-400"> {analysisNotes.join(" · ")}</span>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="hidden lg:flex flex-1 min-h-0">
         <Group orientation="horizontal" className="flex-1 flex">
           <Panel defaultSize={55} minSize={35} maxSize={70} className="min-w-0">
@@ -489,7 +507,7 @@ export function UploadWorkspace({
               setViewMode={setViewMode}
             />
           </Panel>
-          <Separator className="w-1 bg-ink-700 hover:bg-brand-500 data-[resize-state=dragging]:bg-brand-500 transition-colors cursor-col-resize" />
+          <Separator className="w-1 bg-ink-700 hover:bg-counsel-500 data-[resize-state=dragging]:bg-counsel-500 transition-colors cursor-col-resize" />
           <Panel defaultSize={45} minSize={30} maxSize={65} className="min-w-0">
             <RightColumn
               contractId={contractId}
@@ -613,7 +631,7 @@ function TopBar({
           )}
           {summary.medium > 0 && (
             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-risk-med/15 text-risk-med">
-              {summary.medium} With
+              {summary.medium} Med
             </span>
           )}
           {stdCount > 0 && (
@@ -629,7 +647,7 @@ function TopBar({
               type="button"
               onClick={() => void onExport("redlined")}
               disabled={isExporting !== null}
-              className="inline-flex items-center gap-1.5 bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium pl-3.5 pr-3 py-1.5 rounded-l-lg transition-colors disabled:opacity-70 disabled:cursor-wait"
+              className="inline-flex items-center gap-1.5 bg-counsel-500 hover:bg-counsel-600 text-ink-950 text-sm font-medium pl-3.5 pr-3 py-1.5 rounded-l-lg transition-colors disabled:opacity-70 disabled:cursor-wait"
             >
               {isExporting === "redlined" ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -650,7 +668,7 @@ function TopBar({
               aria-label="More export formats"
               onClick={() => setExportOpen((v) => !v)}
               disabled={isExporting !== null}
-              className="inline-flex items-center justify-center bg-brand-500 hover:bg-brand-600 text-white px-1.5 rounded-r-lg border-l border-white/20 transition-colors disabled:opacity-70 disabled:cursor-wait"
+              className="inline-flex items-center justify-center bg-counsel-500 hover:bg-counsel-600 text-ink-950 px-1.5 rounded-r-lg border-l border-ink-950/20 transition-colors disabled:opacity-70 disabled:cursor-wait"
             >
               <ChevronDown className="h-4 w-4" />
             </button>
@@ -744,7 +762,7 @@ function TopBar({
                 icon={<Archive className="h-3.5 w-3.5" />}
                 label="Archive"
                 onClick={() => {
-                  toast("Contract archived", "success");
+                  toast("Archiving coming in next phase");
                   setMenuOpen(false);
                 }}
               />
@@ -803,7 +821,7 @@ function ExportMenuItem({
       className="w-full flex items-start gap-2.5 px-3 py-2 text-left hover:bg-ink-850 transition-colors"
     >
       {busy ? (
-        <Loader2 className="h-3.5 w-3.5 text-brand-300 mt-0.5 shrink-0 animate-spin" />
+        <Loader2 className="h-3.5 w-3.5 text-counsel-300 mt-0.5 shrink-0 animate-spin" />
       ) : (
         <Download className="h-3.5 w-3.5 text-ink-500 mt-0.5 shrink-0" />
       )}
@@ -897,7 +915,7 @@ function DocumentPane({
                           "relative pl-6 py-3 my-1 rounded transition-colors",
                           "before:absolute before:left-0 before:top-3 before:bottom-3 before:w-[3px] before:rounded-full",
                           accent,
-                          isActive && "bg-brand-500/5",
+                          isActive && "bg-counsel-500/5",
                         )}
                       >
                         <p className="text-[14px] leading-[1.85] text-ink-200 whitespace-pre-wrap">
@@ -950,7 +968,7 @@ function ViewToggle({
           className={cn(
             "text-[11.5px] px-2.5 py-1 rounded-md transition-colors",
             viewMode === o.key
-              ? "bg-brand-500/15 text-brand-200"
+              ? "bg-counsel-500/15 text-counsel-200"
               : "text-ink-500 hover:text-ink-300",
           )}
         >
@@ -968,7 +986,7 @@ function DocStatusTag({ state }: { state: ClauseActionState }) {
     state === "accepted"
       ? { label: "Accepted", tone: "bg-risk-low/15 text-risk-low" }
       : state === "modified"
-        ? { label: "Edited", tone: "bg-brand-500/15 text-brand-200" }
+        ? { label: "Edited", tone: "bg-counsel-500/15 text-counsel-200" }
         : { label: "Rejected", tone: "bg-ink-700 text-ink-400" };
   return (
     <span
@@ -1136,15 +1154,15 @@ function RightColumn({
         onDoubleClick={() => setAskHeight(ASK_AI_DEFAULT_HEIGHT)}
         className={cn(
           "group relative h-2 shrink-0 flex items-center justify-center bg-ink-800 border-y border-ink-700 transition-colors",
-          collapsed ? "cursor-default" : "cursor-row-resize hover:bg-brand-500/20",
-          dragging && "bg-brand-500/30",
+          collapsed ? "cursor-default" : "cursor-row-resize hover:bg-counsel-500/20",
+          dragging && "bg-counsel-500/30",
         )}
       >
         <GripHorizontal
           className={cn(
             "h-3 w-3 text-ink-500 transition-colors pointer-events-none",
-            !collapsed && "group-hover:text-brand-300",
-            dragging && "text-brand-200",
+            !collapsed && "group-hover:text-counsel-300",
+            dragging && "text-counsel-200",
           )}
         />
       </div>
@@ -1291,7 +1309,7 @@ function FilterRow({
             className={cn(
               "text-xs px-3 py-1 rounded-full transition-colors whitespace-nowrap",
               active
-                ? "bg-brand-500/15 text-brand-200"
+                ? "bg-counsel-500/15 text-counsel-200"
                 : "bg-ink-850 text-ink-500 hover:text-ink-300",
             )}
           >
@@ -1325,14 +1343,14 @@ function DocumentReviewCard({ analysis }: { analysis: DocumentAnalysisView }) {
   const totalFindings = missing.length + cross.length + oneSided.length;
 
   return (
-    <div className="mt-4 bg-brand-500/5 border border-brand-500/20 rounded-xl overflow-hidden">
+    <div className="mt-4 bg-counsel-500/5 border border-counsel-500/20 rounded-xl overflow-hidden">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left"
       >
         <div className="flex items-center gap-2.5 min-w-0">
-          <Gavel className="h-4 w-4 text-brand-400 shrink-0" />
+          <Gavel className="h-4 w-4 text-counsel-400 shrink-0" />
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <span className="text-[13px] font-semibold text-ink-100">
@@ -1526,9 +1544,9 @@ function SummaryCard({
     score < 40 ? "bg-risk-high" : score < 70 ? "bg-risk-med" : "bg-risk-low";
 
   return (
-    <div className="bg-brand-500/5 border border-brand-500/20 rounded-xl p-5 space-y-4">
+    <div className="bg-counsel-500/5 border border-counsel-500/20 rounded-xl p-5 space-y-4">
       <div className="flex items-center justify-between">
-        <span className="text-[11px] uppercase tracking-[0.08em] text-brand-300 font-medium">
+        <span className="text-[11px] uppercase tracking-[0.08em] text-counsel-300 font-medium">
           Review Summary
         </span>
         <span className="text-[11px] text-ink-500">v1</span>
@@ -1572,7 +1590,7 @@ function SummaryCard({
         </div>
         <div className="h-1.5 bg-ink-800 rounded-full overflow-hidden">
           <div
-            className="h-full rounded-full bg-brand-500 transition-all"
+            className="h-full rounded-full bg-counsel-500 transition-all"
             style={{ width: `${reviewPct}%` }}
           />
         </div>
@@ -1682,12 +1700,22 @@ function ClauseCard({
   return (
     <article
       id={`card-clause-${clause.id}`}
+      role="button"
+      tabIndex={0}
+      aria-expanded={isActive}
       onClick={onToggle}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onToggle();
+        }
+      }}
       className={cn(
         "bg-ink-850 border border-ink-700 rounded-xl p-4 mb-3 cursor-pointer transition-all",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-counsel-500 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950",
         ACCENT_BORDER[level],
         "hover:border-ink-500",
-        isActive && "border-brand-500/50 ring-1 ring-brand-500/30",
+        isActive && "border-counsel-500/50 ring-1 ring-counsel-500/30",
         state === "rejected" && "opacity-60",
       )}
     >
@@ -1703,7 +1731,7 @@ function ClauseCard({
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {state === "modified" && (
-            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9.5px] uppercase tracking-wider font-medium bg-brand-500/15 text-brand-200">
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9.5px] uppercase tracking-wider font-medium bg-counsel-500/15 text-counsel-200">
               Edited
             </span>
           )}
@@ -1731,10 +1759,7 @@ function ClauseCard({
           <span className="text-[11px] uppercase tracking-wider text-ink-500">
             Confidence
           </span>
-          <ConfidenceBars confidence={risk.confidence} />
-          <span className="text-[11px] text-ink-400 font-[family-name:var(--font-mono)]">
-            {Math.round(risk.confidence * 100)}%
-          </span>
+          <ConfidenceChip confidence={risk.confidence} />
         </div>
       )}
 
@@ -1807,8 +1832,9 @@ function ExpandedSections({
       {isStandard && (
         <Section label="Why this is fine">
           <p className="text-[13px] leading-relaxed text-ink-300">
-            This clause matches our playbook and the 50th-percentile drafting
-            in our Indian commercial benchmark corpus. No changes recommended.
+            This clause is consistent with common market-standard drafting and
+            our review playbook — no high- or medium-risk issues detected. No
+            changes recommended.
           </p>
         </Section>
       )}
@@ -1825,7 +1851,7 @@ function ExpandedSections({
 
       {state === "modified" && modifiedText && !editing && (
         <Section label="Your edited redline">
-          <div className="rounded bg-brand-500/5 border border-brand-500/20 px-3 py-2">
+          <div className="rounded bg-counsel-500/5 border border-counsel-500/20 px-3 py-2">
             <p className="text-[13px] text-ink-100 leading-relaxed whitespace-pre-wrap">
               {modifiedText}
             </p>
@@ -1949,7 +1975,7 @@ function ExpandedSections({
                   new CustomEvent("clauseium:ask-ai", { detail: prompt }),
                 );
               }}
-              className="inline-flex items-center gap-1.5 text-brand-400 hover:text-brand-300 text-[13px] px-2 py-1.5 rounded-lg transition-colors ml-auto"
+              className="inline-flex items-center gap-1.5 text-counsel-400 hover:text-counsel-300 text-[13px] px-2 py-1.5 rounded-lg transition-colors ml-auto"
             >
               <MessageSquare className="h-3.5 w-3.5" />
               Ask AI
@@ -2041,21 +2067,15 @@ function RiskBadge({ level }: { level: RiskLevel }) {
   );
 }
 
-function ConfidenceBars({ confidence }: { confidence: number }) {
-  // Render 8 bars; fill proportional to confidence (0–1).
-  const filled = Math.max(0, Math.min(8, Math.round(confidence * 8)));
+// Qualitative confidence only — CLAUDE.md AI-UX rule: never show raw % (spurious
+// precision). Neutral tones, since risk colors (green/amber/red) already mean risk.
+function ConfidenceChip({ confidence }: { confidence: number }) {
+  const label =
+    confidence >= 0.75 ? "High" : confidence >= 0.45 ? "Medium" : "Low";
   return (
-    <div className="flex items-center gap-[2px]">
-      {Array.from({ length: 8 }).map((_, i) => (
-        <span
-          key={i}
-          className={cn(
-            "h-3 w-[3px] rounded-[1px]",
-            i < filled ? "bg-risk-low" : "bg-ink-700",
-          )}
-        />
-      ))}
-    </div>
+    <span className="inline-flex items-center rounded-full border border-ink-700 bg-ink-800/60 px-2 py-0.5 text-[11px] font-medium text-ink-200">
+      {label}
+    </span>
   );
 }
 
@@ -2106,7 +2126,10 @@ function stripCiteTokens(text: string | null): string {
 
 function ToastContainer({ toasts }: { toasts: ToastItem[] }) {
   return (
-    <div className="fixed bottom-6 right-6 z-[100] flex flex-col gap-2 pointer-events-none">
+    <div
+      aria-live="polite"
+      className="fixed bottom-6 right-6 z-[100] flex flex-col gap-2 pointer-events-none"
+    >
       <AnimatePresence>
         {toasts.map((t) => (
           <motion.div
@@ -2131,18 +2154,52 @@ function ToastContainer({ toasts }: { toasts: ToastItem[] }) {
 }
 
 // Banner rendered when the contract is processing or failed (above the panes).
+// Polls the status endpoint and auto-advances the page when analysis is ready —
+// no more "reload to check again".
 export function StatusBanner({
+  contractId,
   status,
   errorMessage,
 }: {
+  contractId: string;
   status: "queued" | "processing" | "failed";
   errorMessage: string | null;
 }) {
+  const router = useRouter();
+  const [checking, setChecking] = useState(false);
+
+  const check = useCallback(async (): Promise<void> => {
+    setChecking(true);
+    try {
+      const res = await fetch(`/api/contracts/${contractId}/status`, {
+        cache: "no-store",
+      });
+      if (res.ok) {
+        const data = (await res.json()) as { status?: string };
+        // "ready" or "failed" both warrant a re-render of the server component.
+        if (data.status === "ready" || data.status === "failed") {
+          router.refresh();
+        }
+      }
+    } catch {
+      /* transient network error — the next tick will retry */
+    } finally {
+      setChecking(false);
+    }
+  }, [contractId, router]);
+
+  // Poll while queued/processing; stop once failed (the page will re-render).
+  useEffect(() => {
+    if (status === "failed") return;
+    const id = setInterval(() => void check(), 3500);
+    return () => clearInterval(id);
+  }, [status, check]);
+
   if (status === "failed") {
     return (
       <div className="rounded-xl border border-risk-high/30 bg-risk-high/10 p-4 flex items-start gap-3 mb-4">
         <AlertTriangle className="h-5 w-5 text-risk-high mt-0.5 shrink-0" />
-        <div>
+        <div className="flex-1">
           <div className="text-sm font-medium text-risk-high">
             Processing failed
           </div>
@@ -2151,21 +2208,43 @@ export function StatusBanner({
               {errorMessage}
             </p>
           )}
+          <Link
+            href="/dashboard"
+            className="mt-3 inline-flex items-center rounded-lg border border-ink-700 px-3 py-1.5 text-[13px] font-medium text-ink-300 transition-colors hover:border-ink-500 hover:text-white"
+          >
+            Back to contracts
+          </Link>
         </div>
       </div>
     );
   }
+
   return (
-    <div className="rounded-xl border border-ink-700 bg-ink-850 p-6 flex items-center gap-3 mb-4">
-      <Gavel className="h-5 w-5 text-brand-400 animate-pulse shrink-0" />
-      <div>
+    <div className="rounded-xl border border-ink-700 bg-ink-850 p-6 flex items-start gap-3 mb-4">
+      <Gavel className="h-5 w-5 text-counsel-400 animate-pulse shrink-0 mt-0.5" />
+      <div className="flex-1 min-w-0">
         <div className="text-sm font-medium text-ink-100">
-          {status === "queued" ? "Waiting in queue…" : "Parsing document…"}
+          {status === "queued" ? "Waiting in queue…" : "Analyzing your contract…"}
         </div>
-        <p className="text-xs text-ink-500 mt-0.5">
-          This page does not auto-refresh — reload to check again.
+        <p className="text-xs text-ink-400 mt-1">
+          Parsing structure · classifying clauses · checking Indian statutes ·
+          drafting redlines
         </p>
+        <p className="text-[11px] text-ink-600 mt-1">
+          This page updates automatically — no need to reload.
+        </p>
+        <div className="mt-3 h-1 w-full max-w-xs overflow-hidden rounded-full bg-ink-700">
+          <div className="h-full w-1/3 rounded-full bg-counsel-500 animate-[indeterminate_1.6s_ease-in-out_infinite]" />
+        </div>
       </div>
+      <button
+        type="button"
+        onClick={() => void check()}
+        disabled={checking}
+        className="shrink-0 rounded-lg border border-ink-700 px-3 py-1.5 text-[13px] font-medium text-ink-300 transition-colors hover:border-ink-500 hover:text-white disabled:opacity-50"
+      >
+        {checking ? "Checking…" : "Check now"}
+      </button>
     </div>
   );
 }

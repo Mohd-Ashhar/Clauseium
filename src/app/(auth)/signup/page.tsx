@@ -22,7 +22,7 @@ export default async function SignupPage({ searchParams }: { searchParams: Searc
       footer={
         <>
           Already have an account?{" "}
-          <Link href="/login" className="font-medium text-brand-400 hover:text-brand-300">
+          <Link href="/login" className="font-medium text-counsel-400 hover:text-counsel-300">
             Sign in
           </Link>
         </>

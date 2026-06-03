@@ -47,21 +47,29 @@ function emptyCounts(): DashboardContract["riskCounts"] {
   return { high: 0, medium: 0, low: 0, standard: 0, missing: 0 };
 }
 
-function deriveStatus(row: ContractRow, highCount: number): DashboardStatus {
+function deriveStatus(
+  row: ContractRow,
+  counts: DashboardContract["riskCounts"],
+): DashboardStatus {
   if (row.status === "queued" || row.status === "processing") return "processing";
   if (row.status === "failed") return "failed";
-  return highCount > 0 ? "needs_attention" : "reviewed";
+  // Surface medium-only contracts too — counsel shouldn't silently miss
+  // material medium risk just because there are zero high-risk clauses.
+  return counts.high > 0 || counts.medium > 0 ? "needs_attention" : "reviewed";
 }
 
-export async function loadDashboard(): Promise<{
+export async function loadDashboard(ownerUserId: string): Promise<{
   contracts: DashboardContract[];
   stats: DashboardStats;
 }> {
   const supabase = await createClient();
 
+  // Defence-in-depth: scope explicitly to the authed user in addition to RLS.
+  // CLAUDE.md: every query must be tenant-scoped — never rely on RLS alone.
   const { data: contractRows } = await supabase
     .from("contracts")
     .select("id, title, original_filename, page_count, status, uploaded_at, processed_at")
+    .eq("owner_user_id", ownerUserId)
     .order("uploaded_at", { ascending: false });
 
   const rows = (contractRows ?? []) as ContractRow[];
@@ -93,7 +101,7 @@ export async function loadDashboard(): Promise<{
       title: r.title,
       originalFilename: r.original_filename,
       pageCount: r.page_count,
-      status: deriveStatus(r, riskCounts.high),
+      status: deriveStatus(r, riskCounts),
       uploadedAt: new Date(r.uploaded_at),
       processedAt: r.processed_at ? new Date(r.processed_at) : null,
       riskCounts,

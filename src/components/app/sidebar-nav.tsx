@@ -33,8 +33,6 @@ export const primaryNav: NavItem[] = [
     label: "Reviews",
     href: "/dashboard/reviews",
     icon: FileSearch,
-    badge: "4",
-    badgeTone: "attention",
     disabled: true,
   },
   {
@@ -55,5 +53,4 @@ export const settingsNav: NavItem = {
   label: "Settings",
   href: "/dashboard/settings",
   icon: Settings,
-  disabled: true,
 };

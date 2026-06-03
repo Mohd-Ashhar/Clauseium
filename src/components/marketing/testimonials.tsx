@@ -10,6 +10,8 @@ type Testimonial = {
   accent: "brand" | "counsel" | "low";
 };
 
+// Anonymized feedback from private-beta design partners. Names/initials are
+// withheld until we have permission to attribute — no fabricated identities.
 const items: Testimonial[] = [
   {
     quote: (
@@ -22,10 +24,10 @@ const items: Testimonial[] = [
         Section 8(1) was spot on.
       </>
     ),
-    name: "Priya Menon",
-    title: "General Counsel · Series D Fintech",
-    initials: "PM",
-    accent: "brand",
+    name: "General Counsel",
+    title: "Series D fintech · name withheld during beta",
+    initials: "GC",
+    accent: "counsel",
   },
   {
     quote: (
@@ -38,9 +40,9 @@ const items: Testimonial[] = [
         just reviews and sends.
       </>
     ),
-    name: "Arjun Subramanian",
-    title: "VP Legal · Enterprise SaaS",
-    initials: "AS",
+    name: "VP, Legal",
+    title: "Enterprise SaaS · name withheld during beta",
+    initials: "VP",
     accent: "counsel",
   },
   {
@@ -51,12 +53,12 @@ const items: Testimonial[] = [
         <span className="font-medium text-counsel-600">
           SIAC vs. domestic arbitration flagging
         </span>{" "}
-        alone is worth the subscription.
+        alone is genuinely useful.
       </>
     ),
-    name: "Nidhi Kapoor",
-    title: "Head of Legal · E-commerce Unicorn",
-    initials: "NK",
+    name: "Head of Legal",
+    title: "E-commerce · name withheld during beta",
+    initials: "HL",
     accent: "low",
   },
 ];
@@ -75,12 +77,16 @@ export function Testimonials() {
     >
       <div className="mx-auto max-w-[1240px] px-6">
         <FadeUp>
-          <p className="text-center font-mono text-[11px] uppercase tracking-[0.18em] text-counsel-600">
-            Voices from India's GCs
+          <p className="text-center text-[11px] uppercase tracking-[0.18em] text-counsel-600">
+            From our private beta
           </p>
           <h2 className="mt-3 text-center font-display text-[clamp(1.75rem,2vw+0.5rem,2.4rem)] font-bold tracking-[-0.02em] text-paper-900">
-            What India's GCs are saying
+            What early counsel are telling us
           </h2>
+          <p className="mx-auto mt-3 max-w-xl text-center text-[13px] leading-relaxed text-paper-900/55">
+            Anonymized feedback from design-partner legal teams in our private
+            beta. Named references available under NDA.
+          </p>
         </FadeUp>
 
         <Stagger className="mt-14 grid grid-cols-1 gap-6 md:grid-cols-3">

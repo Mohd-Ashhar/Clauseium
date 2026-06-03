@@ -23,7 +23,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
       footer={
         <>
           New to Clauseium?{" "}
-          <Link href="/signup" className="font-medium text-brand-400 hover:text-brand-300">
+          <Link href="/signup" className="font-medium text-counsel-400 hover:text-counsel-300">
             Create an account
           </Link>
         </>

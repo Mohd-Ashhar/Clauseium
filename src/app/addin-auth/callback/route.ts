@@ -96,7 +96,7 @@ function renderHtml(payload: DialogPayload): string {
       main { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
       .card { max-width: 360px; text-align: center; }
       .mark { font-size: 24px; font-weight: 700; margin-bottom: 12px; }
-      .mark span { color: #9d80ff; }
+      .mark span { color: #c9a449; }
       h1 { font-size: 18px; margin: 0 0 8px; font-weight: 600; }
       p { font-size: 13px; line-height: 1.5; color: #c5c8ce; margin: 0; }
       .error h1 { color: #e5484d; }

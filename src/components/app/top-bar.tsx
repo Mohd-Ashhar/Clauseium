@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Menu, Moon, Plus, Search } from "lucide-react";
+import { Menu, Plus, Search } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useSidebar } from "./sidebar-context";
 import { useUploadDialog } from "./upload-dialog";
@@ -92,21 +92,8 @@ export function TopBar() {
       {/* Right */}
       <div className="flex items-center gap-1.5">
         <button
-          className="relative h-9 w-9 flex items-center justify-center rounded-lg text-ink-500 hover:text-ink-100 hover:bg-ink-850 transition-colors"
-          aria-label="Notifications"
-        >
-          <Bell className="h-4 w-4" />
-          <span className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-risk-high" />
-        </button>
-        <button
-          className="h-9 w-9 flex items-center justify-center rounded-lg text-ink-500 hover:text-ink-100 hover:bg-ink-850 transition-colors"
-          aria-label="Toggle theme"
-        >
-          <Moon className="h-4 w-4" />
-        </button>
-        <button
           onClick={openUpload}
-          className="h-9 inline-flex items-center gap-1.5 bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium px-3.5 rounded-lg transition-colors"
+          className="h-9 inline-flex items-center gap-1.5 bg-counsel-500 hover:bg-counsel-600 text-ink-950 text-sm font-medium px-3.5 rounded-lg transition-colors"
         >
           <Plus className="h-4 w-4" />
           <span className="hidden sm:inline">New Contract</span>

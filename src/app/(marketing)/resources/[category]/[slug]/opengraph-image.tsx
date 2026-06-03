@@ -78,7 +78,7 @@ export default async function OgImage({
             height: 720,
             borderRadius: 9999,
             background:
-              "radial-gradient(closest-side, rgba(124,92,255,0.45), rgba(124,92,255,0.12) 55%, rgba(124,92,255,0) 75%)",
+              "radial-gradient(closest-side, rgba(201,164,73,0.45), rgba(201,164,73,0.12) 55%, rgba(201,164,73,0) 75%)",
             filter: "blur(20px)",
             display: "flex",
           }}
@@ -103,7 +103,7 @@ export default async function OgImage({
             style={{
               fontSize: 56,
               fontWeight: 800,
-              color: "#7c5cff",
+              color: "#c9a449",
               lineHeight: 1,
               fontFamily: "'Georgia', 'Times New Roman', serif",
               display: "flex",
@@ -202,8 +202,8 @@ export default async function OgImage({
                 width: 32,
                 height: 32,
                 borderRadius: 9999,
-                background: "rgba(124,92,255,0.20)",
-                color: "#d4c8ff",
+                background: "rgba(201,164,73,0.20)",
+                color: "#efddb0",
                 alignItems: "center",
                 justifyContent: "center",
                 fontSize: 13,

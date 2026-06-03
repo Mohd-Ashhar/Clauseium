@@ -8,14 +8,15 @@ import {
 } from "react";
 import {
   ArrowUp,
-  CheckCircle2,
   ChevronDown,
   ChevronUp,
   ExternalLink,
   Maximize2,
   Sparkles,
+  Square,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { CitationChip } from "./citation-chip";
 
 interface RefBundle {
   ref_id: string;
@@ -24,6 +25,7 @@ interface RefBundle {
   url: string | null;
   source: "statute" | "case";
   snippet: string;
+  status?: "verified" | "partially_verified" | "unverified" | "retrieved";
 }
 
 interface ApiMessage {
@@ -213,7 +215,7 @@ export function AskAiChat({
         onClick={onToggleCollapsed ? () => onToggleCollapsed() : undefined}
       >
         <div className="flex items-center gap-1.5">
-          <Sparkles className="h-3.5 w-3.5 text-brand-400" />
+          <Sparkles className="h-3.5 w-3.5 text-counsel-400" />
           <h3 className="text-[13px] font-semibold text-ink-100">
             Ask Clauseium
           </h3>
@@ -270,6 +272,7 @@ export function AskAiChat({
 
       <div
         ref={scrollRef}
+        aria-live="polite"
         className={cn(
           "flex-1 overflow-y-auto dark-scrollbar px-4 py-4 space-y-3",
           collapsed && "hidden",
@@ -312,18 +315,28 @@ export function AskAiChat({
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask about this contract…"
-            className="w-full bg-ink-850 border border-ink-700 hover:border-ink-500 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500/30 rounded-xl px-4 py-3 pr-12 text-sm text-ink-100 placeholder:text-ink-500 transition-colors"
+            className="w-full bg-ink-850 border border-ink-700 hover:border-ink-500 focus:border-counsel-500 focus:outline-none focus:ring-1 focus:ring-counsel-500/30 rounded-xl px-4 py-3 pr-12 text-sm text-ink-100 placeholder:text-ink-500 transition-colors"
             disabled={thinking}
           />
-          {input.trim() && (
+          {thinking ? (
             <button
-              type="submit"
-              disabled={thinking}
-              className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 inline-flex items-center justify-center rounded-full bg-brand-500 hover:bg-brand-600 disabled:opacity-50 transition-colors"
-              aria-label="Send"
+              type="button"
+              onClick={() => abortRef.current?.abort()}
+              className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 inline-flex items-center justify-center rounded-full border border-ink-600 bg-ink-800 text-ink-200 hover:border-ink-400 hover:text-white transition-colors"
+              aria-label="Stop generating"
             >
-              <ArrowUp className="h-3.5 w-3.5 text-white" />
+              <Square className="h-3 w-3 fill-current" />
             </button>
+          ) : (
+            input.trim() && (
+              <button
+                type="submit"
+                className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 inline-flex items-center justify-center rounded-full bg-counsel-500 hover:bg-counsel-600 disabled:opacity-50 transition-colors"
+                aria-label="Send"
+              >
+                <ArrowUp className="h-3.5 w-3.5 text-ink-950" />
+              </button>
+            )
           )}
         </form>
       </div>
@@ -446,7 +459,7 @@ function Message({ message }: { message: UiMessage }) {
   if (message.role === "user") {
     return (
       <div className="flex justify-end">
-        <div className="bg-brand-500/15 text-ink-100 rounded-2xl rounded-br-sm px-4 py-2.5 max-w-[85%] text-sm whitespace-pre-wrap">
+        <div className="bg-counsel-500/15 text-ink-100 rounded-2xl rounded-br-sm px-4 py-2.5 max-w-[85%] text-sm whitespace-pre-wrap">
           {message.text}
         </div>
       </div>
@@ -465,7 +478,7 @@ function Message({ message }: { message: UiMessage }) {
         <div className="leading-relaxed whitespace-pre-wrap">
           {rendered}
           {message.streaming && (
-            <span className="inline-block w-[2px] h-[1em] align-text-bottom bg-brand-500 animate-pulse ml-[1px]" />
+            <span className="inline-block w-[2px] h-[1em] align-text-bottom bg-counsel-500 animate-pulse ml-[1px]" />
           )}
         </div>
         {message.errorCode && (
@@ -507,14 +520,14 @@ function renderWithRefs(
           href={ref.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center text-brand-400 hover:text-brand-300 underline decoration-dotted underline-offset-2"
+          className="inline-flex items-center text-counsel-400 hover:text-counsel-300 underline decoration-dotted underline-offset-2"
         >
           [{refId}]
         </a>,
       );
     } else {
       out.push(
-        <span key={`r${key++}`} className="text-brand-400">
+        <span key={`r${key++}`} className="text-counsel-400">
           [{refId}]
         </span>,
       );
@@ -532,7 +545,7 @@ function RefChip({ ref_ }: { ref_: RefBundle }) {
         href={ref_.url}
         target="_blank"
         rel="noopener noreferrer"
-        className="group inline-flex items-center gap-1.5 px-2.5 py-1 bg-ink-800 border border-ink-700 rounded-lg text-xs hover:border-brand-500/40 hover:bg-ink-800/80 transition-colors"
+        className="group inline-flex items-center gap-1.5 px-2.5 py-1 bg-ink-800 border border-ink-700 rounded-lg text-xs hover:border-counsel-500/40 hover:bg-ink-800/80 transition-colors"
       >
         {children}
         <ExternalLink className="h-2.5 w-2.5 opacity-60 group-hover:opacity-100" />
@@ -548,7 +561,9 @@ function RefChip({ ref_ }: { ref_: RefBundle }) {
         [{ref_.ref_id}]
       </span>
       <span className="text-[11px] text-ink-400">{ref_.citation}</span>
-      <CheckCircle2 className="h-3 w-3 text-risk-low" />
+      {/* Honest provenance via the shared chip: chat refs are retrieved from the
+          corpus but NOT verification-checked — never imply a green "verified". */}
+      <CitationChip status={ref_.status ?? "retrieved"} />
     </Wrapper>
   );
 }

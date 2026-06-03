@@ -47,7 +47,7 @@ export function LoginForm({ next }: LoginFormProps) {
         trailing={
           <Link
             href="/forgot-password"
-            className="text-[12px] font-medium text-brand-400 hover:text-brand-300"
+            className="text-[12px] font-medium text-counsel-400 hover:text-counsel-300"
           >
             Forgot password?
           </Link>

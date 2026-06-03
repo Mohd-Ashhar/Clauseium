@@ -125,7 +125,7 @@ export function ContractTable({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Filter contracts…"
-              className="w-full bg-ink-850 border border-ink-700 hover:border-ink-500 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500/30 rounded-lg pl-8 pr-2.5 py-1.5 text-[13px] text-ink-100 placeholder:text-ink-500 transition-colors"
+              className="w-full bg-ink-850 border border-ink-700 hover:border-ink-500 focus:border-counsel-500 focus:outline-none focus:ring-1 focus:ring-counsel-500/30 rounded-lg pl-8 pr-2.5 py-1.5 text-[13px] text-ink-100 placeholder:text-ink-500 transition-colors"
             />
           </div>
 
@@ -137,7 +137,7 @@ export function ContractTable({
                 className={cn(
                   "text-xs px-3 py-1 rounded-full transition-colors whitespace-nowrap",
                   filter === f.id
-                    ? "bg-brand-500/15 text-brand-200"
+                    ? "bg-counsel-500/15 text-counsel-200"
                     : "bg-ink-850 text-ink-500 hover:text-ink-300",
                 )}
               >
@@ -234,7 +234,7 @@ function ExpandableRow({
           />
         </td>
         <td className="px-4 py-3 align-middle min-w-0">
-          <div className="text-[13.5px] font-medium text-ink-100 truncate group-hover:text-brand-300 transition-colors">
+          <div className="text-[13.5px] font-medium text-ink-100 truncate group-hover:text-counsel-300 transition-colors">
             {c.title}
           </div>
           <div className="text-[12px] text-ink-500 truncate">{c.originalFilename}</div>
@@ -320,7 +320,7 @@ function ExpandedDetail({
         <div className="flex flex-wrap items-center gap-2 pt-1">
           <Link
             href={`/dashboard/uploads/${c.id}`}
-            className="inline-flex items-center gap-1.5 bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium px-3.5 py-1.5 rounded-lg transition-colors"
+            className="inline-flex items-center gap-1.5 bg-counsel-500 hover:bg-counsel-600 text-ink-950 text-sm font-medium px-3.5 py-1.5 rounded-lg transition-colors"
           >
             Open review
             <ArrowRight className="h-3.5 w-3.5" />

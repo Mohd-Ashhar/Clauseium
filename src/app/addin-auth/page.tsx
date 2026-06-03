@@ -8,7 +8,7 @@ export default function AddinAuthPage() {
           className="font-[family-name:var(--font-display)] text-[28px] font-bold tracking-tight"
           aria-hidden="true"
         >
-          <span className="text-brand-400">§</span>{" "}
+          <span className="text-counsel-400">§</span>{" "}
           <span className="text-ink-100">Clauseium</span>
         </div>
         <h1 className="text-[20px] font-semibold text-ink-100">
@@ -28,7 +28,7 @@ export default function AddinAuthPage() {
           any time.
         </p>
         <p className="text-ink-600">
-          Clauseium provides legal information, not legal advice.
+          Clauseium provides legal information and analysis — not a substitute for professional judgement.
         </p>
       </footer>
     </div>

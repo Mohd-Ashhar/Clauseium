@@ -56,6 +56,8 @@ export default async function UploadResultPage({
       "id, title, original_filename, mime_type, file_size_bytes, page_count, status, error_message, structured_json, uploaded_at, processed_at",
     )
     .eq("id", id)
+    // Defence-in-depth alongside RLS — never rely on RLS alone (CLAUDE.md).
+    .eq("owner_user_id", user.id)
     .maybeSingle<ContractRow>();
 
   if (error || !data) notFound();
@@ -77,6 +79,7 @@ export default async function UploadResultPage({
     return (
       <div className="-mx-6 -my-6 min-h-[calc(100vh-3.5rem)] bg-ink-950 px-6 py-8">
         <StatusBanner
+          contractId={data.id}
           status={
             data.status === "failed"
               ? "failed"

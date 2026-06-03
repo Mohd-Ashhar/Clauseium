@@ -29,7 +29,7 @@ export default function OpengraphImage() {
             height: 720,
             borderRadius: 9999,
             background:
-              "radial-gradient(closest-side, rgba(124,92,255,0.45), rgba(124,92,255,0.12) 55%, rgba(124,92,255,0) 75%)",
+              "radial-gradient(closest-side, rgba(201,164,73,0.45), rgba(201,164,73,0.12) 55%, rgba(201,164,73,0) 75%)",
             filter: "blur(20px)",
             display: "flex",
           }}
@@ -60,7 +60,7 @@ export default function OpengraphImage() {
             style={{
               fontSize: 64,
               fontWeight: 800,
-              color: "#7c5cff",
+              color: "#c9a449",
               lineHeight: 1,
               fontFamily: "'Georgia', 'Times New Roman', serif",
               display: "flex",

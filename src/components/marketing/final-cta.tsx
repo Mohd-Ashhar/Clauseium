@@ -46,13 +46,13 @@ export function FinalCTA() {
           <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <MagneticButton>
               <Button size="lg" variant="primary" asChild>
-                <Link href="#">
-                  Book a demo <ArrowRight className="h-4 w-4" />
+                <Link href="/signup">
+                  Start free trial <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
             </MagneticButton>
             <Button size="lg" variant="ghost" asChild>
-              <Link href="#">Start 14-day free trial</Link>
+              <Link href="/pricing">See pricing</Link>
             </Button>
           </div>
         </FadeUp>

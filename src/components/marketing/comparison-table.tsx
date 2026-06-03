@@ -18,7 +18,7 @@ export function ComparisonTable({
       <table className="w-full text-left text-[14px]">
         <thead>
           <tr className="border-b border-paper-200 bg-paper-100">
-            <th className="px-6 py-4 font-mono text-[11px] uppercase tracking-[0.14em] text-paper-600">
+            <th className="px-6 py-4 text-[11px] uppercase tracking-[0.14em] text-paper-600">
               Feature
             </th>
             <th className="border-x border-counsel-200 bg-counsel-50/40 px-6 py-4 text-center font-display text-[15px] font-semibold text-counsel-600">

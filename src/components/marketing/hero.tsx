@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { ArrowRight, Play } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { FadeUp } from "@/components/motion/fade-up";
 import { MagneticButton } from "@/components/motion/magnetic-button";
 import { Button } from "@/components/ui/button";
@@ -65,24 +65,21 @@ export function Hero() {
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <MagneticButton>
               <Button size="lg" variant="primary" asChild>
-                <Link href="#cta">
-                  Book a 20-min demo
+                <Link href="/signup">
+                  Start free trial
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
             </MagneticButton>
             <Button size="lg" variant="ghost" asChild>
-              <Link href="#showcase">
-                <Play className="h-4 w-4" />
-                Watch 90-sec tour
-              </Link>
+              <Link href="#showcase">See it in action</Link>
             </Button>
           </div>
         </FadeUp>
 
         <FadeUp delay={0.4}>
           <p className="mt-8 font-mono text-[12px] tracking-wide text-ink-500">
-            SOC 2 Type II · ISO 27001 · DPDP-ready · Zero data retention
+            Zero data retention · DPDP-aligned · AWS Mumbai · SOC 2 in progress
           </p>
         </FadeUp>
       </div>

@@ -1,7 +1,8 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { Check, Eye, EyeOff } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { FormStatus } from "./form-status";
@@ -16,8 +17,14 @@ type SignupFormProps = {
 export function SignupForm({ next }: SignupFormProps) {
   const [state, action] = useActionState(signUpWithPassword, initialFormState);
   const [showPassword, setShowPassword] = useState(false);
+  const [password, setPassword] = useState("");
 
   const fieldErrors = state.status === "error" ? state.fieldErrors : undefined;
+
+  const reqs = [
+    { label: "At least 8 characters", met: password.length >= 8 },
+    { label: "Contains a number", met: /\d/.test(password) },
+  ];
 
   return (
     <form action={action} className="space-y-4" noValidate>
@@ -58,7 +65,6 @@ export function SignupForm({ next }: SignupFormProps) {
         id="password"
         label="Password"
         error={fieldErrors?.password?.[0]}
-        hint="At least 8 characters and one number."
       >
         <div className="relative">
           <Input
@@ -69,6 +75,8 @@ export function SignupForm({ next }: SignupFormProps) {
             required
             placeholder="••••••••"
             className="pr-10"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             aria-invalid={Boolean(fieldErrors?.password)}
           />
           <button
@@ -80,6 +88,25 @@ export function SignupForm({ next }: SignupFormProps) {
             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
         </div>
+        <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+          {reqs.map((r) => (
+            <li
+              key={r.label}
+              className={cn(
+                "inline-flex items-center gap-1.5 text-[11.5px] transition-colors",
+                r.met ? "text-risk-low" : "text-ink-500",
+              )}
+            >
+              <Check
+                className={cn(
+                  "h-3 w-3",
+                  r.met ? "opacity-100" : "opacity-30",
+                )}
+              />
+              {r.label}
+            </li>
+          ))}
+        </ul>
       </FormField>
 
       <SubmitButton className="w-full" pendingLabel="Creating account…">
@@ -88,7 +115,7 @@ export function SignupForm({ next }: SignupFormProps) {
 
       <p className="text-[11px] leading-relaxed text-ink-500">
         By creating an account, you agree to our terms of service and privacy notice. Clauseium
-        provides legal information, not legal advice.
+        provides legal information and analysis — not a substitute for professional judgement.
       </p>
     </form>
   );

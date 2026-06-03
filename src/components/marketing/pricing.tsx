@@ -80,7 +80,7 @@ export function Pricing() {
     <section id="pricing" className="bg-paper-50 py-20 md:py-28">
       <div className="mx-auto max-w-[1240px] px-6">
         <FadeUp>
-          <p className="text-center font-mono text-[11px] uppercase tracking-[0.18em] text-counsel-600">
+          <p className="text-center text-[11px] uppercase tracking-[0.18em] text-counsel-600">
             Pricing
           </p>
           <h2 className="mx-auto mt-3 max-w-3xl text-center font-display text-[clamp(1.75rem,2vw+0.5rem,2.4rem)] font-bold tracking-[-0.02em] text-paper-900">
@@ -164,7 +164,7 @@ function PricingCard({ tier, cycle }: { tier: Tier; cycle: Cycle }) {
         </span>
       )}
 
-      <div className="text-[13px] font-mono uppercase tracking-[0.16em] text-paper-900/40">
+      <div className="text-[13px] uppercase tracking-[0.16em] text-paper-900/40">
         Tier
       </div>
       <h3 className="mt-1 font-display text-[20px] font-semibold tracking-tight text-paper-900">

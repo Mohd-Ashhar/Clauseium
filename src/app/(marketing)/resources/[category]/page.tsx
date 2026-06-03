@@ -56,7 +56,7 @@ export default async function CategoryListingPage({
           className="pointer-events-none absolute -top-40 right-[-10%] h-[440px] w-[440px] rounded-full opacity-40 blur-3xl"
           style={{
             background:
-              "radial-gradient(closest-side, rgba(124,92,255,0.30), rgba(124,92,255,0.05) 60%, rgba(124,92,255,0) 80%)",
+              "radial-gradient(closest-side, rgba(201,164,73,0.30), rgba(201,164,73,0.05) 60%, rgba(201,164,73,0) 80%)",
           }}
         />
         <div className="relative mx-auto max-w-[1240px] px-6">
@@ -69,7 +69,7 @@ export default async function CategoryListingPage({
             variant="dark"
           />
           <div className="mt-8 max-w-3xl">
-            <span className="inline-flex items-center rounded-full border border-counsel-500/30 bg-counsel-500/10 px-3 py-1 font-mono text-[10.5px] uppercase tracking-[0.16em] text-counsel-200">
+            <span className="inline-flex items-center rounded-full border border-counsel-500/30 bg-counsel-500/10 px-3 py-1 text-[10.5px] uppercase tracking-[0.16em] text-counsel-200">
               {CATEGORY_LABELS[category]}
             </span>
             <h1 className="mt-5 font-display text-[36px] font-bold leading-[1.12] tracking-tight text-white md:text-[44px]">
@@ -100,9 +100,9 @@ export default async function CategoryListingPage({
                 <Link
                   key={item.frontmatter.slug}
                   href={`/resources/${category}/${item.frontmatter.slug}`}
-                  className="group flex flex-col rounded-2xl border border-paper-200 bg-white p-6 transition-all hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-lg"
+                  className="group flex flex-col rounded-2xl border border-paper-200 bg-white p-6 transition-all hover:-translate-y-0.5 hover:border-counsel-200 hover:shadow-lg"
                 >
-                  <span className="font-mono text-[10.5px] uppercase tracking-[0.16em] text-counsel-600">
+                  <span className="text-[10.5px] uppercase tracking-[0.16em] text-counsel-600">
                     {item.frontmatter.difficulty ?? "Article"}
                   </span>
                   <h3 className="mt-3 font-display text-[18px] font-semibold leading-snug text-paper-900">

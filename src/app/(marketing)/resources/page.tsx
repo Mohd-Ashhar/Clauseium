@@ -32,7 +32,7 @@ export default async function ResourcesHubPage() {
           className="pointer-events-none absolute -top-40 right-[-10%] h-[480px] w-[480px] rounded-full opacity-50 blur-3xl"
           style={{
             background:
-              "radial-gradient(closest-side, rgba(124,92,255,0.35), rgba(124,92,255,0.06) 60%, rgba(124,92,255,0) 80%)",
+              "radial-gradient(closest-side, rgba(201,164,73,0.35), rgba(201,164,73,0.06) 60%, rgba(201,164,73,0) 80%)",
           }}
         />
         <div className="relative mx-auto max-w-[1240px] px-6">
@@ -41,7 +41,7 @@ export default async function ResourcesHubPage() {
             variant="dark"
           />
           <div className="mt-8 max-w-3xl">
-            <span className="inline-flex items-center gap-2 rounded-full border border-counsel-500/30 bg-counsel-500/10 px-3 py-1 font-mono text-[10.5px] uppercase tracking-[0.16em] text-counsel-200">
+            <span className="inline-flex items-center gap-2 rounded-full border border-counsel-500/30 bg-counsel-500/10 px-3 py-1 text-[10.5px] uppercase tracking-[0.16em] text-counsel-200">
               <BookOpen className="h-3 w-3" />
               Indian legal resources
             </span>
@@ -68,13 +68,13 @@ export default async function ResourcesHubPage() {
                 <Link
                   key={cat}
                   href={`/resources/${cat}`}
-                  className="group flex flex-col rounded-2xl border border-paper-200 bg-white p-6 transition-all hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-lg"
+                  className="group flex flex-col rounded-2xl border border-paper-200 bg-white p-6 transition-all hover:-translate-y-0.5 hover:border-counsel-200 hover:shadow-lg"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-mono text-[10.5px] uppercase tracking-[0.16em] text-counsel-600">
+                    <span className="text-[10.5px] uppercase tracking-[0.16em] text-counsel-600">
                       {isLive ? "Live" : "Coming soon"}
                     </span>
-                    <ArrowUpRight className="h-4 w-4 text-paper-400 transition-colors group-hover:text-brand-600" />
+                    <ArrowUpRight className="h-4 w-4 text-paper-400 transition-colors group-hover:text-counsel-600" />
                   </div>
                   <h3 className="mt-4 font-display text-[19px] font-semibold text-paper-900">
                     {CATEGORY_LABELS[cat]}
@@ -100,9 +100,9 @@ export default async function ResourcesHubPage() {
                 <Link
                   key={`${item.frontmatter.category}-${item.frontmatter.slug}`}
                   href={`/resources/${item.frontmatter.category}/${item.frontmatter.slug}`}
-                  className="group flex flex-col rounded-2xl border border-paper-200 bg-white p-6 transition-all hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-lg"
+                  className="group flex flex-col rounded-2xl border border-paper-200 bg-white p-6 transition-all hover:-translate-y-0.5 hover:border-counsel-200 hover:shadow-lg"
                 >
-                  <span className="font-mono text-[10.5px] uppercase tracking-[0.16em] text-counsel-600">
+                  <span className="text-[10.5px] uppercase tracking-[0.16em] text-counsel-600">
                     {CATEGORY_LABELS[item.frontmatter.category]}
                   </span>
                   <h3 className="mt-3 font-display text-[18px] font-semibold leading-snug text-paper-900">

@@ -13,7 +13,7 @@ export function GradientText({
   children,
   className,
   from = "from-white",
-  via = "via-brand-200",
+  via = "via-counsel-200",
   to = "to-counsel-200",
 }: GradientTextProps) {
   return (

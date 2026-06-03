@@ -74,7 +74,7 @@ export function RedlineEditor({
         rows={6}
         aria-invalid={overCap}
         aria-describedby={`redline-count-${clausePosition}`}
-        className="w-full resize-y rounded bg-ink-950/70 border border-ink-700 focus:border-brand-500/60 focus:ring-1 focus:ring-brand-500/40 outline-none px-3 py-2 text-[13px] leading-relaxed text-ink-100 dark-scrollbar placeholder:text-ink-600"
+        className="w-full resize-y rounded bg-ink-950/70 border border-ink-700 focus:border-counsel-500/60 focus:ring-1 focus:ring-counsel-500/40 outline-none px-3 py-2 text-[13px] leading-relaxed text-ink-100 dark-scrollbar placeholder:text-ink-600"
         placeholder="Type the exact wording you want in the contract…"
       />
       <div className="flex items-center justify-between gap-3">
@@ -100,7 +100,7 @@ export function RedlineEditor({
             type="button"
             onClick={() => canSave && onSave(value)}
             disabled={!canSave}
-            className="inline-flex items-center gap-1.5 bg-brand-500 hover:bg-brand-600 text-white text-[13px] font-medium px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1.5 bg-counsel-500 hover:bg-counsel-600 text-ink-950 text-[13px] font-medium px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {saving ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />

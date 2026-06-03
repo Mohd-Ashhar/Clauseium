@@ -25,7 +25,7 @@ export const styles = StyleSheet.create({
   brandMark: {
     fontSize: 11,
     fontFamily: "Helvetica-Bold",
-    color: colors.brand500,
+    color: colors.counsel500,
     letterSpacing: 0.6,
   },
   brandMeta: {

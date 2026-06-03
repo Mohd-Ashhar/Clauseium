@@ -14,6 +14,16 @@ export interface ChatClauseContext {
   clause_text: string;
 }
 
+// Verification status of a chat reference. Chat refs are pulled directly from
+// the corpus search, so the honest default is "retrieved" (came from our corpus
+// but the model's USE of it isn't independently cross-checked). Never "verified"
+// unless we actually confirm the model's assertion against the source.
+export type RefStatus =
+  | "verified"
+  | "partially_verified"
+  | "unverified"
+  | "retrieved";
+
 export interface RefBundle {
   ref_id: string; // "REF_1"
   source_id: string; // chunk id
@@ -21,6 +31,7 @@ export interface RefBundle {
   url: string | null;
   source: "statute" | "case";
   snippet: string;
+  status: RefStatus;
 }
 
 export class ChatLlmUnavailableError extends Error {
@@ -49,6 +60,8 @@ export function buildRefBundle(refs: LegalReference[]): RefBundle[] {
     url: r.metadata.url ?? null,
     source: r.metadata.source,
     snippet: r.text.slice(0, 320),
+    // Corpus search hits: honestly "retrieved", not independently verified.
+    status: "retrieved" as RefStatus,
   }));
 }
 

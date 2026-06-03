@@ -24,7 +24,7 @@ export function UploadButton({
       className={cn(
         "inline-flex items-center gap-1.5 text-sm font-medium px-3.5 py-1.5 rounded-lg transition-colors",
         variant === "primary"
-          ? "bg-brand-500 hover:bg-brand-600 text-white"
+          ? "bg-counsel-500 hover:bg-counsel-600 text-ink-950"
           : "text-ink-300 hover:text-ink-100 hover:bg-ink-800",
         className,
       )}

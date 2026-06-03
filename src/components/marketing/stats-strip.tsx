@@ -11,32 +11,31 @@ const stats: {
   caption: string;
   format?: (n: number) => string;
 }[] = [
+  // Honest, methodology-backed capability facts — no fabricated usage metrics
+  // while in private beta.
   {
-    value: 10000,
-    suffix: "+",
-    label: "Contracts reviewed",
-    caption: "across 400+ Indian companies",
-    format: (n) => Math.round(n).toLocaleString("en-IN"),
+    value: 7,
+    suffix: "",
+    label: "Core Indian statutes",
+    caption: "Contract Act, IT Act, DPDP, Companies Act, FEMA & more",
   },
   {
     value: 94,
     suffix: "%",
     label: "Citation accuracy",
-    caption: "verified against Indian Kanoon",
+    caption: "on our 50-contract evaluation set",
   },
   {
     value: 6,
     suffix: " min",
-    label: "Average review time",
-    caption: "vs. 4.2 hours manual average",
+    label: "Upload to redline",
+    caption: "median in internal benchmarks",
   },
   {
-    value: 2.4,
-    prefix: "₹",
-    suffix: "Cr",
-    label: "Risk exposure caught",
-    caption: "in the last 90 days",
-    format: (n) => n.toFixed(1),
+    value: 30,
+    suffix: "-day",
+    label: "Max data retention",
+    caption: "auto-deleted unless you opt in (DPDP)",
   },
 ];
 

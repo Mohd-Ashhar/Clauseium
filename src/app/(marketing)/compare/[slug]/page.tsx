@@ -104,7 +104,7 @@ export default async function ComparisonPage({
           className="pointer-events-none absolute -top-40 right-[-10%] h-[480px] w-[480px] rounded-full opacity-50 blur-3xl"
           style={{
             background:
-              "radial-gradient(closest-side, rgba(124,92,255,0.30), rgba(124,92,255,0.05) 60%, rgba(124,92,255,0) 80%)",
+              "radial-gradient(closest-side, rgba(201,164,73,0.30), rgba(201,164,73,0.05) 60%, rgba(201,164,73,0) 80%)",
           }}
         />
         <div className="relative mx-auto max-w-[1240px] px-6">
@@ -117,7 +117,7 @@ export default async function ComparisonPage({
             variant="dark"
           />
           <div className="mt-8 max-w-3xl">
-            <span className="inline-flex items-center rounded-full border border-counsel-500/30 bg-counsel-500/10 px-3 py-1 font-mono text-[10.5px] uppercase tracking-[0.16em] text-counsel-200">
+            <span className="inline-flex items-center rounded-full border border-counsel-500/30 bg-counsel-500/10 px-3 py-1 text-[10.5px] uppercase tracking-[0.16em] text-counsel-200">
               Comparison
             </span>
             <h1 className="mt-5 font-display text-[36px] font-bold leading-[1.12] tracking-tight text-white md:text-[46px]">
@@ -153,8 +153,8 @@ export default async function ComparisonPage({
             <aside className="lg:sticky lg:top-24 lg:self-start">
               <div className="space-y-6">
                 <TableOfContents headings={headings} />
-                <div className="rounded-xl border border-brand-200 bg-brand-50 p-5">
-                  <div className="font-mono text-[10.5px] uppercase tracking-[0.16em] text-brand-600">
+                <div className="rounded-xl border border-counsel-200 bg-counsel-50 p-5">
+                  <div className="text-[10.5px] uppercase tracking-[0.16em] text-counsel-600">
                     Try Clauseium
                   </div>
                   <h4 className="mt-2 font-display text-[16px] font-semibold leading-snug text-paper-900">
@@ -184,7 +184,7 @@ export default async function ComparisonPage({
           className="pointer-events-none absolute inset-0 opacity-60"
           style={{
             background:
-              "radial-gradient(circle at 30% 50%, rgba(124,92,255,0.18), transparent 55%)",
+              "radial-gradient(circle at 30% 50%, rgba(201,164,73,0.18), transparent 55%)",
           }}
         />
         <div className="relative mx-auto max-w-[1240px] px-6 text-center">

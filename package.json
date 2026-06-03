@@ -9,6 +9,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "check:tokens": "node scripts/check-tokens.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "ingest:legal": "tsx --require ./scripts/server-only-shim.cjs scripts/ingest-legal-corpus.ts",

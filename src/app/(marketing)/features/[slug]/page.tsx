@@ -95,7 +95,7 @@ export default async function FeaturePage({
           className="pointer-events-none absolute -top-40 right-[-10%] h-[480px] w-[480px] rounded-full opacity-50 blur-3xl"
           style={{
             background:
-              "radial-gradient(closest-side, rgba(124,92,255,0.35), rgba(124,92,255,0.06) 60%, rgba(124,92,255,0) 80%)",
+              "radial-gradient(closest-side, rgba(201,164,73,0.35), rgba(201,164,73,0.06) 60%, rgba(201,164,73,0) 80%)",
           }}
         />
         <div className="relative mx-auto max-w-[1240px] px-6">
@@ -108,7 +108,7 @@ export default async function FeaturePage({
             variant="dark"
           />
           <div className="mt-8 max-w-3xl">
-            <span className="inline-flex items-center rounded-full border border-counsel-500/30 bg-counsel-500/10 px-3 py-1 font-mono text-[10.5px] uppercase tracking-[0.16em] text-counsel-200">
+            <span className="inline-flex items-center rounded-full border border-counsel-500/30 bg-counsel-500/10 px-3 py-1 text-[10.5px] uppercase tracking-[0.16em] text-counsel-200">
               {feature.hero.eyebrow}
             </span>
             <h1 className="mt-5 font-display text-[40px] font-bold leading-[1.1] tracking-tight text-white md:text-[52px]">
@@ -179,7 +179,7 @@ export default async function FeaturePage({
                 key={w.step}
                 className="rounded-2xl border border-paper-200 bg-white p-5"
               >
-                <div className="font-mono text-[10.5px] uppercase tracking-[0.16em] text-brand-600">
+                <div className="text-[10.5px] uppercase tracking-[0.16em] text-counsel-600">
                   Step {i + 1}
                 </div>
                 <h3 className="mt-2 font-display text-[16px] font-semibold text-paper-900">
@@ -205,7 +205,7 @@ export default async function FeaturePage({
               <ul className="mt-6 space-y-3">
                 {feature.highlights.map((h) => (
                   <li key={h} className="flex items-start gap-3 text-[14.5px] leading-relaxed text-ink-300">
-                    <span className="mt-1.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-brand-500/20 text-brand-200">
+                    <span className="mt-1.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-counsel-500/20 text-counsel-200">
                       <Check className="h-2.5 w-2.5" />
                     </span>
                     {h}
@@ -246,9 +246,9 @@ export default async function FeaturePage({
                     <Link
                       key={item.frontmatter.slug}
                       href={`/resources/${item.frontmatter.category}/${item.frontmatter.slug}`}
-                      className="group flex flex-col rounded-2xl border border-paper-200 bg-white p-6 transition-all hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-md"
+                      className="group flex flex-col rounded-2xl border border-paper-200 bg-white p-6 transition-all hover:-translate-y-0.5 hover:border-counsel-200 hover:shadow-md"
                     >
-                      <span className="font-mono text-[10.5px] uppercase tracking-[0.16em] text-counsel-600">
+                      <span className="text-[10.5px] uppercase tracking-[0.16em] text-counsel-600">
                         {CATEGORY_LABELS[item.frontmatter.category]}
                       </span>
                       <h3 className="mt-3 font-display text-[16px] font-semibold leading-snug text-paper-900">
@@ -273,9 +273,9 @@ export default async function FeaturePage({
                     <Link
                       key={f.slug}
                       href={`/features/${f.slug}`}
-                      className="group flex flex-col rounded-2xl border border-paper-200 bg-white p-6 transition-all hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-md"
+                      className="group flex flex-col rounded-2xl border border-paper-200 bg-white p-6 transition-all hover:-translate-y-0.5 hover:border-counsel-200 hover:shadow-md"
                     >
-                      <span className="font-mono text-[10.5px] uppercase tracking-[0.16em] text-brand-600">
+                      <span className="text-[10.5px] uppercase tracking-[0.16em] text-counsel-600">
                         Feature
                       </span>
                       <h3 className="mt-3 font-display text-[16px] font-semibold leading-snug text-paper-900">
@@ -296,7 +296,7 @@ export default async function FeaturePage({
       {/* FAQ */}
       <section className="bg-paper-50 py-16">
         <div className="mx-auto max-w-3xl px-6">
-          <p className="text-center font-mono text-[11px] uppercase tracking-[0.18em] text-brand-600">
+          <p className="text-center text-[11px] uppercase tracking-[0.18em] text-counsel-600">
             FAQ
           </p>
           <h2 className="mt-3 text-center font-display text-[clamp(1.75rem,2vw+0.5rem,2.4rem)] font-bold tracking-[-0.02em] text-paper-900">
@@ -327,7 +327,7 @@ export default async function FeaturePage({
           className="pointer-events-none absolute inset-0 opacity-60"
           style={{
             background:
-              "radial-gradient(circle at 30% 50%, rgba(124,92,255,0.18), transparent 55%)",
+              "radial-gradient(circle at 30% 50%, rgba(201,164,73,0.18), transparent 55%)",
           }}
         />
         <div className="relative mx-auto max-w-[1240px] px-6 text-center">

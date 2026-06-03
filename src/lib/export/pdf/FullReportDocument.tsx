@@ -107,7 +107,7 @@ function ClauseEntry({
 
       {clause.suggestedRedline && (
         <>
-          <Text style={[styles.clauseLabel, { color: colors.brand500 }]}>Suggested redline</Text>
+          <Text style={[styles.clauseLabel, { color: colors.counsel500 }]}>Suggested redline</Text>
           <Text style={styles.clauseBodyText}>{clause.suggestedRedline}</Text>
         </>
       )}

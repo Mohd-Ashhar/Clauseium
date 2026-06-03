@@ -17,7 +17,7 @@ function NavRow({ item, collapsed, active }: { item: NavItem; collapsed: boolean
     collapsed && "justify-center px-0 mx-2",
   );
   const interactiveRow = active
-    ? "bg-brand-500/10 text-brand-200 rounded-r-lg border-l-2 border-brand-500"
+    ? "bg-counsel-500/10 text-counsel-200 rounded-r-lg border-l-2 border-counsel-500"
     : "text-ink-300 hover:bg-ink-850 hover:text-ink-100 rounded-lg";
   const disabledRow = "text-ink-500 cursor-not-allowed rounded-lg opacity-70";
 
@@ -29,7 +29,7 @@ function NavRow({ item, collapsed, active }: { item: NavItem; collapsed: boolean
           item.disabled
             ? "text-ink-600"
             : active
-              ? "text-brand-400"
+              ? "text-counsel-400"
               : "text-ink-500 group-hover:text-ink-300",
         )}
       />
@@ -118,13 +118,13 @@ export function AppSidebar({ user }: { user: User }) {
           )}
         >
           {collapsed ? (
-            <span className="font-[family-name:var(--font-display)] text-2xl font-bold text-brand-400 leading-none">
+            <span className="font-[family-name:var(--font-display)] text-2xl font-bold text-counsel-400 leading-none">
               §
             </span>
           ) : (
             <div className="flex flex-col leading-tight">
               <span className="font-[family-name:var(--font-display)] text-base font-bold text-ink-100">
-                <span className="text-brand-400">§</span> Clauseium
+                <span className="text-counsel-400">§</span> Clauseium
               </span>
               <span className="text-[11px] text-ink-500 mt-0.5">Clauseium Legal</span>
             </div>

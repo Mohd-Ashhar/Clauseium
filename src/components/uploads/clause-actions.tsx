@@ -177,7 +177,7 @@ export function ClauseActions({
         <button
           type="button"
           onClick={askAi}
-          className="inline-flex items-center gap-1.5 text-brand-400 hover:text-brand-300 text-[12px] px-2 py-1 rounded-md transition-colors ml-auto"
+          className="inline-flex items-center gap-1.5 text-counsel-400 hover:text-counsel-300 text-[12px] px-2 py-1 rounded-md transition-colors ml-auto"
         >
           <MessageSquare className="h-3 w-3" />
           Ask AI

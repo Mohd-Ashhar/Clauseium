@@ -29,7 +29,7 @@ export function FeaturesBento() {
     >
       <div className="mx-auto max-w-[1240px] px-6">
         <FadeUp>
-          <p className="text-center font-mono text-[11px] uppercase tracking-[0.18em] text-counsel-600">
+          <p className="text-center text-[11px] uppercase tracking-[0.18em] text-counsel-600">
             Capabilities
           </p>
           <h2 className="mx-auto mt-3 max-w-3xl text-center font-display text-[clamp(1.75rem,2vw+0.5rem,2.4rem)] font-bold tracking-[-0.02em] text-paper-900">

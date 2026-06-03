@@ -1,8 +1,11 @@
+import { Clock } from "lucide-react";
 import { ActionBanner } from "@/components/app/action-banner";
 import { AttentionCard, HighRiskCard } from "@/components/app/action-cards";
+import { KPIStat } from "@/components/ui/kpi-stat";
 import { ContractTable } from "@/components/app/contract-table";
 import { EmptyState } from "@/components/app/empty-state";
 import { UploadButton } from "@/components/app/upload-button";
+import { WelcomeBanner } from "@/components/app/welcome-banner";
 import { formatLongDate } from "@/lib/format";
 import { getDashboardGreeting } from "@/lib/dashboard-greeting";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
@@ -14,7 +17,7 @@ export default async function DashboardPage() {
   if (!user) redirect("/login");
 
   const today = new Date();
-  const { contracts, stats } = await loadDashboard();
+  const { contracts, stats } = await loadDashboard(user.id);
   const { title, subtitle, state } = getDashboardGreeting(user, stats, today);
 
   if (contracts.length === 0) {
@@ -37,6 +40,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-6">
+      <WelcomeBanner name={user.name.split(" ")[0] ?? ""} />
       <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
         <div>
           <h1 className="font-[family-name:var(--font-display)] text-[24px] font-semibold text-ink-100 tracking-tight">
@@ -50,7 +54,7 @@ export default async function DashboardPage() {
         </div>
       </header>
 
-      <section className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <AttentionCard
           stats={{
             needsAttention: stats.needsAttention,
@@ -62,6 +66,18 @@ export default async function DashboardPage() {
             totalHighClauses: stats.totalHighClauses,
             contractCount: stats.highRisk,
           }}
+        />
+        <KPIStat
+          label="In review"
+          value={stats.inProgress}
+          unit={stats.inProgress === 1 ? "contract" : "contracts"}
+          caption={
+            stats.inProgress > 0
+              ? "Processing — results appear automatically"
+              : "Nothing in the queue"
+          }
+          icon={Clock}
+          tone="info"
         />
       </section>
 

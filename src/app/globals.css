@@ -131,6 +131,12 @@ h1.font-display {
   to { transform: scaleX(1); }
 }
 
+/* Indeterminate progress bar (e.g. contract analysis in flight). */
+@keyframes indeterminate {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.001ms !important;
@@ -186,8 +192,8 @@ body.app-shell {
 
 /* Document viewer: pulse a section briefly when it becomes active. */
 @keyframes doc-section-pulse {
-  0% { background-color: rgba(80, 110, 255, 0.18); }
-  100% { background-color: rgba(80, 110, 255, 0); }
+  0% { background-color: rgba(201, 164, 73, 0.20); }
+  100% { background-color: rgba(201, 164, 73, 0); }
 }
 .doc-section-pulse {
   animation: doc-section-pulse 1.5s ease-out;

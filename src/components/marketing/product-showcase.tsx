@@ -57,7 +57,7 @@ export function ProductShowcase() {
     >
       <div className="mx-auto max-w-[1240px] px-6">
         <FadeUp>
-          <p className="text-center font-mono text-[11px] uppercase tracking-[0.18em] text-counsel-600">
+          <p className="text-center text-[11px] uppercase tracking-[0.18em] text-counsel-600">
             Inside the workspace
           </p>
           <h2 className="mx-auto mt-3 max-w-3xl text-center font-display text-[clamp(1.75rem,2vw+0.5rem,2.4rem)] font-bold tracking-[-0.02em] text-paper-900">
@@ -121,12 +121,7 @@ export function ProductShowcase() {
 function ShowcaseMockup() {
   return (
     <div className="relative">
-      <div
-        className="overflow-hidden rounded-2xl border border-ink-700 bg-ink-900"
-        style={{
-          animation: "subtle-glow-pulse 4.5s ease-in-out infinite",
-        }}
-      >
+      <div className="overflow-hidden rounded-2xl border border-ink-700 bg-ink-900 shadow-[0_24px_60px_rgba(5,5,5,0.45),0_0_0_1px_rgba(201,164,73,0.10)]">
         {/* Top bar */}
         <div className="flex items-center justify-between border-b border-ink-700 bg-ink-850 px-4 py-3">
           <div className="flex min-w-0 flex-1 items-center gap-2.5">

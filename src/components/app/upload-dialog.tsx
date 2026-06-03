@@ -13,7 +13,7 @@ import {
   type DragEvent,
   type ReactNode,
 } from "react";
-import { CheckCircle2, FileText, Loader2, UploadCloud, X, AlertTriangle } from "lucide-react";
+import { CheckCircle2, FileText, Loader2, ShieldCheck, UploadCloud, X, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface UploadDialogContextValue {
@@ -224,7 +224,7 @@ function UploadDialog({
                   className={cn(
                     "flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed cursor-pointer transition-colors px-6 py-10 text-center",
                     dragOver
-                      ? "border-brand-500 bg-brand-500/5"
+                      ? "border-counsel-500 bg-counsel-500/5"
                       : "border-ink-700 hover:border-ink-500 bg-ink-850/50",
                   )}
                 >
@@ -237,7 +237,7 @@ function UploadDialog({
                   />
                   {file ? (
                     <>
-                      <FileText className="h-8 w-8 text-brand-400" />
+                      <FileText className="h-8 w-8 text-counsel-400" />
                       <div className="text-sm text-ink-100 font-medium">{file.name}</div>
                       <div className="text-xs text-ink-500">{formatBytes(file.size)}</div>
                       <div className="text-[11px] text-ink-500 mt-1">
@@ -248,7 +248,7 @@ function UploadDialog({
                     <>
                       <UploadCloud className="h-8 w-8 text-ink-500" />
                       <div className="text-sm text-ink-300">
-                        <span className="text-brand-400 font-medium">Click to browse</span> or drop
+                        <span className="text-counsel-400 font-medium">Click to browse</span> or drop
                         a file here
                       </div>
                       <div className="text-[11px] text-ink-500">PDF · DOCX · 25 MB max</div>
@@ -269,7 +269,7 @@ function UploadDialog({
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="e.g. Mutual NDA — Razorpay Software"
-                    className="w-full bg-ink-850 border border-ink-700 hover:border-ink-500 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500/30 rounded-lg px-3 py-2 text-sm text-ink-100 placeholder:text-ink-500 transition-colors"
+                    className="w-full bg-ink-850 border border-ink-700 hover:border-ink-500 focus:border-counsel-500 focus:outline-none focus:ring-1 focus:ring-counsel-500/30 rounded-lg px-3 py-2 text-sm text-ink-100 placeholder:text-ink-500 transition-colors"
                   />
                 </div>
               </>
@@ -285,7 +285,12 @@ function UploadDialog({
             )}
           </div>
 
-          <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-ink-700">
+          <div className="flex items-center justify-between gap-3 px-5 py-4 border-t border-ink-700">
+            <p className="hidden sm:flex items-center gap-1.5 text-[11px] text-ink-500">
+              <ShieldCheck className="h-3.5 w-3.5 text-counsel-500" />
+              Zero retention with LLMs · auto-deleted in 30 days
+            </p>
+            <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => onOpenChange(false)}
@@ -299,7 +304,7 @@ function UploadDialog({
                 type="button"
                 onClick={onSubmit}
                 disabled={!file}
-                className="inline-flex items-center gap-1.5 bg-brand-500 hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium px-3.5 py-1.5 rounded-lg transition-colors"
+                className="inline-flex items-center gap-1.5 bg-counsel-500 hover:bg-counsel-600 disabled:opacity-50 disabled:cursor-not-allowed text-ink-950 text-sm font-medium px-3.5 py-1.5 rounded-lg transition-colors"
               >
                 Upload
               </button>
@@ -308,7 +313,7 @@ function UploadDialog({
               <button
                 type="button"
                 onClick={onView}
-                className="inline-flex items-center gap-1.5 bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium px-3.5 py-1.5 rounded-lg transition-colors"
+                className="inline-flex items-center gap-1.5 bg-counsel-500 hover:bg-counsel-600 text-ink-950 text-sm font-medium px-3.5 py-1.5 rounded-lg transition-colors"
               >
                 View result
               </button>
@@ -317,11 +322,12 @@ function UploadDialog({
               <button
                 type="button"
                 onClick={reset}
-                className="inline-flex items-center gap-1.5 bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium px-3.5 py-1.5 rounded-lg transition-colors"
+                className="inline-flex items-center gap-1.5 bg-counsel-500 hover:bg-counsel-600 text-ink-950 text-sm font-medium px-3.5 py-1.5 rounded-lg transition-colors"
               >
                 Try again
               </button>
             )}
+            </div>
           </div>
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>
@@ -331,10 +337,10 @@ function UploadDialog({
 
 function JobProgress({ job, onView }: { job: JobState; onView: () => void }) {
   const steps: { phase: Phase; label: string }[] = [
-    { phase: "uploading", label: "Uploading file" },
-    { phase: "queued", label: "Queued for processing" },
-    { phase: "processing", label: "Parsing & detecting structure" },
-    { phase: "ready", label: "Ready" },
+    { phase: "uploading", label: "Uploading" },
+    { phase: "queued", label: "Queued" },
+    { phase: "processing", label: "Analyzing clauses and risk" },
+    { phase: "ready", label: "Review ready" },
   ];
   const order: Phase[] = ["uploading", "queued", "processing", "ready"];
   const currentIdx = order.indexOf(job.phase);
@@ -361,7 +367,7 @@ function JobProgress({ job, onView }: { job: JobState; onView: () => void }) {
             key={step.phase}
             className={cn(
               "flex items-center gap-3 rounded-lg px-3 py-2 text-sm",
-              active && "bg-brand-500/10 text-ink-100",
+              active && "bg-counsel-500/10 text-ink-100",
               done && "text-ink-300",
               !done && !active && "text-ink-500",
             )}
@@ -369,7 +375,7 @@ function JobProgress({ job, onView }: { job: JobState; onView: () => void }) {
             {done ? (
               <CheckCircle2 className="h-4 w-4 text-risk-low shrink-0" />
             ) : active ? (
-              <Loader2 className="h-4 w-4 animate-spin text-brand-400 shrink-0" />
+              <Loader2 className="h-4 w-4 animate-spin text-counsel-400 shrink-0" />
             ) : (
               <span className="h-4 w-4 rounded-full border border-ink-700 shrink-0" />
             )}
@@ -381,9 +387,9 @@ function JobProgress({ job, onView }: { job: JobState; onView: () => void }) {
         <button
           type="button"
           onClick={onView}
-          className="w-full text-sm text-brand-300 hover:text-brand-200 transition-colors pt-1"
+          className="w-full text-sm font-medium text-counsel-300 hover:text-counsel-200 transition-colors pt-1"
         >
-          Click &quot;View result&quot; to inspect the structured output →
+          Open your review →
         </button>
       )}
     </div>
