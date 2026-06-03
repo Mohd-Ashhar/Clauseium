@@ -16,6 +16,7 @@ import {
 import { resolveClauseDecision } from "./shared/decisions";
 import { DISCLAIMER_LONG, COMMENT_AUTHOR_INITIALS } from "./shared/disclaimer";
 import { AI_AUTHOR, BRAND_NAME, colors, riskLabel } from "./shared/branding";
+import { composeClauseComment } from "./shared/clause-comment";
 import { contractTypeFullLabel, formatLongDate } from "@/lib/format";
 import type { ClauseAnalysis } from "@/types/contract";
 import type { ExportInput } from "./index";
@@ -206,51 +207,32 @@ export async function generateRedlinedDocx(input: ExportInput): Promise<Blob> {
   return await Packer.toBlob(doc);
 }
 
+// Maps the shared comment blocks (single source of truth) onto the `docx`
+// library's Paragraph/TextRun primitives, so the reconstructed-docx comment says
+// exactly what the tracked-changes comment and the web workspace say — including
+// the "Deviates from your playbook" line and honest citation statuses.
 function buildCommentOptions(
   id: number,
   clause: ClauseAnalysis,
   date: Date,
 ): ICommentOptions {
-  const paragraphs: Paragraph[] = [
-    new Paragraph({
-      children: [
-        new TextRun({ text: riskLabel(clause.riskLevel), bold: true }),
-      ],
-    }),
-    new Paragraph({
-      children: [new TextRun({ text: clause.summary })],
-    }),
-  ];
+  const blocks = composeClauseComment({
+    riskLevel: clause.riskLevel,
+    summary: clause.summary,
+    reasoning: clause.reasoning,
+    citations: clause.citations,
+    ruleIds: clause.ruleIds,
+  });
 
-  if (clause.reasoning) {
-    paragraphs.push(
+  const paragraphs: Paragraph[] = blocks.map(
+    (runs, i) =>
       new Paragraph({
-        spacing: { before: 80 },
-        children: [
-          new TextRun({ text: "Reasoning: ", bold: true }),
-          new TextRun({ text: clause.reasoning }),
-        ],
+        spacing: i === 0 ? undefined : { before: 60 },
+        children: runs.map(
+          (r) => new TextRun({ text: r.text, bold: r.bold }),
+        ),
       }),
-    );
-  }
-
-  if (clause.citations.length > 0) {
-    paragraphs.push(
-      new Paragraph({
-        spacing: { before: 80 },
-        children: [new TextRun({ text: "Citations:", bold: true })],
-      }),
-    );
-    for (const c of clause.citations) {
-      paragraphs.push(
-        new Paragraph({
-          children: [
-            new TextRun({ text: `• ${c.text} (${c.status.replace("_", " ")})` }),
-          ],
-        }),
-      );
-    }
-  }
+  );
 
   return {
     id,

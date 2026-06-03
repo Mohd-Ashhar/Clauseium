@@ -9,6 +9,11 @@ import type {
 } from "@/types/contract";
 import type { ClassificationLabel } from "@/lib/classification";
 import type { ClauseState } from "./types";
+import {
+  deriveClauseSummary,
+  displayRuleIds,
+  sanitizeForExport,
+} from "./shared/clause-comment";
 
 // Build the export view-model (`Contract` + per-clause decision states) from raw
 // DB rows, server-side. This is the authoritative builder used by the export
@@ -37,6 +42,7 @@ export interface ExportClauseRow {
   risk_explanation: string | null;
   risk_suggestion: string | null;
   risk_confidence: number | string | null;
+  risk_rule_ids: string[] | null;
   citations: LegalCitation[] | null;
   trust_score: number | string | null;
 }
@@ -139,14 +145,10 @@ export function buildContractForExport(args: {
       const category: ClauseCategory = c.category
         ? CATEGORY_MAP[c.category]
         : "other";
-      const cleanIssue = stripCiteTokens(c.risk_issue);
-      const summaryText =
-        cleanIssue ||
-        (level === "missing"
-          ? "Required clause not present in this contract."
-          : level === "standard" || level === "low"
-            ? "Matches our playbook and the Indian commercial benchmark corpus."
-            : "Material risk identified for reviewer attention.");
+      // Honest, sanitized summary (no over-claim, no leaked engine error text).
+      const summaryText = deriveClauseSummary(level, c.risk_issue);
+      // Playbook rule IDs the analyzer attached, with engine sentinels removed.
+      const ruleIds = displayRuleIds(c.risk_rule_ids);
 
       return {
         id: c.id,
@@ -156,7 +158,7 @@ export function buildContractForExport(args: {
         originalText: stripCiteTokens(c.clause_text) || c.clause_text,
         riskLevel: level,
         summary: summaryText,
-        reasoning: stripCiteTokens(c.risk_explanation),
+        reasoning: sanitizeForExport(stripCiteTokens(c.risk_explanation)),
         suggestedRedline: stripCiteTokens(c.risk_suggestion) || undefined,
         modifiedText:
           action?.state === "modified" && action.modified_text
@@ -164,10 +166,13 @@ export function buildContractForExport(args: {
             : undefined,
         citations: Array.isArray(c.citations) ? c.citations : [],
         confidence: num(c.risk_confidence) ?? 0,
-        isFromPlaybook: false,
+        ruleIds,
+        // Derived from real data, not hardcoded: a clause "matches the playbook"
+        // when it tripped no playbook rule.
+        isFromPlaybook: ruleIds.length === 0,
         marketPosition: "at",
         trustScore: num(c.trust_score) ?? undefined,
-        issue: cleanIssue || undefined,
+        issue: sanitizeForExport(stripCiteTokens(c.risk_issue)) || undefined,
       } satisfies ClauseAnalysis;
     });
 

@@ -70,6 +70,10 @@ export interface ClauseAnalysis {
   citations: LegalCitation[];
   confidence: number;
   isFromPlaybook: boolean;
+  // Playbook rule IDs this clause tripped (e.g. "term.no_notice"). Drives the
+  // "Deviates from your playbook" framing in exports. Optional so non-export
+  // consumers that build ClauseAnalysis don't have to supply it.
+  ruleIds?: string[];
   marketPosition: "above" | "at" | "below";
   trustScore?: number;
   issue?: string;

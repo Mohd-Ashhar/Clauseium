@@ -17,6 +17,12 @@ import {
   paragraphRawText,
   applyParagraphReplacement,
 } from "./paragraph-ops";
+import {
+  anchorComment,
+  createCommentCollector,
+  writeComments,
+} from "./comments";
+import type { CommentBlock } from "../shared/clause-comment";
 import type {
   ClauseManifestEntry,
   EngineClause,
@@ -57,6 +63,9 @@ export function injectRedlines(args: InjectRedlinesArgs): RedlineEngineResult {
   let skipped = 0;
   const fallbackClauses: EngineClause[] = [];
   const insertClauses: EngineClause[] = [];
+  // Buffered (paragraph, comment) pairs. Anchored + written as one best-effort
+  // step at the very end so a comment failure can never corrupt the redlines.
+  const pendingComments: { p: XmlElement; blocks: CommentBlock[] }[] = [];
 
   const sorted = [...args.clauses].sort((a, b) => a.position - b.position);
 
@@ -128,6 +137,11 @@ export function injectRedlines(args: InjectRedlinesArgs): RedlineEngineResult {
       usedParas.add(p);
       applied += 1;
       manifest.push(entry(clause, "applied", "tracked change applied"));
+      // Comments only in redlined mode — keep "clean" exports clean. Buffer the
+      // located paragraph; anchoring happens after the loop.
+      if (args.mode === "redlined" && clause.comment && clause.comment.length > 0) {
+        pendingComments.push({ p, blocks: clause.comment });
+      }
     } else {
       fallback += 1;
       fallbackClauses.push(clause);
@@ -146,7 +160,26 @@ export function injectRedlines(args: InjectRedlinesArgs): RedlineEngineResult {
     }
   }
 
-  zip.file(DOCUMENT_PART, serializeXml(doc));
+  // Anchor + write all buffered comments as one best-effort step. On any failure
+  // we ship the redlines without comments rather than a broken package.
+  if (pendingComments.length > 0) {
+    try {
+      const comments = createCommentCollector(zip);
+      for (const { p, blocks } of pendingComments) {
+        const cid = comments.add(blocks);
+        anchorComment(doc, p, cid);
+      }
+      zip.file(DOCUMENT_PART, serializeXml(doc));
+      writeComments(zip, comments, args.rev);
+    } catch {
+      // Re-serialize the redline-only document (anchors may be partial) so the
+      // package stays self-consistent without the comments part.
+      zip.file(DOCUMENT_PART, serializeXml(doc));
+    }
+  } else {
+    zip.file(DOCUMENT_PART, serializeXml(doc));
+  }
+
   const bytes = zip.generate({ type: "nodebuffer", compression: "DEFLATE" });
   return { bytes, applied, fallback, skipped, manifest };
 }

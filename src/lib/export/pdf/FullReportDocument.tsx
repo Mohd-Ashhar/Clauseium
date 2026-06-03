@@ -4,6 +4,7 @@ import type { ClauseState } from "../types";
 import { contractTypeFullLabel, formatLongDate } from "@/lib/format";
 import { colors } from "../shared/branding";
 import { clauseStateLabel } from "../shared/decisions";
+import { displayRuleIds, formatRuleIds } from "../shared/clause-comment";
 import { DISCLAIMER_LONG } from "../shared/disclaimer";
 import {
   CitationLine,
@@ -91,6 +92,11 @@ function ClauseEntry({
   state: ClauseState | undefined;
   includeReasoning: boolean;
 }) {
+  const isStandard =
+    clause.riskLevel === "standard" || clause.riskLevel === "low";
+  const ruleIds = displayRuleIds(clause.ruleIds);
+  const showsDeviation = !isStandard && ruleIds.length > 0;
+
   return (
     <View style={styles.clauseCard}>
       <View style={styles.clauseHeader}>
@@ -100,6 +106,11 @@ function ClauseEntry({
         <RiskBadge level={clause.riskLevel} />
       </View>
       <Text style={styles.clauseTitle}>{clause.title}</Text>
+      {showsDeviation && (
+        <Text style={[styles.clauseSummary, { color: colors.riskHigh }]}>
+          Deviates from your playbook — flagged by {formatRuleIds(ruleIds)}
+        </Text>
+      )}
       <Text style={styles.clauseSummary}>{clause.summary}</Text>
 
       <Text style={styles.clauseLabel}>Original</Text>

@@ -56,6 +56,7 @@ function makeClauses(
       risk_explanation: null,
       risk_suggestion: null,
       risk_confidence: 0.8,
+      risk_rule_ids: null,
       citations: [],
       trust_score: 0.8,
     });
@@ -78,5 +79,69 @@ describe("buildContractForExport overall score", () => {
     expect(contract.riskSummary.overallScore).toBeGreaterThanOrEqual(30);
     expect(contract.riskSummary.overallScore).toBeLessThanOrEqual(55);
     expect(contract.riskSummary.escalationRecommended).toBe(true);
+  });
+});
+
+function oneClause(over: Partial<ExportClauseRow>): ExportClauseRow {
+  return {
+    id: "c1",
+    position: 0,
+    clause_text: "The parties agree to the following terms and conditions herein.",
+    section_title: "Term",
+    clause_number: "1",
+    category: "other",
+    risk_level: "standard",
+    risk_issue: null,
+    risk_explanation: null,
+    risk_suggestion: null,
+    risk_confidence: 0.8,
+    risk_rule_ids: null,
+    citations: [],
+    trust_score: 0.8,
+    ...over,
+  };
+}
+
+function build(over: Partial<ExportClauseRow>) {
+  const { contract } = buildContractForExport({
+    contract: { id: "x", title: "T", page_count: 1, original_filename: "f.docx" },
+    clauses: [oneClause(over)],
+    actions: [],
+  });
+  return (contract.clauses ?? [])[0];
+}
+
+describe("buildContractForExport — export parity", () => {
+  it("uses honest market-standard copy for standard/low clauses (no benchmark over-claim)", () => {
+    const clause = build({ risk_level: "standard", risk_issue: null });
+    expect(clause.summary).not.toMatch(/benchmark corpus/i);
+    expect(clause.summary).toMatch(/market-standard drafting and our review playbook/i);
+  });
+
+  it("scrubs leaked engine error jargon out of the summary and reasoning", () => {
+    const clause = build({
+      risk_level: "standard",
+      risk_issue: "Risk analyzer returned an unparseable response",
+      risk_explanation: "The legal analysis model produced an invalid result",
+    });
+    expect(clause.summary).not.toMatch(/unparseable|analyzer returned/i);
+    expect(clause.summary).toMatch(/inconclusive/i);
+    expect(clause.reasoning).not.toMatch(/legal analysis model|unparseable/i);
+    expect(clause.reasoning).toMatch(/inconclusive/i);
+  });
+
+  it("surfaces playbook rule ids and filters the internal LLM_PARSE_FAILED sentinel", () => {
+    const clause = build({
+      risk_level: "high",
+      risk_rule_ids: ["term.no_notice", "LLM_PARSE_FAILED", "lol.uncapped"],
+    });
+    expect(clause.ruleIds).toEqual(["term.no_notice", "lol.uncapped"]);
+    expect(clause.isFromPlaybook).toBe(false);
+  });
+
+  it("marks a clause that tripped no rule as from-playbook", () => {
+    const clause = build({ risk_level: "standard", risk_rule_ids: [] });
+    expect(clause.ruleIds).toEqual([]);
+    expect(clause.isFromPlaybook).toBe(true);
   });
 });

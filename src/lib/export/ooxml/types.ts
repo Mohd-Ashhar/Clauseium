@@ -1,3 +1,5 @@
+import type { CommentBlock } from "../shared/clause-comment";
+
 export type RedlineMode = "redlined" | "clean";
 
 // A clause to act on, already resolved by resolveExportText:
@@ -12,6 +14,11 @@ export interface EngineClause {
   sectionTitle: string | null;
   op: "replace" | "insert" | "skip";
   newText: string;
+  // Optional Clauseium AI comment to anchor on this clause's paragraph (only
+  // honored for a successfully located/applied "replace"). Composed by the
+  // shared composer so it reads identically to the reconstructed-docx / PDF /
+  // web-app comment.
+  comment?: CommentBlock[];
 }
 
 export interface RevisionMeta {

@@ -14,6 +14,11 @@ import {
 } from "@/lib/export/build-contract";
 import { buildFilename, mimeTypeFor } from "@/lib/export/filename";
 import { AI_AUTHOR } from "@/lib/export/shared/branding";
+import {
+  clauseHasComment,
+  composeClauseComment,
+  deriveClauseSummary,
+} from "@/lib/export/shared/clause-comment";
 import type { ClauseState } from "@/lib/export/types";
 
 export const runtime = "nodejs";
@@ -53,6 +58,7 @@ interface ClauseRow {
   risk_explanation: string | null;
   risk_suggestion: string | null;
   risk_confidence: number | string | null;
+  risk_rule_ids: string[] | null;
   citations: LegalCitation[] | null;
   trust_score: number | string | null;
   clause_classifications:
@@ -123,7 +129,7 @@ export async function POST(
   const { data: clauseData, error: clauseErr } = await supabase
     .from("clauses")
     .select(
-      "id, position, clause_text, section_title, clause_number, risk_level, risk_issue, risk_explanation, risk_suggestion, risk_confidence, citations, trust_score, clause_classifications(category, classified_at)",
+      "id, position, clause_text, section_title, clause_number, risk_level, risk_issue, risk_explanation, risk_suggestion, risk_confidence, risk_rule_ids, citations, trust_score, clause_classifications(category, classified_at)",
     )
     .eq("contract_id", id)
     .order("position", { ascending: true });
@@ -271,6 +277,24 @@ async function exportTrackedDocx(
         : resolved.op === "insert"
           ? "insert"
           : "skip";
+
+    // Compose a Clauseium AI comment for clauses we're redlining, so the .docx a
+    // Word-native reviewer downloads carries the "why" (risk, playbook deviation,
+    // reasoning, honest citations) — not just the tracked change. Same composer
+    // as the reconstructed-docx / PDF / web app, so all surfaces stay in lockstep.
+    const level = c.risk_level ?? "standard";
+    const commentInput = {
+      riskLevel: level,
+      summary: deriveClauseSummary(level, c.risk_issue),
+      reasoning: c.risk_explanation,
+      citations: c.citations,
+      ruleIds: c.risk_rule_ids,
+    };
+    const comment =
+      mode === "redlined" && op === "replace" && clauseHasComment(commentInput)
+        ? composeClauseComment(commentInput)
+        : undefined;
+
     return {
       id: c.id,
       position: c.position,
@@ -279,6 +303,7 @@ async function exportTrackedDocx(
       sectionTitle: c.section_title,
       op,
       newText: stripCite(resolved.newText),
+      comment,
     };
   });
 
@@ -365,6 +390,7 @@ function buildView(
     risk_explanation: c.risk_explanation,
     risk_suggestion: c.risk_suggestion,
     risk_confidence: c.risk_confidence,
+    risk_rule_ids: c.risk_rule_ids,
     citations: c.citations,
     trust_score: c.trust_score,
   }));
