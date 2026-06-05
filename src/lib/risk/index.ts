@@ -5,6 +5,13 @@ export {
 } from "./orchestrator";
 export { persistRiskAnalyses, finalizeRiskConfidence } from "./persist";
 export {
+  createRiskCache,
+  riskCacheKey,
+  isCacheable,
+  RISK_ANALYZER_VERSION,
+  type RiskCache,
+} from "./cache";
+export {
   RISK_ANALYZER_MODEL,
   RISK_MODEL_DEFAULT,
   RISK_MODEL_ESCALATION,

@@ -114,3 +114,83 @@ describe("analyzeDocument", () => {
     expect(out.model).toBe("playbook-only");
   });
 });
+
+// These reproduce the exact shapes that USED to discard a paid Opus response
+// (hyphenated posture; clause_positions as a string; a findings array sent as a
+// string) and assert we now coerce/salvage rather than throw → fallback.
+describe("analyzeDocument — tolerant parsing (no wasted spend)", () => {
+  it("coerces a hyphenated posture, a risk synonym, and a string clause_positions", async () => {
+    createMock.mockResolvedValueOnce(
+      docTool({
+        executive_summary: "Risky MSA.",
+        overall_posture: "high-risk", // hyphen — not in the strict enum
+        missing_protections: [],
+        cross_clause_issues: [
+          {
+            title: "Cap defeated by indemnity",
+            risk_level: "critical", // synonym → high
+            clause_positions: "3, 5", // string — not an array
+            explanation: "Indemnity is uncapped.",
+            recommendation: "Cap it.",
+          },
+        ],
+        one_sided_terms: [],
+      }),
+    );
+
+    const out = await analyzeDocument(SAMPLE);
+
+    expect(out.degraded).toBe(false); // NOT discarded
+    expect(out.overallPosture).toBe("high_risk");
+    expect(out.crossClauseIssues).toHaveLength(1);
+    expect(out.crossClauseIssues[0].riskLevel).toBe("high");
+    expect(out.crossClauseIssues[0].clausePositions).toEqual([3, 5]);
+  });
+
+  it("salvages other fields when a findings array arrives as a string", async () => {
+    createMock.mockResolvedValueOnce(
+      docTool({
+        executive_summary: "Some summary.",
+        overall_posture: "unfavourable",
+        missing_protections: "none found", // string instead of array
+        cross_clause_issues: [],
+        one_sided_terms: [
+          {
+            title: "One-sided termination",
+            risk_level: "medium",
+            clause_position: "clause 9", // string carrying a number
+            explanation: "Only one party may terminate.",
+            recommendation: "Make mutual.",
+          },
+        ],
+      }),
+    );
+
+    const out = await analyzeDocument(SAMPLE);
+
+    expect(out.degraded).toBe(false);
+    expect(out.missingProtections).toEqual([]); // unsalvageable string → dropped
+    expect(out.executiveSummary).toBe("Some summary.");
+    expect(out.oneSidedTerms[0].clausePosition).toBe(9);
+  });
+
+  it("backfills an empty executive summary instead of showing a blank", async () => {
+    createMock.mockResolvedValueOnce(
+      docTool({
+        executive_summary: "",
+        overall_posture: "balanced",
+        missing_protections: [
+          { key: "k", label: "Liability cap", risk_level: "high", rationale: "No cap.", suggested_clause: "" },
+        ],
+        cross_clause_issues: [],
+        one_sided_terms: [],
+      }),
+    );
+
+    const out = await analyzeDocument(SAMPLE);
+
+    expect(out.degraded).toBe(false);
+    expect(out.executiveSummary.length).toBeGreaterThan(0);
+    expect(out.missingProtections).toHaveLength(1);
+  });
+});

@@ -27,10 +27,35 @@ Year omitted only for cases. Use the verified statute snippets when relevant.
 You MUST include at least one [CITE: …] in the explanation when risk_level is
 "high" or "medium".
 
-Be precise and grounded. Reject speculation, but do NOT under-report: if a
-clause is one-sided, uncapped, missing a standard protection, or deviates from
-Indian market practice, say so plainly and grade it accordingly. Do not default
-to "low/standard" to be safe.
+RISK LEVEL — grade the ACTUAL terms of the clause, not its topic. Being a
+liability, indemnity, IP or jurisdiction clause is NOT itself a reason to flag
+risk; a well-drafted clause in a high-stakes category is "standard".
+- high     — a material, one-sided exposure or a clear statutory breach to fix
+             now: uncapped or nominal liability, a one-way indemnity, an
+             exclusive FOREIGN forum with no Indian-seat arbitration, an unwaived
+             DPDP breach-notification gap, an MSMED payment-term violation.
+- medium   — a real but bounded deviation worth a redline: a protection that is
+             PRESENT but weaker than market standard (a cap with no fraud /
+             wilful-misconduct carve-out; an indemnity with no super-cap), or a
+             partially-mitigated one-sided tilt.
+- low      — a minor or stylistic gap; the clause is broadly acceptable and
+             could merely be tightened.
+- standard — the clause is balanced, mutual or adequately protective and
+             consistent with Indian market norms. Use this freely, INCLUDING in
+             high-stakes categories. The following are "standard", NOT medium:
+               · a mutual indemnity that is capped or subject to the liability cap
+               · a liability cap that carves out fraud / gross negligence /
+                 wilful misconduct and excludes indirect & consequential damages
+               · exclusive jurisdiction of an Indian court (e.g. courts at Mumbai)
+               · a full IP assignment with work-for-hire and a moral-rights waiver
+- missing  — a standard protection the contract should contain is absent.
+
+Be precise and grounded. Reject speculation. Do NOT under-report a genuine risk
+to be safe — if a clause is one-sided, uncapped, or missing a standard
+protection, say so plainly and grade it accordingly. But equally, do NOT inflate
+a sound, market-standard clause to "medium" merely because its category is
+high-stakes or because an even stronger version is imaginable: if the terms are
+balanced and protective, grade them standard/low.
 
 Call the submit_risk_analysis tool exactly once with your structured analysis.
 Write a thorough, reviewer-grade analysis:

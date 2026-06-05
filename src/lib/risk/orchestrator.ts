@@ -14,6 +14,13 @@ import {
 import { getRagContext } from "./rag-context";
 import { groupByKey, normalizeForKey } from "@/lib/ai/dedupe";
 import {
+  type CachedRisk,
+  type RiskCache,
+  isCacheable,
+  riskCacheKey,
+} from "./cache";
+import { isBatchEnabled, runRiskBatch } from "./batch";
+import {
   aggregateCitationHints,
   aggregateRuleIds,
   pickPrimary,
@@ -46,6 +53,11 @@ export interface AnalyzeRiskOptions {
   // contract marked "alive" and the status-route reclaim never fires mid-run
   // (which would re-bill the whole document).
   onProgress?: (done: number, total: number) => void;
+  // Optional cross-contract analysis cache. When provided, an identical clause
+  // (text+category, same analyzer version) analyzed for a prior contract is
+  // reused instead of re-billed. Omit it (e.g. in tests/eval) for the
+  // uncached path — behaviour is otherwise identical.
+  cache?: RiskCache;
 }
 
 export async function analyzeClauseRisks(
@@ -115,17 +127,111 @@ export async function analyzeClauseRisks(
   const callableGroups = groups.slice(0, maxLlmCalls);
   const skippedGroups = groups.slice(maxLlmCalls);
 
-  let done = 0;
-  await runWithConcurrency(callableGroups, concurrency, async (group) => {
+  // Cross-contract cache layer: a hit reuses a prior identical-clause analysis
+  // (no LLM call); misses fall through to the analyzer and are written back.
+  const cache = opts.cache;
+  const groupKeys = callableGroups.map((g) =>
+    riskCacheKey(g[0].input.clauseText, g[0].input.category),
+  );
+  const cached = cache
+    ? await cache.get(groupKeys)
+    : new Map<string, CachedRisk>();
+
+  type Group = (typeof callableGroups)[number];
+  const misses: { group: Group; key: string }[] = [];
+  callableGroups.forEach((group, gi) => {
+    const key = groupKeys[gi];
+    const hit = cached.get(key);
+    if (hit) {
+      for (const member of group) {
+        results[member.idx] = { ...hit, clauseId: member.input.clauseId };
+      }
+    } else {
+      misses.push({ group, key });
+    }
+  });
+
+  const toCache: { key: string; result: RiskAnalysisResult }[] = [];
+  const applyResult = (group: Group, key: string, result: RiskAnalysisResult) => {
     const rep = group[0];
-    const result = await llmFallback(rep.input, rep.ruleFindings, opts.signal);
     for (const member of group) {
       results[member.idx] =
         member === rep ? result : { ...result, clauseId: member.input.clauseId };
     }
+    if (cache && isCacheable(result)) toCache.push({ key, result });
+  };
+
+  // With RISK_USE_BATCH=1, the Batch API analyzes the misses first (~50%
+  // cheaper, same model/prompt/output). Anything it can't deliver — timeout,
+  // error, or an unparsed response — falls through to the real-time analyzer
+  // below, so no clause is ever lost. Default off → this block is skipped and
+  // the path is byte-identical to real-time.
+  let pending = misses;
+  if (isBatchEnabled() && pending.length > 0) {
+    const handled = new Set<string>();
+    const prepared = await Promise.all(
+      pending.map(async (m) => {
+        const rep = m.group[0];
+        let ragContext: LegalReference[] = [];
+        try {
+          ragContext = await getRagContext(rep.input.category, rep.input.clauseText);
+        } catch {
+          ragContext = [];
+        }
+        const llmInput: LlmAnalyzeInput = {
+          clauseId: rep.input.clauseId,
+          category: rep.input.category,
+          clauseText: rep.input.clauseText,
+          ruleFindings: rep.ruleFindings,
+          ragContext,
+          classificationConfidence: rep.input.classificationConfidence,
+        };
+        return { miss: m, ragContext, llmInput };
+      }),
+    );
+    const outcomes = await runRiskBatch(
+      prepared.map((p) => ({ customId: p.miss.key, input: p.llmInput })),
+      {
+        ...(opts.signal ? { signal: opts.signal } : {}),
+        // Keep the contract's heartbeat fresh during the (long) batch poll so
+        // the status-route reclaim never fires mid-batch.
+        onPoll: () => opts.onProgress?.(0, prepared.length),
+      },
+    );
+    for (const p of prepared) {
+      const bo = outcomes.get(p.miss.key);
+      if (!bo) continue;
+      const rep = p.miss.group[0];
+      const merged = mergeRuleAndLlm(
+        rep.input.clauseId,
+        rep.ruleFindings,
+        bo.response,
+        p.ragContext.length,
+        rep.input.clauseText,
+      );
+      applyResult(p.miss.group, p.miss.key, merged);
+      handled.add(p.miss.key);
+    }
+    pending = pending.filter((m) => !handled.has(m.key));
+  }
+
+  let done = 0;
+  await runWithConcurrency(pending, concurrency, async ({ group, key }) => {
+    const rep = group[0];
+    const result = await llmFallback(rep.input, rep.ruleFindings, opts.signal);
+    applyResult(group, key, result);
     done += 1;
-    opts.onProgress?.(done, callableGroups.length);
+    opts.onProgress?.(done, pending.length);
   });
+
+  if (cache && toCache.length > 0) {
+    // A cache write must never block or fail the analysis.
+    try {
+      await cache.set(toCache);
+    } catch {
+      /* best-effort */
+    }
+  }
 
   for (const group of skippedGroups) {
     for (const { idx, input, ruleFindings } of group) {

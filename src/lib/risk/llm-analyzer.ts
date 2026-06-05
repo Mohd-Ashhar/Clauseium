@@ -224,6 +224,57 @@ export async function analyzeByLlm(
   }
 }
 
+// Generous headroom for the tool_use JSON (issue 400 / explanation 2000 /
+// suggestion 1200 char ceilings + tool-call overhead).
+const RISK_MAX_TOKENS = 4096;
+
+// The exact messages.create params for a risk request. Shared by the real-time
+// path (callAnalyzer) AND the Batch API path (buildRiskRequestParams) so both
+// send byte-identical prompts.
+function riskMessageParams(model: string, userText: string) {
+  return {
+    model,
+    max_tokens: RISK_MAX_TOKENS,
+    system: [
+      {
+        type: "text" as const,
+        text: RISK_SYSTEM_PROMPT,
+        cache_control: { type: "ephemeral" as const },
+      },
+    ],
+    messages: [{ role: "user" as const, content: userText }],
+    tools: [RISK_TOOL],
+    // Force the model to call submit_risk_analysis. Anthropic guarantees the
+    // response contains exactly one tool_use block.
+    tool_choice: { type: "tool" as const, name: RISK_TOOL.name },
+  };
+}
+
+// Build the model choice + request params for a clause WITHOUT sending it — used
+// by the Batch API path (which submits many at once). Uses pickRiskModel
+// (single pass; the cheap→escalate cascade is a real-time-only optimization).
+export function buildRiskRequestParams(input: LlmAnalyzeInput): {
+  model: string;
+  params: ReturnType<typeof riskMessageParams>;
+} {
+  const userText = buildRiskUserPrompt(input);
+  const model = pickRiskModel(
+    input.category,
+    input.ruleFindings,
+    input.classificationConfidence,
+  );
+  return { model, params: riskMessageParams(model, userText) };
+}
+
+// Non-throwing parse of a (batch or real-time) message → the structured risk
+// response, or null when the model didn't call the tool / failed the schema.
+export function parseRiskMessage(message: unknown): LlmRiskResponse | null {
+  const toolBlock = findToolUse(message);
+  if (!toolBlock) return null;
+  const parsed = llmRiskResponseSchema.safeParse(toolBlock.input);
+  return parsed.success ? parsed.data : null;
+}
+
 async function callAnalyzer(
   client: AnthropicMessagesAPI,
   userText: string,
@@ -233,27 +284,7 @@ async function callAnalyzer(
   // Network / 5xx / rate-limit errors fall through to p-retry. Parse
   // errors are wrapped in AbortError below so p-retry short-circuits.
   const message = await client.messages.create(
-    {
-      model,
-      // Generous headroom for the tool_use JSON. We deliberately removed the
-      // tight ~140/500/350-char output caps so the analyzer can produce a
-      // proper, reviewer-grade explanation and redline; 4096 comfortably
-      // covers the schema ceilings (issue 400 / explanation 2000 /
-      // suggestion 1200) plus tool-call overhead.
-      max_tokens: 4096,
-      system: [
-        {
-          type: "text",
-          text: RISK_SYSTEM_PROMPT,
-          cache_control: { type: "ephemeral" },
-        },
-      ],
-      messages: [{ role: "user", content: userText }],
-      tools: [RISK_TOOL],
-      // Force the model to call submit_risk_analysis. Anthropic
-      // guarantees the response contains exactly one tool_use block.
-      tool_choice: { type: "tool", name: RISK_TOOL.name },
-    },
+    riskMessageParams(model, userText),
     signal ? { signal } : undefined,
   );
 
@@ -348,6 +379,36 @@ async function getClient(apiKey: string): Promise<AnthropicMessagesAPI> {
     ? new mod.default({ apiKey, baseURL })
     : new mod.default({ apiKey });
   return _client as AnthropicMessagesAPI;
+}
+
+// Minimal view of the SDK's Message Batches API (the real client exposes more).
+export interface RiskBatchClient {
+  messages: {
+    batches: {
+      create(body: {
+        requests: Array<{ custom_id: string; params: unknown }>;
+      }): Promise<{ id: string; processing_status: string }>;
+      retrieve(id: string): Promise<{ id: string; processing_status: string }>;
+      results(
+        id: string,
+      ): Promise<
+        AsyncIterable<{
+          custom_id: string;
+          result: { type: string; message?: unknown };
+        }>
+      >;
+      cancel(id: string): Promise<unknown>;
+    };
+  };
+}
+
+// The same lazily-created SDK instance used for real-time calls, exposed with its
+// Batches surface for the batch path. Throws if the API key is unset.
+export async function getRiskBatchClient(): Promise<RiskBatchClient> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) throw new RiskLlmUnavailableError();
+  const client = await getClient(apiKey);
+  return client as unknown as RiskBatchClient;
 }
 
 // Test seam: reset cached client between tests.

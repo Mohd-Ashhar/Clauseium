@@ -40,6 +40,7 @@ vi.mock("@/lib/risk", () => ({
   isRiskLlmAvailable: () => true,
   persistRiskAnalyses: h.persistRiskAnalyses,
   persistDocumentAnalysis: h.persistDocumentAnalysis,
+  createRiskCache: () => ({ get: async () => new Map(), set: async () => {} }),
 }));
 
 import { processContract } from "./orchestrate";

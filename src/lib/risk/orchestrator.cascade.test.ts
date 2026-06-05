@@ -18,6 +18,7 @@ vi.mock("./rag-context", () => ({
 }));
 
 import { analyzeClauseRisks } from "./orchestrator";
+import { riskCacheKey, type RiskCache, type CachedRisk } from "./cache";
 import {
   _resetForTests,
   RISK_MODEL_DEFAULT,
@@ -179,6 +180,68 @@ describe("risk cascade", () => {
 
     expect(createMock).toHaveBeenCalledTimes(1);
     expect(modelOf(0)).toBe(RISK_MODEL_ESCALATION); // no cheap pre-pass
+  });
+});
+
+describe("risk cache (cross-contract)", () => {
+  const CL = {
+    clauseId: "x1",
+    clauseText:
+      "The Provider shall deliver monthly status reports summarising progress against the roadmap.",
+    category: "other" as const,
+    classificationConfidence: 0.95,
+  };
+
+  it("a cache HIT reuses the prior analysis with no LLM call", async () => {
+    const key = riskCacheKey(CL.clauseText, CL.category);
+    const hit: CachedRisk = {
+      riskLevel: "medium",
+      issue: "Cached issue",
+      explanation: "Cached explanation.",
+      suggestion: "",
+      confidence: 0.7,
+      method: "llm",
+      ruleIds: [],
+    };
+    const cache: RiskCache = {
+      get: async () => new Map([[key, hit]]),
+      set: async () => {},
+    };
+
+    const out = await analyzeClauseRisks([CL], { cache });
+
+    expect(createMock).not.toHaveBeenCalled(); // served from cache
+    expect(out[0]?.riskLevel).toBe("medium");
+    expect(out[0]?.issue).toBe("Cached issue");
+    expect(out[0]?.clauseId).toBe("x1"); // re-attached to the asking clause
+  });
+
+  it("a cache MISS analyzes once and writes the result back", async () => {
+    createMock.mockResolvedValueOnce(
+      tool({
+        risk_level: "high",
+        issue: "Real issue",
+        explanation: "Real explanation.",
+        suggestion: "Fix it.",
+        confidence: 0.85,
+      }),
+    );
+    let writeCount = 0;
+    let writtenKey = "";
+    const cache: RiskCache = {
+      get: async () => new Map(),
+      set: async (entries) => {
+        writeCount += entries.length;
+        writtenKey = entries[0]?.key ?? "";
+      },
+    };
+
+    const out = await analyzeClauseRisks([CL], { cache });
+
+    expect(createMock).toHaveBeenCalledTimes(1);
+    expect(out[0]?.riskLevel).toBe("high");
+    expect(writeCount).toBe(1);
+    expect(writtenKey).toBe(riskCacheKey(CL.clauseText, CL.category));
   });
 });
 

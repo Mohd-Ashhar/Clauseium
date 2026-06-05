@@ -20,6 +20,7 @@ import { verifyAndPersistCitations } from "@/lib/citations/persist";
 import {
   analyzeClauseRisks,
   analyzeDocument,
+  createRiskCache,
   isRiskLlmAvailable,
   persistDocumentAnalysis,
   persistRiskAnalyses,
@@ -191,6 +192,13 @@ export async function processContract(contract: ContractRecord): Promise<void> {
             const heartbeat = makeThrottledHeartbeat(client, contract.id);
             const riskResults = await analyzeClauseRisks(riskInputs, {
               onProgress: () => heartbeat(),
+              // Cross-contract cache (migration 0012). Default on; set
+              // RISK_CACHE=0 to disable. Migration-tolerant: a missing table
+              // degrades to no caching.
+              cache:
+                process.env.RISK_CACHE === "0"
+                  ? undefined
+                  : createRiskCache(client),
             });
             await persistRiskAnalyses(client, contract.id, riskResults);
             riskByClauseId = new Map(riskResults.map((r) => [r.clauseId, r]));

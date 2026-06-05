@@ -2,7 +2,7 @@ import "server-only";
 import pRetry, { AbortError } from "p-retry";
 import { z } from "zod";
 import {
-  RISK_MODEL_ESCALATION,
+  RISK_MODEL_DEFAULT,
   isRiskLlmAvailable,
   RiskLlmUnavailableError,
 } from "./llm-analyzer";
@@ -28,6 +28,12 @@ import type { RiskLevel } from "@/types/contract";
 // prior, so the model verifies/explains gaps rather than hallucinating them.
 
 export const DOC_ANALYSIS_MAX_TOKENS = 8000;
+// The whole-document pass runs on the cheaper DEFAULT model. It is a
+// supplementary, document-level summary; running it on the strongest (escalation)
+// model made it the single most expensive call per contract (~5× output cost).
+// The per-clause analysis — where depth matters most — still escalates to the
+// strong model. Override with DOC_ANALYSIS_MODEL to restore the stronger model.
+const DOC_ANALYSIS_MODEL = process.env.DOC_ANALYSIS_MODEL ?? RISK_MODEL_DEFAULT;
 // Generous ceiling: a strong model handles large contracts in one pass. We
 // head+tail trim only pathologically large documents.
 const DOC_MAX_CHARS = 120_000;
@@ -87,47 +93,97 @@ export interface DocumentAnalysis {
 
 const riskLevelEnum = z.enum(["high", "medium", "low", "standard", "missing"]);
 
+// ── Tolerant parsing ────────────────────────────────────────────────────────
+// The whole-document call is the most expensive single call per contract, so a
+// parse failure that discards its output is pure wasted spend. A strong model
+// reliably returns the RIGHT SHAPE but not always the exact literals our strict
+// schema demanded (e.g. posture "high-risk" not "high_risk", a clause_positions
+// string "3, 5" not [3,5], a lone object instead of a one-element array). We now
+// COERCE/SALVAGE those natural variations instead of throwing — so the output we
+// already paid for is used. We never retry the call (a retry just doubles cost).
+
+const POSTURE = ["favourable", "balanced", "unfavourable", "high_risk"] as const;
+const POSTURE_SYN: Record<string, (typeof POSTURE)[number]> = {
+  favourable: "favourable", favorable: "favourable", positive: "favourable",
+  balanced: "balanced", neutral: "balanced", moderate: "balanced", mixed: "balanced", fair: "balanced",
+  unfavourable: "unfavourable", unfavorable: "unfavourable", negative: "unfavourable", onerous: "unfavourable", cautionary: "unfavourable", one_sided: "unfavourable",
+  high_risk: "high_risk", critical: "high_risk", severe: "high_risk", aggressive: "high_risk", very_high: "high_risk",
+};
+const RISK_SYN: Record<string, z.infer<typeof riskLevelEnum>> = {
+  high: "high", critical: "high", severe: "high",
+  medium: "medium", moderate: "medium", med: "medium",
+  low: "low", minor: "low", informational: "low", info: "low",
+  standard: "standard", none: "standard", acceptable: "standard", ok: "standard",
+  missing: "missing", absent: "missing",
+};
+const key = (v: unknown) =>
+  typeof v === "string" ? v.trim().toLowerCase().replace(/[\s/_-]+/g, "_") : "";
+
+// String field: coerce non-strings, trim, never fail.
+const strField = z.preprocess(
+  (v) => (typeof v === "string" ? v : v == null ? "" : String(v)),
+  z.string().trim(),
+).catch("");
+const postureSchema = z.preprocess(
+  (v) => POSTURE_SYN[key(v)] ?? "balanced",
+  z.enum(POSTURE),
+).catch("balanced");
+const riskSchema = z.preprocess(
+  (v) => RISK_SYN[key(v)] ?? "medium",
+  riskLevelEnum,
+).catch("medium" as const);
+const positionsSchema = z.preprocess((v) => {
+  if (Array.isArray(v)) return v.map(Number).filter(Number.isFinite).map((n) => Math.trunc(n));
+  if (typeof v === "number") return [Math.trunc(v)];
+  if (typeof v === "string") return (v.match(/-?\d+/g) ?? []).map(Number);
+  return [];
+}, z.array(z.number().int())).catch([] as number[]);
+const clausePosSchema = z.preprocess((v) => {
+  if (typeof v === "number") return Math.trunc(v);
+  if (typeof v === "string") {
+    const m = v.match(/-?\d+/);
+    return m ? parseInt(m[0], 10) : null;
+  }
+  return null;
+}, z.number().int().nullable()).catch(null);
+// Array of items: pass arrays through, wrap a lone object, drop unsalvageable
+// strings/empties — and catch [] so one bad item can't fail the whole field.
+const arrayOf = <T extends z.ZodTypeAny>(item: T) =>
+  z.preprocess(
+    (v) => (Array.isArray(v) ? v : v && typeof v === "object" ? [v] : []),
+    z.array(item),
+  ).catch([] as z.infer<T>[]);
+
 const docAnalysisLlmSchema = z.object({
-  executive_summary: z.string().trim().min(1),
-  overall_posture: z.enum([
-    "favourable",
-    "balanced",
-    "unfavourable",
-    "high_risk",
-  ]),
-  missing_protections: z
-    .array(
-      z.object({
-        key: z.string().trim().min(1),
-        label: z.string().trim().min(1),
-        risk_level: riskLevelEnum,
-        rationale: z.string().trim().min(1),
-        suggested_clause: z.string().trim().default(""),
-      }),
-    )
-    .default([]),
-  cross_clause_issues: z
-    .array(
-      z.object({
-        title: z.string().trim().min(1),
-        risk_level: riskLevelEnum,
-        clause_positions: z.array(z.number().int()).default([]),
-        explanation: z.string().trim().min(1),
-        recommendation: z.string().trim().default(""),
-      }),
-    )
-    .default([]),
-  one_sided_terms: z
-    .array(
-      z.object({
-        title: z.string().trim().min(1),
-        risk_level: riskLevelEnum,
-        clause_position: z.number().int().nullable().default(null),
-        explanation: z.string().trim().min(1),
-        recommendation: z.string().trim().default(""),
-      }),
-    )
-    .default([]),
+  executive_summary: strField,
+  overall_posture: postureSchema,
+  missing_protections: arrayOf(
+    z.object({
+      key: strField,
+      label: strField,
+      risk_level: riskSchema,
+      rationale: strField,
+      suggested_clause: strField,
+    }),
+  ),
+  cross_clause_issues: arrayOf(
+    z.object({
+      title: strField,
+      risk_level: riskSchema,
+      clause_positions: positionsSchema,
+      explanation: strField,
+      recommendation: strField,
+    }),
+  ),
+  one_sided_terms: arrayOf(
+    z.object({
+      title: strField,
+      risk_level: riskSchema,
+      clause_position: clausePosSchema,
+      explanation: strField,
+      recommendation: strField,
+    }),
+  ),
 });
 
 type DocAnalysisLlm = z.infer<typeof docAnalysisLlmSchema>;
@@ -360,7 +416,7 @@ export async function analyzeDocument(
       async () => {
         const message = await client.messages.create(
           {
-            model: RISK_MODEL_ESCALATION,
+            model: DOC_ANALYSIS_MODEL,
             max_tokens: DOC_ANALYSIS_MAX_TOKENS,
             system: [
               {
@@ -398,34 +454,61 @@ export async function analyzeDocument(
     return fallback();
   }
 
-  return {
-    contractType: detected.type,
-    contractTypeLabel: playbook.typeLabel,
-    contractTypeConfidence: detected.confidence,
-    executiveSummary: parsed.executive_summary,
-    overallPosture: parsed.overall_posture,
-    missingProtections: parsed.missing_protections.map((m) => ({
+  // Drop empty/placeholder items the coercion may have produced (an item is only
+  // useful if it has a label/title or some explanation).
+  const missingProtections = parsed.missing_protections
+    .filter((m) => m.label.trim() || m.rationale.trim())
+    .map((m) => ({
       key: m.key,
       label: m.label,
       riskLevel: m.risk_level,
       rationale: m.rationale,
       suggestedClause: m.suggested_clause,
-    })),
-    crossClauseIssues: parsed.cross_clause_issues.map((c) => ({
+    }));
+  const crossClauseIssues = parsed.cross_clause_issues
+    .filter((c) => c.title.trim() || c.explanation.trim())
+    .map((c) => ({
       title: c.title,
       riskLevel: c.risk_level,
       clausePositions: c.clause_positions,
       explanation: c.explanation,
       recommendation: c.recommendation,
-    })),
-    oneSidedTerms: parsed.one_sided_terms.map((o) => ({
+    }));
+  const oneSidedTerms = parsed.one_sided_terms
+    .filter((o) => o.title.trim() || o.explanation.trim())
+    .map((o) => ({
       title: o.title,
       riskLevel: o.risk_level,
       clausePosition: o.clause_position,
       explanation: o.explanation,
       recommendation: o.recommendation,
-    })),
-    model: RISK_MODEL_ESCALATION,
+    }));
+
+  const summary = parsed.executive_summary.trim();
+  // If the model returned nothing usable at all, prefer the deterministic
+  // playbook fallback (it at least lists checklist gaps) over a blank result.
+  if (
+    !summary &&
+    missingProtections.length === 0 &&
+    crossClauseIssues.length === 0 &&
+    oneSidedTerms.length === 0
+  ) {
+    return fallback();
+  }
+
+  return {
+    contractType: detected.type,
+    contractTypeLabel: playbook.typeLabel,
+    contractTypeConfidence: detected.confidence,
+    // Backfill an empty summary so the UI never shows a blank headline.
+    executiveSummary:
+      summary ||
+      `${playbook.typeLabel} review: ${missingProtections.length} missing protection(s), ${crossClauseIssues.length} cross-clause issue(s), ${oneSidedTerms.length} one-sided term(s) identified.`,
+    overallPosture: parsed.overall_posture,
+    missingProtections,
+    crossClauseIssues,
+    oneSidedTerms,
+    model: DOC_ANALYSIS_MODEL,
     degraded: false,
   };
 }
