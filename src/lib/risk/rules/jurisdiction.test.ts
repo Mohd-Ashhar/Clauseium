@@ -4,6 +4,7 @@ import {
   noJurisdictionAtAll,
   nonExclusiveJurisdiction,
   indianForumGood,
+  arbitrationNoSeat,
 } from "./jurisdiction";
 import type { RuleCtx } from "../types";
 
@@ -53,5 +54,28 @@ describe("jurisdiction rules", () => {
     );
     expect(f?.ruleId).toBe("juris.indian_exclusive");
     expect(f?.level).toBe("low");
+  });
+
+  it("flags arbitration without a designated seat", () => {
+    const f = arbitrationNoSeat(
+      ctx("Any dispute shall be finally resolved by arbitration under the Arbitration and Conciliation Act 1996 by a sole arbitrator."),
+    );
+    expect(f?.ruleId).toBe("juris.no_arbitration_seat");
+    expect(f?.level).toBe("medium");
+  });
+
+  it("does not flag arbitration when a seat is specified", () => {
+    expect(
+      arbitrationNoSeat(ctx("The seat of arbitration shall be Mumbai, India.")),
+    ).toBeNull();
+    expect(
+      arbitrationNoSeat(ctx("Any dispute shall be resolved by arbitration seated in New Delhi.")),
+    ).toBeNull();
+  });
+
+  it("does not flag a clause with no arbitration at all", () => {
+    expect(
+      arbitrationNoSeat(ctx("The courts at Mumbai shall have exclusive jurisdiction.")),
+    ).toBeNull();
   });
 });

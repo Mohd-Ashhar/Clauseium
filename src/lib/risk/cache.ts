@@ -12,9 +12,11 @@ import type { RiskAnalysisResult } from "./types";
 // engine, or merge logic changes in a way that should invalidate cached
 // analyses — this guarantees the cache stays quality-neutral across deploys.
 // v2: risk prompt gained an explicit risk-level rubric calibrating the
-// medium/standard boundary (kills high-stakes-category over-flagging). Pre-rubric
-// cached grades must not be reused, so the version bump invalidates them.
-export const RISK_ANALYZER_VERSION = 2;
+// medium/standard boundary (kills high-stakes-category over-flagging).
+// v3: prompt now requires bracketing every statutory reference (the inline
+// citation guard removes un-bracketed ones), and India rule packs were added —
+// both change output, so pre-v3 cached grades must not be reused.
+export const RISK_ANALYZER_VERSION = 3;
 
 // Retention window — reads ignore anything older (DPDP 30-day posture).
 const FRESH_MS = 30 * 24 * 60 * 60 * 1000;

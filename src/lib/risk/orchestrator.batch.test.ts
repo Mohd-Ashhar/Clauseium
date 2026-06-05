@@ -18,6 +18,8 @@ vi.mock("./rag-context", () => ({
 // batch outcomes and real-times whatever the batch didn't return.
 vi.mock("./batch", () => ({
   isBatchEnabled: () => true,
+  // 0 so the 2-clause fixtures clear the batch-safe minimum-clause gate.
+  readBatchMinClauses: () => 0,
   runRiskBatch: (...args: unknown[]) => runRiskBatchMock(...args),
 }));
 
@@ -60,6 +62,15 @@ const B = {
   clauseId: "b",
   clauseText: "The Company may review the Provider's records upon reasonable prior notice during business hours.",
   category: "other" as const,
+  classificationConfidence: 0.9,
+};
+// High-stakes category (termination) but rule-clean, so it is escalation-eligible
+// without forcing a high-rule escalation — used to assert batch excludes it.
+const HIGH_STAKES = {
+  clauseId: "hs",
+  clauseText:
+    "Either Party may terminate this Agreement for a material breach that the other fails to cure within 30 days of written notice, and the confidentiality obligations shall survive termination.",
+  category: "termination" as const,
   classificationConfidence: 0.9,
 };
 
@@ -123,6 +134,53 @@ describe("analyzeClauseRisks — batch path", () => {
     const out = await analyzeClauseRisks([A, B], { concurrency: 1 });
 
     expect(createMock).toHaveBeenCalledTimes(2); // both real-timed
+    expect(out).toHaveLength(2);
+  });
+
+  it("excludes escalation-eligible (high-stakes) clauses from batch when the cascade is on", async () => {
+    // Cascade ON (default) so high-stakes clauses run the cheap→escalate path
+    // and must NOT be diverted into a single-pass batch.
+    delete process.env.RISK_CASCADE;
+    runRiskBatchMock.mockImplementation(async () => {
+      const keyA = riskCacheKey(A.clauseText, A.category);
+      return new Map([
+        [
+          keyA,
+          {
+            response: {
+              risk_level: "low",
+              issue: "Batch: fine",
+              explanation: "From batch. [CITE: Indian Contract Act 1872 | s.73 | 1872]",
+              suggestion: "",
+              confidence: 0.9,
+            },
+            model: "claude-sonnet-4-6",
+          },
+        ],
+      ]);
+    });
+    // Real-time cheap pass for the high-stakes clause: confidently low → no escalate.
+    createMock.mockResolvedValue(
+      tool({
+        risk_level: "low",
+        issue: "Real-time: standard termination",
+        explanation: "From real-time. [CITE: Indian Contract Act 1872 | s.73 | 1872]",
+        suggestion: "",
+        confidence: 0.9,
+      }),
+    );
+
+    const out = await analyzeClauseRisks([A, HIGH_STAKES], { concurrency: 1 });
+
+    // The batch only ever SAW the non-high-stakes 'other' clause.
+    expect(runRiskBatchMock).toHaveBeenCalledTimes(1);
+    const batchItems = runRiskBatchMock.mock.calls[0][0] as Array<{
+      input: { category: string };
+    }>;
+    expect(batchItems).toHaveLength(1);
+    expect(batchItems[0].input.category).toBe("other");
+    // The high-stakes clause was handled (real-time), so both clauses have a result.
+    expect(out.find((r) => r.clauseId === "hs")).toBeTruthy();
     expect(out).toHaveLength(2);
   });
 });

@@ -1,15 +1,23 @@
 "use client";
 
 import { Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { signInWithOAuthForAddin, type AddinOAuthProvider } from "./actions";
 
-export function AddinSignInButtons() {
+export function AddinSignInButtons({
+  autoProvider,
+}: {
+  // When the add-in opens the dialog at /addin-auth?provider=<p>, we start that
+  // provider's OAuth immediately instead of making the user pick again (the
+  // double-click bug). On failure we fall back to the buttons below.
+  autoProvider?: AddinOAuthProvider;
+}) {
   const [pending, setPending] = useState<AddinOAuthProvider | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const autoStarted = useRef(false);
 
-  async function onClick(provider: AddinOAuthProvider) {
+  const start = useCallback(async (provider: AddinOAuthProvider) => {
     setError(null);
     setPending(provider);
     const result = await signInWithOAuthForAddin(provider);
@@ -19,7 +27,18 @@ export function AddinSignInButtons() {
     }
     setError(result.error);
     setPending(null);
-  }
+  }, []);
+
+  // Auto-start once when a provider is supplied in the URL. The ref guard ensures
+  // a single attempt (no loop), and an error simply reveals the manual buttons.
+  useEffect(() => {
+    if (autoProvider && !autoStarted.current) {
+      autoStarted.current = true;
+      void start(autoProvider);
+    }
+  }, [autoProvider, start]);
+
+  const onClick = start;
 
   return (
     <div className="space-y-3">

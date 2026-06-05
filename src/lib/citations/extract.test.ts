@@ -57,6 +57,41 @@ describe("extractCitations", () => {
     expect(extractCitations("[CITE: a | ]")).toHaveLength(0);
   });
 
+  it("admits a name+year-only case token (empty middle field)", () => {
+    const out = extractCitations(
+      "see [CITE: K. S. Puttaswamy v. Union of India | | 2017]",
+    );
+    expect(out).toHaveLength(1);
+    expect(out[0].caseOrStatute).toBe("K. S. Puttaswamy v. Union of India");
+    expect(out[0].sectionOrCitation).toBe("");
+    expect(out[0].year).toBe(2017);
+    expect(out[0].formatValid).toBe(true);
+  });
+
+  it("promotes a bare trailing year in a 2-field case token", () => {
+    const out = extractCitations("[CITE: X vs Y | 2017]");
+    expect(out).toHaveLength(1);
+    expect(out[0].caseOrStatute).toBe("X vs Y");
+    expect(out[0].sectionOrCitation).toBe("");
+    expect(out[0].year).toBe(2017);
+    expect(out[0].formatValid).toBe(true);
+  });
+
+  it("keeps a case with a reporter citation (no year promotion)", () => {
+    const out = extractCitations(
+      "[CITE: Puttaswamy v. Union of India | (2017) 10 SCC 1 | 2017]",
+    );
+    expect(out).toHaveLength(1);
+    expect(out[0].sectionOrCitation).toBe("(2017) 10 SCC 1");
+    expect(out[0].year).toBe(2017);
+    expect(out[0].formatValid).toBe(true);
+  });
+
+  it("does NOT loosen section-less statutes (no 'v.' + empty section)", () => {
+    // Section-less statute must still be rejected — only cases skip the section.
+    expect(extractCitations("[CITE: Some Act | | 2017]")).toHaveLength(0);
+  });
+
   it("assigns deterministic ids", () => {
     const a = extractCitations("[CITE: ICA | 73 | 1872]");
     const b = extractCitations("[CITE: ICA | 73 | 1872]");

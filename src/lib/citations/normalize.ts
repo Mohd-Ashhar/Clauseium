@@ -7,7 +7,9 @@ const STATUTE_ALIASES: Array<[RegExp, string]> = [
   [/\b(arb(?:itration)?\.? act)\b/gi, "arbitration and conciliation act"],
   [/\b(cos\.? act|companies act)\b/gi, "companies act"],
   [/\b(fema)(?:\s+act)?\b/gi, "foreign exchange management act"],
-  [/\b(stamp act)\b/gi, "indian stamp act"],
+  // Absorb an optional "indian" prefix so "Indian Stamp Act" canonicalises to a
+  // single "indian stamp act" (not a doubled "indian indian stamp act").
+  [/\b(?:indian\s+)?stamp\s+act\b/gi, "indian stamp act"],
 ];
 
 export function canonicalize(input: string): string {

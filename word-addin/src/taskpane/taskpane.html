@@ -6,23 +6,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Clauseium</title>
     <!--
-      CSP for the task pane iframe. Required entries:
-        - script-src https://appsforoffice.microsoft.com  (Office.js CDN)
-        - connect-src http://localhost:3000               (Clauseium API in dev)
-        - connect-src https://*.supabase.co              (auth refresh)
-        - frame-src  http://localhost:3000               (Dialog navigates here)
-      Adjust connect-src/frame-src for production hosts before deploying.
+      CSP for the task pane iframe. BUILT FROM ENV at compile time by
+      webpack.config.js (buildCsp) — composed from APP_ORIGIN + SUPABASE_URL +
+      the OAuth origins, with localhost added only in dev. Never hardcode hosts
+      here: a prod build must not ship a localhost CSP that blocks the prod API.
     -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="
-        default-src 'self';
-        script-src 'self' https://appsforoffice.microsoft.com;
-        style-src 'self' 'unsafe-inline';
-        connect-src 'self' http://localhost:3000 https://localhost:3000 https://*.supabase.co;
-        frame-src http://localhost:3000 https://localhost:3000 https://*.supabase.co https://login.microsoftonline.com https://accounts.google.com;
-        img-src 'self' data: https:;
-      "
+      content="<%= htmlWebpackPlugin.options.csp %>"
     />
     <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
   </head>

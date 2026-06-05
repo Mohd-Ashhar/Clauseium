@@ -12,11 +12,11 @@
     "check:tokens": "node scripts/check-tokens.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
-    "ingest:legal": "tsx --require ./scripts/server-only-shim.cjs scripts/ingest-legal-corpus.ts",
+    "ingest:legal": "node --env-file-if-exists=.env --env-file-if-exists=.env.local --import tsx --require ./scripts/server-only-shim.cjs scripts/ingest-legal-corpus.ts",
     "reprocess:contract": "node --env-file=.env --import tsx --require ./scripts/server-only-shim.cjs scripts/reprocess-contract.ts",
     "backfill:citation-urls": "tsx --require ./scripts/server-only-shim.cjs scripts/backfill-citation-urls.ts",
     "eval:accuracy": "vitest run tests/eval/accuracy.test.ts",
-    "eval:report": "tsx --require ./scripts/server-only-shim.cjs scripts/eval-accuracy.ts"
+    "eval:report": "node --env-file-if-exists=.env --env-file-if-exists=.env.local --import tsx --require ./scripts/server-only-shim.cjs scripts/eval-accuracy.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",

@@ -139,3 +139,68 @@ Microsoft Word desktop.
   fine for dev.
 - The clipboard fallback in `applyRedline` requires a user gesture and may
   silently fail in some Office hosts. Decision is still persisted server-side.
+
+---
+
+# Production release gate
+
+The dev checklist above runs against localhost. Before shipping to real users,
+walk this section against the PROD origins. The four Office.js paths cannot be
+exercised in CI — the manual matrix is the real gate.
+
+## Configure prod origins (one-time)
+
+- [ ] Decide canonical origins (defaults: app `https://clauseium.app`, add-in
+      `https://addin.clauseium.app`). Override via `APP_ORIGIN` / `ADDIN_ORIGIN`
+      env when building.
+- [ ] **Deployed app `ADDIN_ORIGIN`** env includes the prod add-in origin
+      (comma-separated for several). *If wrong, every add-in API call fails CORS
+      preflight* — the single most likely prod misconfig.
+- [ ] Host `dist/` over HTTPS at the add-in origin; `taskpane.html` + `manifest`
+      served `no-cache`, hashed JS `long-cache`.
+
+## Build + automated gates (CI on every word-addin PR)
+
+- [ ] `npm run typecheck` (add-in) and the main repo `tsc --noEmit` both green.
+- [ ] `APP_ORIGIN=… ADDIN_ORIGIN=… npm run manifest:prod` then
+      `npm run validate` (office-addin-manifest) exits 0.
+- [ ] Prod `npm run build`, then assert `dist/taskpane.html` CSP contains the
+      prod APP_ORIGIN + Supabase project subdomain and **no `localhost`**
+      (the CSP is now built from env by webpack — verify it took effect).
+- [ ] office.js still loaded from `appsforoffice.microsoft.com` CDN (never self-hosted).
+- [ ] All five icon URLs + `SupportUrl`/`LearnMoreUrl` resolve 200 over HTTPS at
+      the prod origin (confirm `/support` exists).
+
+## Manual matrix — Word Desktop (Win + Mac) AND Word Online
+
+- [ ] **Sign-in round-trip**: click "Continue with Google/Microsoft" → the dialog
+      lands on the provider consent screen WITHOUT a second provider click
+      (auto-OAuth from `?provider=`), returns signed-in.
+- [ ] Cold upload + analyze a real 5–25 page `.docx`; by-hash warm restart on
+      reopen.
+- [ ] Click a clause card → Word scrolls to the clause.
+- [ ] Accept a redline → exactly ONE tracked-change revision, attributed to the
+      signed-in user.
+- [ ] Reject; chat drawer answers with citations.
+- [ ] 15–25 page (>4 MB) upload via multi-slice `getFileAsync` (sha256 matches a
+      server-side recompute — no truncation).
+- [ ] Edit a clause in Word, then accept its redline → a distinct "clause edited
+      since analysis" affordance (not a silent no-op).
+
+## Rollback
+
+- [ ] Redeploy the previous `dist/` and revert the manifest `Version`.
+
+## Distribution
+
+- [ ] Ship via **M365 Admin Center centralized deployment** first (fast, no
+      Microsoft review, needs the customer's M365 admin).
+- [ ] AppSource public listing is a parallel parity track — budget days-to-weeks
+      + 1–2 rejection cycles (privacy URL, screenshots, no `http` URLs).
+
+## Open items still owned by the team
+
+- [ ] DPDP retention: the add-in consent screen promises 30-day deletion — ensure
+      migration 0014's purge job is applied + scheduled before charging customers.
+- [ ] Security-review sign-off on the `refresh_token`-in-localStorage posture
+      before the AppSource public listing.

@@ -30,6 +30,16 @@ import {
 
 const ERROR_MESSAGE_MAX = 500;
 
+// Below this many clauses, a contract is eligible for the whole-document cost
+// gate (skip the LLM doc pass when it's also clean). Override with
+// DOC_ANALYSIS_MIN_CLAUSES.
+const DOC_ANALYSIS_MIN_CLAUSES_DEFAULT = 8;
+function readDocAnalysisMinClauses(): number {
+  const raw = process.env.DOC_ANALYSIS_MIN_CLAUSES;
+  const n = raw ? Number.parseInt(raw, 10) : Number.NaN;
+  return Number.isFinite(n) && n > 0 ? n : DOC_ANALYSIS_MIN_CLAUSES_DEFAULT;
+}
+
 // Postgres "column does not exist" — the heartbeat columns (migration 0011) and
 // document_analysis (0009) are treated as best-effort so an un-migrated DB keeps
 // working.
@@ -191,6 +201,7 @@ export async function processContract(contract: ContractRecord): Promise<void> {
             });
             const heartbeat = makeThrottledHeartbeat(client, contract.id);
             const riskResults = await analyzeClauseRisks(riskInputs, {
+              contractId: contract.id,
               onProgress: () => heartbeat(),
               // Cross-contract cache (migration 0012). Default on; set
               // RISK_CACHE=0 to disable. Migration-tolerant: a missing table
@@ -248,10 +259,33 @@ export async function processContract(contract: ContractRecord): Promise<void> {
               sectionTitle: r.section_title ?? null,
               text: r.clause_text,
             }));
-            const docAnalysis = await analyzeDocument({
-              contractTitle: contract.title,
-              clauses: docClauses,
-            });
+            // Cost gate (opt-in via DOC_ANALYSIS_GATE): skip the LLM doc pass for
+            // a short AND clean contract. Conservative — `anyHighOrMissing` is
+            // true whenever the per-clause risk state is unknown or only partially
+            // computed (e.g. a partial resume), so we only ever skip a genuinely
+            // simple document.
+            const riskCoversAll =
+              riskByClauseId != null && riskByClauseId.size === clauseCount;
+            const anyHighOrMissing =
+              !riskCoversAll ||
+              [...riskByClauseId!.values()].some(
+                (r) => r.riskLevel === "high" || r.riskLevel === "missing",
+              );
+            const docAnalysis = await analyzeDocument(
+              {
+                contractTitle: contract.title,
+                clauses: docClauses,
+              },
+              {
+                contractId: contract.id,
+                gate: {
+                  skipIfSimple: process.env.DOC_ANALYSIS_GATE === "1",
+                  minClauses: readDocAnalysisMinClauses(),
+                  clauseCount,
+                  anyHighOrMissing,
+                },
+              },
+            );
             documentOk = await persistDocumentAnalysis(
               client,
               contract.id,

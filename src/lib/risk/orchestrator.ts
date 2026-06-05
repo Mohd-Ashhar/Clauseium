@@ -7,19 +7,29 @@ import {
   type LlmAnalyzeResult,
   LLM_PARSE_FAILED_MARKER,
   pickRiskModel,
+  RISK_MODEL_CHEAP,
   RISK_MODEL_DEFAULT,
   RISK_MODEL_ESCALATION,
   RiskLlmUnavailableError,
 } from "./llm-analyzer";
 import { getRagContext } from "./rag-context";
+import { embedBatch } from "@/lib/rag/embed";
 import { groupByKey, normalizeForKey } from "@/lib/ai/dedupe";
+import {
+  bucketReps,
+  ruleSignature,
+  semDedupEnabled,
+  semDedupThreshold,
+  type SemDedupRep,
+} from "./semantic-dedup";
 import {
   type CachedRisk,
   type RiskCache,
   isCacheable,
   riskCacheKey,
 } from "./cache";
-import { isBatchEnabled, runRiskBatch } from "./batch";
+import { isBatchEnabled, readBatchMinClauses, runRiskBatch } from "./batch";
+import { logLlmCall } from "./cost-log";
 import {
   aggregateCitationHints,
   aggregateRuleIds,
@@ -58,6 +68,9 @@ export interface AnalyzeRiskOptions {
   // reused instead of re-billed. Omit it (e.g. in tests/eval) for the
   // uncached path — behaviour is otherwise identical.
   cache?: RiskCache;
+  // Cost-observability context (migration 0013). Threaded into the per-call cost
+  // log so spend is attributable per contract. Inert unless RISK_COST_LOG=1.
+  contractId?: string;
 }
 
 export async function analyzeClauseRisks(
@@ -120,10 +133,17 @@ export async function analyzeClauseRisks(
   // analyzed once. Grouping BEFORE the budget slice means maxLlmCalls counts
   // UNIQUE clauses — boilerplate-heavy documents get more real coverage per
   // dollar, not less.
-  const groups = groupByKey(
+  let groups = groupByKey(
     llmQueue,
     (q) => `${normalizeForKey(q.input.clauseText)}|${q.input.category}`,
   );
+  // Optional semantic merge (RISK_SEMDEDUP): collapse legally-identical near-
+  // duplicate groups so each is analyzed once. Runs BEFORE the budget slice so
+  // the per-contract call budget counts semantic-unique clauses. Degrades to the
+  // exact-dedup grouping if disabled or embeddings are unavailable.
+  if (semDedupEnabled()) {
+    groups = await semanticMerge(groups);
+  }
   const callableGroups = groups.slice(0, maxLlmCalls);
   const skippedGroups = groups.slice(maxLlmCalls);
 
@@ -146,6 +166,15 @@ export async function analyzeClauseRisks(
       for (const member of group) {
         results[member.idx] = { ...hit, clauseId: member.input.clauseId };
       }
+      // A cache hit is a zero-token call we DIDN'T make — record it so the cache
+      // saving is visible in the cost log.
+      void logLlmCall({
+        contractId: opts.contractId,
+        model: "(cache)",
+        category: group[0].input.category,
+        method: "cache_hit",
+        cacheHit: true,
+      });
     } else {
       misses.push({ group, key });
     }
@@ -167,10 +196,29 @@ export async function analyzeClauseRisks(
   // below, so no clause is ever lost. Default off → this block is skipped and
   // the path is byte-identical to real-time.
   let pending = misses;
-  if (isBatchEnabled() && pending.length > 0) {
+  // Only batch clauses that would run a SINGLE pass on the SAME model in
+  // real-time too — i.e. cascade disabled, or the clause isn't escalation-
+  // eligible (pickRiskModel keeps it on the cheap default). Batching an
+  // escalation-eligible clause would run the strong model single-pass and skip
+  // the cheap→escalate cascade, which can cost MORE than real-time. Restricting
+  // batch to these makes it a pure ~50% saving that never defeats the cascade.
+  const cascadeOn = cascadeEnabled();
+  const isBatchSafe = (m: (typeof misses)[number]): boolean => {
+    if (!cascadeOn) return true;
+    const rep = m.group[0];
+    return (
+      pickRiskModel(
+        rep.input.category,
+        rep.ruleFindings,
+        rep.input.classificationConfidence,
+      ) === RISK_MODEL_DEFAULT
+    );
+  };
+  const batchSafe = isBatchEnabled() ? pending.filter(isBatchSafe) : [];
+  if (batchSafe.length >= readBatchMinClauses() && batchSafe.length > 0) {
     const handled = new Set<string>();
     const prepared = await Promise.all(
-      pending.map(async (m) => {
+      batchSafe.map(async (m) => {
         const rep = m.group[0];
         let ragContext: LegalReference[] = [];
         try {
@@ -210,6 +258,13 @@ export async function analyzeClauseRisks(
         rep.input.clauseText,
       );
       applyResult(p.miss.group, p.miss.key, merged);
+      void logLlmCall({
+        contractId: opts.contractId,
+        model: bo.model,
+        category: rep.input.category,
+        method: "batch",
+        usage: bo.usage,
+      });
       handled.add(p.miss.key);
     }
     pending = pending.filter((m) => !handled.has(m.key));
@@ -218,7 +273,12 @@ export async function analyzeClauseRisks(
   let done = 0;
   await runWithConcurrency(pending, concurrency, async ({ group, key }) => {
     const rep = group[0];
-    const result = await llmFallback(rep.input, rep.ruleFindings, opts.signal);
+    const result = await llmFallback(
+      rep.input,
+      rep.ruleFindings,
+      opts.signal,
+      opts.contractId,
+    );
     applyResult(group, key, result);
     done += 1;
     opts.onProgress?.(done, pending.length);
@@ -242,10 +302,54 @@ export async function analyzeClauseRisks(
   return results;
 }
 
+type RiskQueueItem = {
+  idx: number;
+  input: AnalyzeRiskInput;
+  ruleFindings: RuleFinding[];
+};
+
+// Collapse legally-identical near-duplicate groups by ABSORBING each non-canonical
+// group's member clauses into its bucket's canonical group. Because every
+// downstream step (cache, batch, real-time) already broadcasts a group's result
+// to all of its members (re-attaching each clause's own id), a merged group is
+// analyzed once and every absorbed clause gets the result for free — no other
+// code path needs to change. The canonical rep (group[0]) drives the cache key
+// and the analysis. Never loses a clause: degrades to the input grouping on any
+// failure.
+async function semanticMerge(
+  groups: RiskQueueItem[][],
+): Promise<RiskQueueItem[][]> {
+  if (groups.length < 2 || !process.env.OPENAI_API_KEY) return groups;
+  let embeddings: number[][];
+  try {
+    embeddings = await embedBatch(groups.map((g) => g[0].input.clauseText));
+  } catch {
+    return groups;
+  }
+  if (embeddings.length !== groups.length) return groups;
+
+  const reps: SemDedupRep[] = groups.map((g, i) => ({
+    category: g[0].input.category,
+    ruleSignature: ruleSignature(g[0].ruleFindings),
+    embedding: embeddings[i],
+  }));
+  const canonical = bucketReps(reps, semDedupThreshold());
+
+  const merged = new Map<number, RiskQueueItem[]>();
+  groups.forEach((g, i) => {
+    const c = canonical[i];
+    const head = merged.get(c);
+    if (head) head.push(...g);
+    else merged.set(c, [...g]);
+  });
+  return [...merged.values()];
+}
+
 async function llmFallback(
   input: AnalyzeRiskInput,
   ruleFindings: readonly RuleFinding[],
   signal?: AbortSignal,
+  contractId?: string,
 ): Promise<RiskAnalysisResult> {
   // RAG context is fetched ONCE and reused across both cascade passes — the
   // cheap pass and any escalation see the same grounding, at no extra
@@ -271,6 +375,7 @@ async function llmFallback(
       llmInput,
       ruleFindings,
       signal,
+      contractId,
     );
     const merged = mergeRuleAndLlm(
       input.clauseId,
@@ -308,30 +413,51 @@ async function analyzeWithCascade(
   llmInput: LlmAnalyzeInput,
   ruleFindings: readonly RuleFinding[],
   signal?: AbortSignal,
+  contractId?: string,
 ): Promise<{ response: LlmRiskResponse; failedToParse?: boolean }> {
-  const base = signal ? { signal } : {};
+  const base = { ...(signal ? { signal } : {}), ...(contractId ? { contractId } : {}) };
   const target = pickRiskModel(
     llmInput.category,
     ruleFindings,
     llmInput.classificationConfidence,
   );
 
-  // Not escalation-eligible, or cascade disabled → single pass with the model
-  // pickRiskModel chose (unchanged behaviour).
-  if (!cascadeEnabled() || target !== RISK_MODEL_ESCALATION) {
-    const r = await analyzeByLlm(llmInput, { ...base, model: target });
+  // The cascade is a cheap-first → escalate-if-risky pair. The escalate target is
+  // PARAMETERIZED by what pickRiskModel chose:
+  //   - Opus-eligible clause → cheap Sonnet, escalate to Opus.
+  //   - Haiku-routed low-stakes 'other' → cheap Haiku, escalate to Sonnet.
+  //   - Plain Sonnet clause → no cascade (single pass), unchanged behaviour.
+  let cheapModel: string | null = null;
+  let strongModel = RISK_MODEL_ESCALATION;
+  if (target === RISK_MODEL_ESCALATION) {
+    cheapModel = RISK_MODEL_DEFAULT;
+    strongModel = RISK_MODEL_ESCALATION;
+  } else if (target === RISK_MODEL_CHEAP) {
+    cheapModel = RISK_MODEL_CHEAP;
+    strongModel = RISK_MODEL_DEFAULT;
+  }
+
+  // Cascade disabled, or a single-pass (plain default) clause → one call with the
+  // model pickRiskModel chose (unchanged behaviour).
+  if (!cascadeEnabled() || cheapModel === null) {
+    const r = await analyzeByLlm(llmInput, { ...base, model: target, costMethod: "realtime" });
     return { response: r.response, failedToParse: r.failedToParse };
   }
 
-  // Escalation-eligible: cheap pass first.
-  const cheap = await analyzeByLlm(llmInput, { ...base, model: RISK_MODEL_DEFAULT });
+  // Cheap pass first.
+  const cheap = await analyzeByLlm(llmInput, {
+    ...base,
+    model: cheapModel,
+    costMethod: "cascade_cheap",
+  });
   if (!shouldEscalate(cheap, ruleFindings)) {
     return { response: cheap.response, failedToParse: cheap.failedToParse };
   }
-  // Risky or uncertain → spend the strong model (same RAG context).
+  // Risky or uncertain → spend the stronger model (same RAG context).
   const strong = await analyzeByLlm(llmInput, {
     ...base,
-    model: RISK_MODEL_ESCALATION,
+    model: strongModel,
+    costMethod: "cascade_escalate",
   });
   return { response: strong.response, failedToParse: strong.failedToParse };
 }

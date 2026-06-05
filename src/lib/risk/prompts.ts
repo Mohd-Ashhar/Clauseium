@@ -21,11 +21,14 @@ Copyright Act 1957, MSMED Act 2006, Indian Stamp Act 1899.
 Detect: one-sided clauses, missing protections, DPDP violations, uncapped liability,
 and bad jurisdiction (foreign forum without arbitration carve-out).
 
-Inline EVERY statutory or case reference in the explanation field using exactly
-this token format: [CITE: <act-or-case-name> | <section-or-citation> | <year>]
+Inline EVERY statutory or case reference — in the explanation AND the suggestion —
+using exactly this token format: [CITE: <act-or-case-name> | <section-or-citation> | <year>]
 Year omitted only for cases. Use the verified statute snippets when relevant.
 You MUST include at least one [CITE: …] in the explanation when risk_level is
 "high" or "medium".
+NEVER name an Act or a section in prose without bracketing it as a [CITE: …]
+token — any un-bracketed statutory reference is treated as unverified and will be
+removed before the analysis is shown to the reviewer.
 
 RISK LEVEL — grade the ACTUAL terms of the clause, not its topic. Being a
 liability, indemnity, IP or jurisdiction clause is NOT itself a reason to flag

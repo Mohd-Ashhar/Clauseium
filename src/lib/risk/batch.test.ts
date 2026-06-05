@@ -1,9 +1,57 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
-import { runRiskBatch, type BatchItem } from "./batch";
+import {
+  isBatchEnabled,
+  readBatchMinClauses,
+  runRiskBatch,
+  type BatchItem,
+} from "./batch";
 import type { RiskBatchClient } from "./llm-analyzer";
+
+const ENV_KEYS = ["RISK_USE_BATCH", "RISK_BATCH_DEFAULT", "RISK_BATCH_MIN_CLAUSES"];
+const ORIG_ENV = Object.fromEntries(ENV_KEYS.map((k) => [k, process.env[k]]));
+afterEach(() => {
+  for (const k of ENV_KEYS) {
+    if (ORIG_ENV[k] === undefined) delete process.env[k];
+    else process.env[k] = ORIG_ENV[k] as string;
+  }
+});
+
+describe("isBatchEnabled (default-on with override precedence)", () => {
+  it("defaults ON when nothing is set", () => {
+    delete process.env.RISK_USE_BATCH;
+    delete process.env.RISK_BATCH_DEFAULT;
+    expect(isBatchEnabled()).toBe(true);
+  });
+  it("explicit RISK_USE_BATCH=0 wins even when default on", () => {
+    process.env.RISK_USE_BATCH = "0";
+    delete process.env.RISK_BATCH_DEFAULT;
+    expect(isBatchEnabled()).toBe(false);
+  });
+  it("explicit RISK_USE_BATCH=1 wins even when default off", () => {
+    process.env.RISK_USE_BATCH = "1";
+    process.env.RISK_BATCH_DEFAULT = "0";
+    expect(isBatchEnabled()).toBe(true);
+  });
+  it("RISK_BATCH_DEFAULT=0 disables when no explicit override", () => {
+    delete process.env.RISK_USE_BATCH;
+    process.env.RISK_BATCH_DEFAULT = "0";
+    expect(isBatchEnabled()).toBe(false);
+  });
+});
+
+describe("readBatchMinClauses", () => {
+  it("defaults to 12 and honours an override", () => {
+    delete process.env.RISK_BATCH_MIN_CLAUSES;
+    expect(readBatchMinClauses()).toBe(12);
+    process.env.RISK_BATCH_MIN_CLAUSES = "0";
+    expect(readBatchMinClauses()).toBe(0);
+    process.env.RISK_BATCH_MIN_CLAUSES = "25";
+    expect(readBatchMinClauses()).toBe(25);
+  });
+});
 
 function toolMessage(input: object) {
   return { content: [{ type: "tool_use", name: "submit_risk_analysis", input }] };

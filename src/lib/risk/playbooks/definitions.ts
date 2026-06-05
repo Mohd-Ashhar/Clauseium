@@ -152,6 +152,22 @@ const insurance: ExpectedClause = {
     "Insurance requirements back-stop indemnities with real recoverability.",
 };
 
+const stampDuty: ExpectedClause = {
+  key: "stamp_duty",
+  label: "Stamping / stamp duty",
+  importance: "recommended",
+  match: [
+    /stamp duty/,
+    /duly stamped/,
+    /adequately stamped/,
+    /payment of stamp/,
+    /stamped in accordance/,
+  ],
+  missingRisk: "medium",
+  whyItMatters:
+    "An instrument not duly stamped is inadmissible in evidence and cannot be acted upon under s.35 of the Indian Stamp Act 1899 until the duty and penalty are paid. The agreement should allocate responsibility for stamping; the applicable duty is state-specific.",
+};
+
 const noticePeriod: ExpectedClause = {
   key: "notice",
   label: "Notices",
@@ -179,6 +195,7 @@ export const PLAYBOOKS: Record<string, Playbook> = {
       warranties,
       forceMajeure,
       insurance,
+      stampDuty,
       noticePeriod,
     ],
   },
@@ -252,6 +269,7 @@ export const PLAYBOOKS: Record<string, Playbook> = {
       disputeResolution,
       insurance,
       forceMajeure,
+      stampDuty,
     ],
   },
   consulting: {
@@ -266,6 +284,7 @@ export const PLAYBOOKS: Record<string, Playbook> = {
       nonCompete,
       governingLaw,
       warranties,
+      stampDuty,
     ],
   },
   lease: {
@@ -279,6 +298,7 @@ export const PLAYBOOKS: Record<string, Playbook> = {
       insurance,
       noticePeriod,
       forceMajeure,
+      { ...stampDuty, missingRisk: "high" },
     ],
   },
   generic: {
@@ -294,6 +314,7 @@ export const PLAYBOOKS: Record<string, Playbook> = {
       paymentTerms,
       ipOwnership,
       dataProtection,
+      stampDuty,
     ],
   },
 };

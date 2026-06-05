@@ -1,6 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
+// Origins permitted to call /api/* cross-origin (the Word add-in). DEPLOY GATE:
+// the deployed app's ADDIN_ORIGIN must include the PROD add-in origin (comma-
+// separated for multiple) or EVERY add-in request fails CORS preflight with an
+// opaque error — the single most likely add-in prod misconfiguration.
 const ALLOWED_ORIGINS = (process.env.ADDIN_ORIGIN ?? "")
   .split(",")
   .map((o) => o.trim())

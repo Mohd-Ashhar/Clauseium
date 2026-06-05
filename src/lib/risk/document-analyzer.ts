@@ -6,6 +6,7 @@ import {
   isRiskLlmAvailable,
   RiskLlmUnavailableError,
 } from "./llm-analyzer";
+import { extractUsage, logLlmCall, type LlmUsage } from "./cost-log";
 import {
   checkPlaybook,
   detectContractType,
@@ -370,6 +371,18 @@ class DocParseError extends Error {}
 
 export interface AnalyzeDocumentOptions {
   signal?: AbortSignal;
+  // Cost-observability context (migration 0013). Inert unless RISK_COST_LOG=1.
+  contractId?: string;
+  // Cost gate (opt-in): skip the expensive whole-document LLM pass for a contract
+  // that is BOTH short AND clean, returning the deterministic playbook-only result
+  // instead. `anyHighOrMissing` must be true whenever the per-clause risk state is
+  // unknown/partial, so we only ever skip a genuinely simple document.
+  gate?: {
+    skipIfSimple: boolean;
+    minClauses: number;
+    clauseCount: number;
+    anyHighOrMissing: boolean;
+  };
 }
 
 export async function analyzeDocument(
@@ -406,11 +419,26 @@ export async function analyzeDocument(
     return fallback();
   }
 
+  // Cost gate: a short AND clean contract (few clauses, no high/missing per-clause
+  // risk, no high-importance playbook gap) doesn't warrant the priciest single
+  // call per contract — return the deterministic checklist result. This is a
+  // COMPLETE result for a simple document (not a degraded one), so it renders as a
+  // clean review rather than the partial-analysis banner.
+  if (
+    opts.gate?.skipIfSimple &&
+    opts.gate.clauseCount < opts.gate.minClauses &&
+    !opts.gate.anyHighOrMissing &&
+    !playbook.missing.some((m) => m.riskLevel === "high")
+  ) {
+    return { ...fallback(), model: "playbook-gated", degraded: false };
+  }
+
   const apiKey = process.env.ANTHROPIC_API_KEY!;
   const client = await getClient(apiKey);
   const userText = buildUserPrompt(input, detected, playbook.missing);
 
   let parsed: DocAnalysisLlm;
+  let usage: LlmUsage | undefined;
   try {
     parsed = await pRetry(
       async () => {
@@ -431,6 +459,7 @@ export async function analyzeDocument(
           },
           opts.signal ? { signal: opts.signal } : undefined,
         );
+        usage = extractUsage((message as { usage?: unknown }).usage);
         const tool = findToolUse(message);
         if (!tool) {
           // Don't retry a structural failure — fall straight to fallback.
@@ -453,6 +482,14 @@ export async function analyzeDocument(
     );
     return fallback();
   }
+
+  // Fire-and-forget cost log of the (successful) whole-document call.
+  void logLlmCall({
+    contractId: opts.contractId,
+    model: DOC_ANALYSIS_MODEL,
+    method: "doc",
+    usage,
+  });
 
   // Drop empty/placeholder items the coercion may have produced (an item is only
   // useful if it has a label/title or some explanation).

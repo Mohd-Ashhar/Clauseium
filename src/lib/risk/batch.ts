@@ -6,6 +6,7 @@ import {
   type LlmAnalyzeInput,
   type RiskBatchClient,
 } from "./llm-analyzer";
+import { extractUsage, type LlmUsage } from "./cost-log";
 import type { LlmRiskResponse } from "./schemas";
 
 // Anthropic Message Batches path for the per-clause risk analyzer (~50% cheaper
@@ -21,6 +22,7 @@ export interface BatchItem {
 export interface BatchOutcome {
   response: LlmRiskResponse;
   model: string;
+  usage?: LlmUsage;
 }
 
 export interface RunBatchOptions {
@@ -34,8 +36,15 @@ export interface RunBatchOptions {
   client?: RiskBatchClient;
 }
 
-const DEFAULT_MAX_WAIT_MS = 4 * 60 * 1000; // stay within the process window
+// Kept comfortably BELOW the status-route STALE_PROCESSING_MS (240000): a batch
+// wait must finish (or fall back to real-time) before the heartbeat could look
+// stale enough to be reclaimed and re-billed. Paired with an immediate heartbeat
+// tick at submit (onPoll) — see runRiskBatch.
+const DEFAULT_MAX_WAIT_MS = 3 * 60 * 1000; // 180s — inside the 240s stale window
 const DEFAULT_POLL_MS = 5000;
+// Below this many batch-safe clauses we stay real-time so small/interactive
+// uploads aren't slowed by the (minutes-long) batch round-trip.
+const DEFAULT_MIN_CLAUSES = 12;
 
 export function readBatchMaxWaitMs(): number {
   const raw = process.env.RISK_BATCH_MAX_WAIT_MS;
@@ -43,8 +52,23 @@ export function readBatchMaxWaitMs(): number {
   return Number.isFinite(n) && n > 0 ? n : DEFAULT_MAX_WAIT_MS;
 }
 
+export function readBatchMinClauses(): number {
+  const raw = process.env.RISK_BATCH_MIN_CLAUSES;
+  const n = raw ? Number.parseInt(raw, 10) : Number.NaN;
+  return Number.isFinite(n) && n >= 0 ? n : DEFAULT_MIN_CLAUSES;
+}
+
+// Batch is now DEFAULT-ON. Precedence: an explicit RISK_USE_BATCH=0/1 always
+// wins (so existing deploys can force it off or on); otherwise RISK_BATCH_DEFAULT
+// decides, defaulting to ON. The orchestrator additionally requires a minimum
+// batch-safe clause count and only batches clauses that run a single pass on the
+// same model in real-time too, so default-on never defeats the cascade.
 export function isBatchEnabled(): boolean {
-  return process.env.RISK_USE_BATCH === "1";
+  const explicit = process.env.RISK_USE_BATCH;
+  if (explicit === "1") return true;
+  if (explicit === "0") return false;
+  const def = process.env.RISK_BATCH_DEFAULT;
+  return def == null ? true : !/^(0|false|off)$/i.test(def.trim());
 }
 
 function delay(ms: number, signal?: AbortSignal): Promise<void> {
@@ -86,6 +110,10 @@ export async function runRiskBatch(
 
   try {
     const batch = await client.messages.batches.create({ requests });
+    // Immediate heartbeat tick the moment the batch is submitted, so the long
+    // poll that follows never lets the contract's heartbeat look stale to the
+    // status-route reclaim (which would re-bill the whole document).
+    opts.onPoll?.();
     const deadline = Date.now() + maxWaitMs;
     let status = batch.processing_status;
 
@@ -124,6 +152,7 @@ export async function runRiskBatch(
           out.set(r.custom_id, {
             response: parsed,
             model: modelByCustomId.get(r.custom_id) ?? "",
+            usage: extractUsage((r.result.message as { usage?: unknown }).usage),
           });
         }
       }

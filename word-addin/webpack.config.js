@@ -38,8 +38,42 @@ const SUPABASE_ANON_KEY =
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
   "";
 
+// Build the task-pane CSP from the active environment's origins. This is injected
+// into taskpane.html at build time (the static HTML must NOT hardcode localhost —
+// webpack's DefinePlugin only touches the JS bundle, so a prod build would
+// otherwise ship a dev CSP that blocks the prod API + OAuth origins). office.js
+// is ALWAYS loaded from the Microsoft CDN (AppSource requirement — never self-host).
+function buildCsp({ appOrigin, supabaseUrl, isDev }) {
+  const connect = new Set(["'self'", appOrigin]);
+  const frame = new Set([
+    "'self'",
+    appOrigin,
+    "https://login.microsoftonline.com",
+    "https://accounts.google.com",
+  ]);
+  if (supabaseUrl) {
+    connect.add(supabaseUrl);
+    frame.add(supabaseUrl);
+  }
+  if (isDev) {
+    for (const o of ["http://localhost:3000", "https://localhost:3000"]) {
+      connect.add(o);
+      frame.add(o);
+    }
+  }
+  return [
+    "default-src 'self'",
+    "script-src 'self' https://appsforoffice.microsoft.com",
+    "style-src 'self' 'unsafe-inline'",
+    `connect-src ${[...connect].join(" ")}`,
+    `frame-src ${[...frame].join(" ")}`,
+    "img-src 'self' data: https:",
+  ].join("; ");
+}
+
 module.exports = async (env, argv) => {
   const isDev = argv.mode !== "production";
+  const csp = buildCsp({ appOrigin: APP_ORIGIN, supabaseUrl: SUPABASE_URL, isDev });
 
   return {
     devtool: isDev ? "source-map" : false,
@@ -80,6 +114,8 @@ module.exports = async (env, argv) => {
         template: "./src/taskpane/taskpane.html",
         filename: "taskpane.html",
         chunks: ["taskpane"],
+        // Injected into the CSP <meta> in taskpane.html via `<%= htmlWebpackPlugin.options.csp %>`.
+        csp,
       }),
       new CopyWebpackPlugin({
         patterns: [

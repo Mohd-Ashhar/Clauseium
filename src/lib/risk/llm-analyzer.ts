@@ -4,6 +4,12 @@ import type { ClassificationLabel } from "@/lib/classification/categories";
 import type { LegalReference } from "@/lib/rag/types";
 import { llmRiskResponseSchema, type LlmRiskResponse } from "./schemas";
 import { RISK_SYSTEM_PROMPT, buildRiskUserPrompt } from "./prompts";
+import {
+  extractUsage,
+  logLlmCall,
+  type LlmCallMethod,
+  type LlmUsage,
+} from "./cost-log";
 import type { RuleFinding } from "./types";
 
 // Tiered models. Sonnet is the balanced workhorse for clause-level legal
@@ -15,6 +21,19 @@ export const RISK_MODEL_DEFAULT =
   process.env.RISK_MODEL_DEFAULT ?? "claude-sonnet-4-6";
 export const RISK_MODEL_ESCALATION =
   process.env.RISK_MODEL_ESCALATION ?? "claude-opus-4-8";
+// Cheapest tier, used (opt-in) for confidently-classified, rule-clean low-stakes
+// 'other' clauses. The cascade still gives any risky/uncertain Haiku pass a
+// Sonnet re-read, so recall is preserved.
+export const RISK_MODEL_CHEAP =
+  process.env.RISK_MODEL_CHEAP ?? "claude-haiku-4-5-20251001";
+
+// Opt-in: route confidently-classified, rule-clean 'other'-category clauses to
+// the cheap model for their first pass. OFF by default (quality-neutral only
+// once a scored eval clears it). High-stakes categories, high rule-hits, and
+// low-confidence clauses are never affected.
+function lowStakesHaikuEnabled(): boolean {
+  return process.env.RISK_LOWSTAKES_HAIKU === "1";
+}
 
 // Categories where a missed or mis-graded risk has the highest commercial
 // impact — these escalate to the stronger model.
@@ -44,6 +63,20 @@ export function pickRiskModel(
   ) {
     return RISK_MODEL_ESCALATION;
   }
+  // Low-stakes Haiku (opt-in): a confidently-classified, rule-clean 'other'
+  // clause — the catch-all bucket with no specialised rules — runs on the cheap
+  // model first. We require an explicit confidence at/above the trust threshold
+  // (an undefined/low confidence falls through to Sonnet) so a possibly-
+  // mislabeled clause is never under-modelled.
+  if (
+    lowStakesHaikuEnabled() &&
+    category === "other" &&
+    !ruleFindings.some((f) => f.level === "high") &&
+    typeof classificationConfidence === "number" &&
+    classificationConfidence >= LOW_CLASSIFICATION_CONFIDENCE
+  ) {
+    return RISK_MODEL_CHEAP;
+  }
   return RISK_MODEL_DEFAULT;
 }
 
@@ -65,6 +98,11 @@ export interface LlmAnalyzeOptions {
   // Force a specific model, bypassing pickRiskModel. The orchestrator's cascade
   // uses this to run a cheap first pass and escalate only when warranted.
   model?: string;
+  // Cost-observability context (migration 0013). Optional and flag-gated — when
+  // RISK_COST_LOG is off these are inert. `costMethod` distinguishes a single
+  // real-time pass from the cheap/escalate legs of the cascade.
+  contractId?: string;
+  costMethod?: LlmCallMethod;
 }
 
 export interface LlmAnalyzeInput {
@@ -84,6 +122,9 @@ export interface LlmAnalyzeResult {
   // retries and we returned the soft fallback. The orchestrator stamps a
   // marker onto risk_rule_ids so an admin endpoint can re-run these later.
   failedToParse?: boolean;
+  // Token usage for the underlying call (cost observability). Undefined on the
+  // soft-fallback path (no successful call).
+  usage?: LlmUsage;
 }
 
 export class RiskLlmUnavailableError extends Error {
@@ -193,7 +234,7 @@ export async function analyzeByLlm(
     // p-retry only retries transient failures (network / 5xx / rate limit).
     // Parse errors are wrapped in AbortError inside callAnalyzer so p-retry
     // unwraps and surfaces the RiskParseError immediately without retrying.
-    const response = await pRetry(
+    const { response, usage } = await pRetry(
       async () => callAnalyzer(client, userText, model, opts.signal),
       {
         retries: 2,
@@ -203,7 +244,15 @@ export async function analyzeByLlm(
         ...(opts.signal ? { signal: opts.signal } : {}),
       },
     );
-    return { response, model };
+    // Fire-and-forget cost log (no-op unless RISK_COST_LOG=1).
+    void logLlmCall({
+      contractId: opts.contractId,
+      model,
+      category: input.category,
+      method: opts.costMethod ?? "realtime",
+      usage,
+    });
+    return { response, model, usage };
   } catch (err) {
     if (err instanceof RiskParseError) {
       console.warn(
@@ -280,13 +329,14 @@ async function callAnalyzer(
   userText: string,
   model: string,
   signal?: AbortSignal,
-): Promise<LlmRiskResponse> {
+): Promise<{ response: LlmRiskResponse; usage: LlmUsage }> {
   // Network / 5xx / rate-limit errors fall through to p-retry. Parse
   // errors are wrapped in AbortError below so p-retry short-circuits.
   const message = await client.messages.create(
     riskMessageParams(model, userText),
     signal ? { signal } : undefined,
   );
+  const usage = extractUsage((message as { usage?: unknown }).usage);
 
   const toolBlock = findToolUse(message);
   if (!toolBlock) {
@@ -316,7 +366,7 @@ async function callAnalyzer(
       ),
     );
   }
-  return parsed.data;
+  return { response: parsed.data, usage };
 }
 
 interface ToolUseBlock {

@@ -256,6 +256,33 @@ describe("verifyCitationsForClause", () => {
     expect(out.citations[0].status).toBe("verified");
   });
 
+  it("neutralizes an un-bracketed, unverifiable statute reference (inline guard)", async () => {
+    const clauseEmbedding = new Array(1536).fill(0.1);
+    embedQueryMock.mockResolvedValue(clauseEmbedding);
+    // Nothing in the corpus matches the prose ref → it cannot verify.
+    const supabase = makeSupabase(
+      {
+        "legal_documents:statute": { data: [], error: null },
+        "legal_documents:case": { data: [], error: null },
+      },
+      { data: [], error: null },
+    );
+    searchCorpusMock.mockResolvedValue([]);
+
+    const carrier = "This obligation is governed by the Foobar Act 1999 and is risky.";
+    const out = await verifyCitationsForClause(
+      { clauseId: "c-inline", clauseText: "A clause about something.", citationCarrier: carrier },
+      { supabase, fetchImpl: makeFetch({ docs: [] }) },
+    );
+
+    // Not surfaced as an authority…
+    expect(out.citations).toHaveLength(0);
+    // …and the displayed text neutralizes the ungrounded statute name.
+    expect(out.neutralize(carrier)).toBe(
+      "This obligation is governed by applicable Indian law and is risky.",
+    );
+  });
+
   it("demotes an exact match to partial when the clause is off-topic for it (P2-1)", async () => {
     delete process.env.INDIAN_KANOON_API_TOKEN;
     const clauseEmbedding = new Array(1536).fill(0.1);

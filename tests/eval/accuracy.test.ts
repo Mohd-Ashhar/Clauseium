@@ -23,7 +23,7 @@ describe("accuracy eval (deterministic layer)", () => {
   const report = scoreFixtures(FIXTURES);
 
   it("has a meaningful fixture set", () => {
-    expect(FIXTURES.length).toBeGreaterThanOrEqual(20);
+    expect(FIXTURES.length).toBeGreaterThanOrEqual(50);
   });
 
   it("never drops a clause we expect findings from (Phase 0 filter guard)", () => {

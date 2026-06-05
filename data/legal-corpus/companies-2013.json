@@ -1,0 +1,22 @@
+{
+  "kind": "statute",
+  "statute_name": "Companies Act, 2013",
+  "year": 2013,
+  "url": "https://indiankanoon.org/search/?formInput=companies+act+2013",
+  "section_urls": {
+    "166": "https://indiankanoon.org/search/?formInput=section+166+companies+act+2013",
+    "188": "https://indiankanoon.org/search/?formInput=section+188+companies+act+2013"
+  },
+  "sections": [
+    {
+      "number": "166",
+      "heading": "Duties of directors",
+      "body": "Subject to the provisions of this Act, a director of a company shall act in accordance with the articles of the company. A director shall act in good faith in order to promote the objects of the company for the benefit of its members as a whole, and in the best interests of the company, its employees, the shareholders, the community and for the protection of environment. A director shall exercise his duties with due and reasonable care, skill and diligence and shall exercise independent judgment. A director shall not involve in a situation in which he may have a direct or indirect interest that conflicts, or possibly may conflict, with the interest of the company. A director shall not achieve or attempt to achieve any undue gain or advantage either to himself or to his relatives, partners, or associates."
+    },
+    {
+      "number": "188",
+      "heading": "Related party transactions",
+      "body": "Except with the consent of the Board of Directors given by a resolution at a meeting of the Board and subject to such conditions as may be prescribed, no company shall enter into any contract or arrangement with a related party with respect to sale, purchase or supply of any goods or materials; selling or otherwise disposing of, or buying, property of any kind; leasing of property of any kind; availing or rendering of any services; appointment of any agent for purchase or sale of goods, materials, services or property; such related party's appointment to any office or place of profit in the company, its subsidiary company or associate company; and underwriting the subscription of any securities or derivatives thereof, of the company. Where any contract or arrangement is entered into by a director or any other employee, without obtaining the consent of the Board or approval by a resolution in the general meeting and if it is not ratified within three months, such contract or arrangement shall be voidable at the option of the Board or, as the case may be, of the shareholders."
+    }
+  ]
+}

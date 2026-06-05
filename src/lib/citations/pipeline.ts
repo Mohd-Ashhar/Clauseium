@@ -5,6 +5,13 @@ import { embedQuery } from "@/lib/rag/embed";
 import { extractCitations } from "./extract";
 import { verifyOne } from "./verify";
 import { applyQualityGate, type GateOutput } from "./gate";
+import {
+  inlineGuardEnabled,
+  inlineGuardMode,
+  neutralizeText,
+  scanInlineRefs,
+  toCitationToken,
+} from "./inline-guard";
 import { logVerification, logPipeline } from "./logger";
 import type {
   ExtractedCitation,
@@ -35,7 +42,14 @@ export interface VerifyOutput {
   results: VerificationResult[];
   pipelineLog: PipelineLogEntry;
   verifyLogs: VerifyLogEntry[];
+  // Inline-citation guard: rewrites any UN-bracketed statutory reference that did
+  // not verify against the corpus. Field-agnostic and idempotent — apply it to
+  // each displayed field (explanation/issue/suggestion) independently. Identity
+  // when the guard is disabled, in chip mode, or nothing failed.
+  neutralize: (text: string) => string;
 }
+
+const IDENTITY = (text: string) => text;
 
 export async function verifyCitationsForClause(
   input: VerifyInput,
@@ -45,7 +59,15 @@ export async function verifyCitationsForClause(
   const start = Date.now();
   const extracted = extractCitations(input.citationCarrier);
 
-  if (extracted.length === 0) {
+  // Inline guard: detect statutory references written in PROSE (not bracketed)
+  // and push them through the SAME verify→gate path. Verified ones surface as
+  // authorities; unverified ones are neutralised in the displayed text.
+  const inlineRefs = inlineGuardEnabled()
+    ? scanInlineRefs(input.citationCarrier)
+    : [];
+  const inlineTokens = inlineRefs.map(toCitationToken);
+
+  if (extracted.length === 0 && inlineTokens.length === 0) {
     const empty = applyQualityGate([]);
     const log = makePipelineLog(input.clauseId, empty, Date.now() - start);
     logPipeline(log);
@@ -56,13 +78,15 @@ export async function verifyCitationsForClause(
       results: [],
       pipelineLog: log,
       verifyLogs: [],
+      neutralize: IDENTITY,
     };
   }
 
   const clauseEmbedding = await safeEmbed(input.clauseText);
 
+  const allTokens = [...extracted, ...inlineTokens];
   const results = await Promise.all(
-    extracted.map((c) =>
+    allTokens.map((c) =>
       verifyOne(
         c,
         {
@@ -76,6 +100,18 @@ export async function verifyCitationsForClause(
   );
 
   const gated = applyQualityGate(results);
+
+  // Inline refs that did NOT survive the gate (not verified/partial) are the
+  // ungrounded prose claims to neutralise.
+  const keptIds = new Set(gated.citations.map((c) => c.id));
+  const unverifiedKeys = new Set<string>();
+  inlineRefs.forEach((ref, i) => {
+    if (!keptIds.has(inlineTokens[i].id)) unverifiedKeys.add(ref.canonicalKey);
+  });
+  const neutralize =
+    inlineGuardMode() === "neutralize" && unverifiedKeys.size > 0
+      ? (text: string) => neutralizeText(text, unverifiedKeys)
+      : IDENTITY;
 
   const verifyLogs: VerifyLogEntry[] = results.map((r) => ({
     evt: "citation.verify" as const,
@@ -114,6 +150,7 @@ export async function verifyCitationsForClause(
     results,
     pipelineLog: log,
     verifyLogs,
+    neutralize,
   };
 }
 
@@ -142,6 +179,10 @@ export async function verifyClauseAnalysis(
 
   return {
     ...analysis,
+    // Neutralise any ungrounded prose statute reference in the displayed fields.
+    summary: out.neutralize(analysis.summary ?? ""),
+    reasoning: out.neutralize(analysis.reasoning ?? ""),
+    suggestedRedline: out.neutralize(analysis.suggestedRedline ?? ""),
     citations: out.citations,
     trustScore: out.trustScore,
     verificationLog: [out.pipelineLog, ...out.verifyLogs],

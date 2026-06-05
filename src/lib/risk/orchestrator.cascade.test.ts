@@ -21,6 +21,8 @@ import { analyzeClauseRisks } from "./orchestrator";
 import { riskCacheKey, type RiskCache, type CachedRisk } from "./cache";
 import {
   _resetForTests,
+  pickRiskModel,
+  RISK_MODEL_CHEAP,
   RISK_MODEL_DEFAULT,
   RISK_MODEL_ESCALATION,
 } from "./llm-analyzer";
@@ -180,6 +182,71 @@ describe("risk cascade", () => {
 
     expect(createMock).toHaveBeenCalledTimes(1);
     expect(modelOf(0)).toBe(RISK_MODEL_ESCALATION); // no cheap pre-pass
+  });
+});
+
+describe("low-stakes Haiku routing (opt-in)", () => {
+  const ORIG_HAIKU = process.env.RISK_LOWSTAKES_HAIKU;
+  beforeEach(() => {
+    process.env.RISK_LOWSTAKES_HAIKU = "1";
+  });
+  afterEach(() => {
+    if (ORIG_HAIKU === undefined) delete process.env.RISK_LOWSTAKES_HAIKU;
+    else process.env.RISK_LOWSTAKES_HAIKU = ORIG_HAIKU;
+  });
+
+  const OTHER = {
+    clauseId: "o1",
+    clauseText:
+      "The Provider shall deliver monthly status reports summarising progress against the agreed roadmap.",
+    category: "other" as const,
+    classificationConfidence: 0.95,
+  };
+
+  it("pickRiskModel routes a confident, rule-clean 'other' clause to the cheap model", () => {
+    expect(pickRiskModel("other", [], 0.95)).toBe(RISK_MODEL_CHEAP);
+    // high-stakes category is unaffected
+    expect(pickRiskModel("indemnification", [], 0.95)).toBe(RISK_MODEL_ESCALATION);
+    // a high rule on an 'other' clause still escalates (never Haiku)
+    expect(
+      pickRiskModel("other", [{ ruleId: "x", level: "high" } as never], 0.95),
+    ).toBe(RISK_MODEL_ESCALATION);
+    // low/absent confidence is not routed to Haiku
+    expect(pickRiskModel("other", [], 0.4)).toBe(RISK_MODEL_ESCALATION);
+    expect(pickRiskModel("other", [], undefined)).toBe(RISK_MODEL_DEFAULT);
+  });
+
+  it("runs Haiku first and does NOT escalate when the cheap pass is confidently standard", async () => {
+    createMock.mockResolvedValueOnce(
+      tool({ risk_level: "standard", issue: "ok", explanation: "fine", suggestion: "", confidence: 0.9 }),
+    );
+    const out = await analyzeClauseRisks([OTHER]);
+    expect(createMock).toHaveBeenCalledTimes(1);
+    expect(modelOf(0)).toBe(RISK_MODEL_CHEAP);
+    expect(out[0]?.riskLevel).toBe("standard");
+  });
+
+  it("escalates a Haiku 'other' clause to SONNET (not Opus) when the cheap pass finds risk", async () => {
+    createMock
+      .mockResolvedValueOnce(
+        tool({ risk_level: "medium", issue: "hmm", explanation: "worth a look", suggestion: "", confidence: 0.8 }),
+      )
+      .mockResolvedValueOnce(
+        tool({ risk_level: "high", issue: "real", explanation: "material risk", suggestion: "fix", confidence: 0.9 }),
+      );
+    const out = await analyzeClauseRisks([OTHER]);
+    expect(createMock).toHaveBeenCalledTimes(2);
+    expect(modelOf(0)).toBe(RISK_MODEL_CHEAP); // Haiku cheap pass
+    expect(modelOf(1)).toBe(RISK_MODEL_DEFAULT); // escalates to Sonnet, NOT Opus
+    expect(out[0]?.riskLevel).toBe("high");
+  });
+
+  it("leaves high-stakes clauses on the Sonnet→Opus cascade (flag does not affect them)", async () => {
+    createMock.mockResolvedValueOnce(
+      tool({ risk_level: "standard", issue: "ok", explanation: "fine", suggestion: "", confidence: 0.9 }),
+    );
+    await analyzeClauseRisks([HIGH_STAKES_BENIGN]);
+    expect(modelOf(0)).toBe(RISK_MODEL_DEFAULT); // cheap pass is Sonnet, not Haiku
   });
 });
 

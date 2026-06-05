@@ -1,6 +1,23 @@
 import { AddinSignInButtons } from "./sign-in-buttons";
+import type { AddinOAuthProvider } from "./actions";
 
-export default function AddinAuthPage() {
+// The add-in opens this page at /addin-auth?provider=google|azure. Normalise it
+// (tolerating "microsoft" → "azure") so the matching OAuth flow auto-starts.
+function normalizeProvider(
+  raw: string | string[] | undefined,
+): AddinOAuthProvider | undefined {
+  const v = Array.isArray(raw) ? raw[0] : raw;
+  if (v === "google") return "google";
+  if (v === "azure" || v === "microsoft") return "azure";
+  return undefined;
+}
+
+export default function AddinAuthPage({
+  searchParams,
+}: {
+  searchParams?: { provider?: string | string[] };
+}) {
+  const autoProvider = normalizeProvider(searchParams?.provider);
   return (
     <div className="space-y-6">
       <header className="space-y-2 text-center">
@@ -19,7 +36,7 @@ export default function AddinAuthPage() {
         </p>
       </header>
 
-      <AddinSignInButtons />
+      <AddinSignInButtons autoProvider={autoProvider} />
 
       <footer className="space-y-3 pt-2 text-center text-[11px] leading-relaxed text-ink-500">
         <p>

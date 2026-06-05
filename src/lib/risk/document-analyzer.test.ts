@@ -194,3 +194,59 @@ describe("analyzeDocument — tolerant parsing (no wasted spend)", () => {
     expect(out.missingProtections).toHaveLength(1);
   });
 });
+
+describe("analyzeDocument — cost gate (short + clean)", () => {
+  // A short, playbook-complete contract: liability cap with carve-outs, mutual
+  // indemnity, confidentiality, termination, governing law + arbitration, and
+  // DPDP — so checkPlaybook finds no high-importance gap.
+  const SHORT_CLEAN = {
+    contractTitle: "Services Agreement",
+    clauses: [
+      { id: "c1", position: 0, sectionTitle: "Liability", text: "Notwithstanding the foregoing, the cap shall not apply to fraud, gross negligence or wilful misconduct. Each party's aggregate liability shall not exceed the fees paid in the preceding twelve months, and neither party shall be liable for indirect or consequential damages." },
+      { id: "c2", position: 1, sectionTitle: "Indemnity", text: "Each party shall indemnify the other against third-party claims, including intellectual property infringement, subject to the limitation of liability." },
+      { id: "c3", position: 2, sectionTitle: "Confidentiality", text: "Each party shall keep confidential all confidential information of the other party and shall not disclose it to any third party." },
+      { id: "c4", position: 3, sectionTitle: "Term", text: "Either party may terminate on sixty days' written notice if the other commits a material breach not cured within thirty days; the confidentiality provisions survive termination." },
+      { id: "c5", position: 4, sectionTitle: "Law", text: "This Agreement shall be governed by the laws of India and disputes shall be referred to arbitration seated in Mumbai under the Arbitration and Conciliation Act 1996." },
+      { id: "c6", position: 5, sectionTitle: "Data", text: "As Data Processor for the specified purpose, the Processor shall notify the Data Fiduciary of any personal data breach within 72 hours, honour data principal rights of access and correction, and not transfer personal data outside India except to a notified country." },
+    ],
+  };
+
+  const enabledGate = (over: Partial<{ clauseCount: number; anyHighOrMissing: boolean }> = {}) => ({
+    skipIfSimple: true,
+    minClauses: 8,
+    clauseCount: 6,
+    anyHighOrMissing: false,
+    ...over,
+  });
+
+  it("SKIPS the LLM pass for a short, clean contract (deterministic playbook result)", async () => {
+    const out = await analyzeDocument(SHORT_CLEAN, { gate: enabledGate() });
+    expect(createMock).not.toHaveBeenCalled();
+    expect(out.model).toBe("playbook-gated");
+    expect(out.degraded).toBe(false);
+  });
+
+  it("RUNS the LLM pass when the contract is long (>= minClauses)", async () => {
+    createMock.mockResolvedValueOnce(
+      docTool({ executive_summary: "x", overall_posture: "balanced", missing_protections: [], cross_clause_issues: [], one_sided_terms: [] }),
+    );
+    await analyzeDocument(SHORT_CLEAN, { gate: enabledGate({ clauseCount: 20 }) });
+    expect(createMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("RUNS the LLM pass when any clause is high/missing", async () => {
+    createMock.mockResolvedValueOnce(
+      docTool({ executive_summary: "x", overall_posture: "balanced", missing_protections: [], cross_clause_issues: [], one_sided_terms: [] }),
+    );
+    await analyzeDocument(SHORT_CLEAN, { gate: enabledGate({ anyHighOrMissing: true }) });
+    expect(createMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("RUNS the LLM pass when the gate is disabled", async () => {
+    createMock.mockResolvedValueOnce(
+      docTool({ executive_summary: "x", overall_posture: "balanced", missing_protections: [], cross_clause_issues: [], one_sided_terms: [] }),
+    );
+    await analyzeDocument(SHORT_CLEAN, { gate: { ...enabledGate(), skipIfSimple: false } });
+    expect(createMock).toHaveBeenCalledTimes(1);
+  });
+});

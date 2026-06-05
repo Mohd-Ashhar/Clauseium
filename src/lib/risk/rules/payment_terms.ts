@@ -4,7 +4,10 @@ import type { RuleFn } from "../types";
 // parenthesised ("within ninety (90) days") day counts — all common in real
 // contracts. The older numeric-only form silently failed on spelled numbers,
 // which in turn suppressed the MSMED 45-day check downstream.
-const HAS_DUE_DATE = /\b(?:within\s+(?:\d{1,3}|[a-z]+(?:[\s-]*\(?\d{1,3}\)?)?)\s*(?:business\s+)?(?:days?|weeks?|months?)|net\s*\d{1,3}|due\s+(?:date|on)|payable\s+within|by\s+the\s+\d{1,2}(?:st|nd|rd|th)\s+(?:day\s+of)?)/i;
+// Accepts numeric ("within 30 days"), single-word spelled ("within ninety (90)
+// days") AND hyphenated spelled ("within forty-five (45) days" — the canonical
+// MSME 45-day phrasing) day counts.
+const HAS_DUE_DATE = /\b(?:within\s+(?:\d{1,3}|[a-z]+(?:[\s-]+[a-z]+)*(?:\s*\(?\d{1,3}\)?)?)\s*(?:business\s+)?(?:days?|weeks?|months?)|net\s*\d{1,3}|due\s+(?:date|on)|payable\s+within|by\s+the\s+\d{1,2}(?:st|nd|rd|th)\s+(?:day\s+of)?)/i;
 const FOREIGN_CURRENCY = /\b(?:usd|us\s*dollars?|eur|euro|gbp|pounds?\s+sterling|sgd|singapore\s+dollars?|aud)\b/i;
 const HAS_FEMA_REFERENCE = /\b(?:fema|foreign\s+exchange\s+management\s+act|reserve\s+bank\s+of\s+india|rbi\s+approval)\b/i;
 const HAS_GST = /\b(?:gst|goods\s+and\s+services\s+tax|tds|tax\s+deduct(?:ion|ed)\s+at\s+source|withholding\s+tax)\b/i;
@@ -84,6 +87,23 @@ export const foreignCurrencyNoFema: RuleFn = ({ lower }) => {
   };
 };
 
+export const msmedNoInterest: RuleFn = ({ lower }) => {
+  if (!MENTIONS_MSME_SUPPLIER.test(lower)) return null;
+  if (!HAS_DUE_DATE.test(lower)) return null;
+  if (HAS_LATE_FEE.test(lower)) return null;
+  return {
+    ruleId: "pay.msmed_interest",
+    level: "medium",
+    issue: "No statutory interest for delayed payment to an MSME supplier.",
+    explanation:
+      "MSMED Act §16 entitles a registered MSME supplier to compound interest, with monthly rests, at three times the RBI notified bank rate on any amount paid after the appointed day — and this liability arises by statute, irrespective of any contrary term in the contract [CITE: Micro Small and Medium Enterprises Development Act 2006 | s.16 | 2006].",
+    suggestion:
+      "Add: 'Where the supplier is registered under the MSMED Act 2006, any amount not paid within the period prescribed under Section 15 of that Act shall carry interest at the rate specified in Section 16, compounded monthly.'",
+    citationHints: ["Micro Small and Medium Enterprises Development Act 2006 | s.16 | 2006"],
+    confidence: 0.7,
+  };
+};
+
 export const noTaxAllocation: RuleFn = ({ lower }) => {
   if (HAS_GST.test(lower)) return null;
   return {
@@ -102,6 +122,7 @@ export const noTaxAllocation: RuleFn = ({ lower }) => {
 export const paymentTermsRules: RuleFn[] = [
   noDueDate,
   msmedExceeds45Days,
+  msmedNoInterest,
   noLateFee,
   foreignCurrencyNoFema,
   noTaxAllocation,

@@ -50,14 +50,28 @@ export async function verifyAndPersistCitations(
         { perCallTimeoutMs: opts.perCallTimeoutMs, signal: opts.signal },
       );
 
+      // Inline-citation guard: if a prose statute reference didn't verify, persist
+      // the neutralised text so the ungrounded claim never reaches the reader.
+      // `out.neutralize` is identity when nothing failed, so this is a no-op write
+      // in the common case.
+      const update: Record<string, unknown> = {
+        citations: out.citations,
+        trust_score: out.trustScore,
+        verification_log: [out.pipelineLog, ...out.verifyLogs],
+        citations_updated_at: new Date().toISOString(),
+      };
+      if (risk) {
+        const neuIssue = out.neutralize(risk.issue ?? "");
+        const neuExplanation = out.neutralize(risk.explanation ?? "");
+        const neuSuggestion = out.neutralize(risk.suggestion ?? "");
+        if (neuIssue !== risk.issue) update.risk_issue = neuIssue;
+        if (neuExplanation !== risk.explanation) update.risk_explanation = neuExplanation;
+        if (neuSuggestion !== risk.suggestion) update.risk_suggestion = neuSuggestion;
+      }
+
       const { data, error } = await client
         .from("clauses")
-        .update({
-          citations: out.citations,
-          trust_score: out.trustScore,
-          verification_log: [out.pipelineLog, ...out.verifyLogs],
-          citations_updated_at: new Date().toISOString(),
-        })
+        .update(update)
         .eq("id", clause.id)
         .select("contract_id")
         .maybeSingle();

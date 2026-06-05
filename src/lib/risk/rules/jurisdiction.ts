@@ -5,6 +5,10 @@ const FOREIGN_FORUM = /\b(?:singapore|london|new\s+york|delaware|switzerland|hon
 const HAS_ARBITRATION = /\b(?:arbitration|arbitral\s+tribunal|sole\s+arbitrator)\b/i;
 const HAS_INDIAN_FORUM = /\b(?:courts?\s+(?:at|of|in)\s+(?:mumbai|new\s+delhi|delhi|bengaluru|bangalore|chennai|kolkata|hyderabad|ahmedabad|gurgaon|gurugram|noida|pune)|courts?\s+of\s+india|indian\s+courts?)\b/i;
 const NON_EXCLUSIVE = /\bnon[-\s]exclusive\s+jurisdiction\b/i;
+// A designated SEAT / place / venue of arbitration. "venue" alone is weaker than
+// "seat" post-BGS Soma, but its presence still signals the drafter addressed it.
+const HAS_ARBITRATION_SEAT =
+  /\b(?:seat\s+of\s+arbitration|seated\s+(?:at|in)|place\s+of\s+arbitration|venue\s+of\s+arbitration|arbitration\s+(?:shall\s+be\s+)?(?:seated|held)\s+(?:at|in))\b/i;
 
 export const foreignForumNoArbitration: RuleFn = ({ lower }) => {
   if (!HAS_JURISDICTION_TERM.test(lower)) return null;
@@ -71,9 +75,26 @@ export const indianForumGood: RuleFn = ({ lower }) => {
   };
 };
 
+export const arbitrationNoSeat: RuleFn = ({ lower }) => {
+  if (!HAS_ARBITRATION.test(lower)) return null;
+  if (HAS_ARBITRATION_SEAT.test(lower)) return null;
+  return {
+    ruleId: "juris.no_arbitration_seat",
+    level: "medium",
+    issue: "Arbitration agreed but no seat (place) of arbitration specified.",
+    explanation:
+      "An arbitration clause should fix the SEAT of arbitration, which determines the supervisory court and the curial law governing the arbitration. Absent a designated seat, the tribunal determines the place under the Arbitration and Conciliation Act 1996, inviting jurisdictional disputes [CITE: Arbitration and Conciliation Act 1996 | s.20 | 1996].",
+    suggestion:
+      "Specify the seat: 'The seat of arbitration shall be [Mumbai], India, and the courts at [Mumbai] shall have supervisory jurisdiction over the arbitration.'",
+    citationHints: ["Arbitration and Conciliation Act 1996 | s.20 | 1996"],
+    confidence: 0.7,
+  };
+};
+
 export const jurisdictionRules: RuleFn[] = [
   foreignForumNoArbitration,
   noJurisdictionAtAll,
   nonExclusiveJurisdiction,
   indianForumGood,
+  arbitrationNoSeat,
 ];

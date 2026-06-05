@@ -11,7 +11,10 @@ export const extractedCitationSchema = z.object({
   id: z.string().min(1),
   raw: z.string().min(1),
   caseOrStatute: z.string().min(1),
-  sectionOrCitation: z.string().min(1),
+  // Empty for a name+year-only case token (e.g. "Puttaswamy v. Union of India |
+  // | 2017"); statutes always carry a section. Validity is enforced by
+  // `formatValid`, not by requiring this field to be non-empty.
+  sectionOrCitation: z.string(),
   year: z.number().int().min(1800).max(3000).nullable(),
   formatValid: z.boolean(),
 });
